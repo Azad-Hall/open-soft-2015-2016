@@ -3,3 +3,12 @@ project( test )
 find_package( OpenCV REQUIRED )
 add_executable( test test.cpp pugixml.cpp)
 target_link_libraries( test ${OpenCV_LIBS} )
+
+add_executable(remove-text remove-text.cpp pugixml.cpp)
+target_link_libraries( remove-text ${OpenCV_LIBS} )
+
+add_executable(ComputerVision ComputerVision.cpp pugixml.cpp)
+target_link_libraries( ComputerVision ${OpenCV_LIBS} )
+
+add_executable(graph-candidates  graph-candidates.cpp pugixml.cpp)
+target_link_libraries( graph-candidates ${OpenCV_LIBS} )
