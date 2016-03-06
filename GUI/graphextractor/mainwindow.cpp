@@ -99,7 +99,7 @@ void MainWindow::createStatusBar() {
 
 void MainWindow::openFile()
 {
-    //Initialize status bar to Done!!
+    //Initialize status bar to Loading!!
     statusBar()->showMessage("Loading...");
     statusProgressBar->setValue(0);
 
@@ -118,7 +118,7 @@ void MainWindow::openFile()
     // Enable SaveAs
     saveAsAct->setEnabled(true);
 
-    //Update status bar to Done!!
+    //Update status bar message to Done!!
     statusBar()->showMessage("Done!!");
     statusProgressBar->setValue(100);
 }
@@ -138,25 +138,20 @@ void MainWindow::saveToFile() {
 }
 
 void MainWindow::saveFile(const QString &fileName) {
-    QFile file(fileName);
-    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+    // No need to copy to same path
+    if(fileName == outFilePath)
+        return;
+
+    if(!QFile::copy(outFilePath, fileName)) {
         QMessageBox::warning(this, tr("Error"),
-                             tr("Cannot write file %1:\n%2.")
-                             .arg(fileName)
-                             .arg(file.errorString()));
-        file.close();
+                             tr("Cannot write file %1:\n.")
+                             .arg(fileName));
         return;
     }
 
-    QString copyPath = file.fileName();
-
-    file.remove();
-    file.close();
-
-    QFile::copy(outFilePath, copyPath);
-
-    QFileInfo fi(copyPath);
+    QFileInfo fi(fileName);
     setWindowTitle(fi.fileName());
+
 }
 
 void MainWindow::about() {

@@ -30,7 +30,6 @@
 #include <QProgressBar>
 #include <QStatusBar>
 #include "QPdfWidget"
-#include <QDebug>
 
 class QMenu;
 class QProgressBar;
