@@ -31,7 +31,7 @@ make
 touch Graph_Extract_run.sh
 echo "#!/bin/sh" >> Graph_Extract_run.sh
 echo "export LD_LIBRARY_PATH=`pwd`/qpdflib"  >> Graph_Extract_run.sh
-echo "exec ./graphextractor/graphextractor" >> Graph_Extract_run.sh
+echo "exec `pwd`/graphextractor/graphextractor" >> Graph_Extract_run.sh
 chmod +x Graph_Extract_run.sh
 
 echo "--- Installing Complete"
