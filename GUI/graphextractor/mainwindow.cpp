@@ -51,6 +51,12 @@ void MainWindow::createActions()
     openAct->setStatusTip(tr("Open an existing file"));
     connect(openAct, SIGNAL(triggered()), this, SLOT(openFile()));
 
+    saveAsAct = new QAction(QIcon(":/icons/save.png"),tr("Save &As..."), this);
+    saveAsAct->setShortcuts(QKeySequence::SaveAs);
+    saveAsAct->setStatusTip(tr("Save the document under a new name"));
+    connect(saveAsAct, SIGNAL(triggered()), this, SLOT(saveToFile()));
+    saveAsAct->setEnabled(false);
+
     exitAct = new QAction(tr("E&xit"), this);
     exitAct->setShortcuts(QKeySequence::Quit);
     exitAct->setStatusTip(tr("Exit the application"));
@@ -69,6 +75,8 @@ void MainWindow::createMenus() {
 
     fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(openAct);
+    fileMenu->addAction(saveAsAct);
+    fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 
     helpMenu = menuBar()->addMenu(tr("&Help"));
@@ -81,6 +89,7 @@ void MainWindow::createToolBar()
     QToolBar *pToolBar = addToolBar(tr("File"));
     pToolBar->setMovable(false);
     pToolBar->addAction(openAct);
+    pToolBar->addAction(saveAsAct);
 }
 
 void MainWindow::createStatusBar() {
@@ -103,9 +112,51 @@ void MainWindow::openFile()
 
     loadFile(fileName);
 
+    // Set the processed file path here
+    outFilePath = fileName;
+
+    // Enable SaveAs
+    saveAsAct->setEnabled(true);
+
     //Update status bar to Done!!
     statusBar()->showMessage("Done!!");
     statusProgressBar->setValue(100);
+}
+
+void MainWindow::saveToFile() {
+    QFileDialog dialog(this);
+    dialog.setWindowModality(Qt::WindowModal);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setDefaultSuffix("pdf");
+    QStringList files;
+    if(dialog.exec())
+        files = dialog.selectedFiles();
+    else
+        return;
+
+    return saveFile(files.at(0));
+}
+
+void MainWindow::saveFile(const QString &fileName) {
+    QFile file(fileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) {
+        QMessageBox::warning(this, tr("Error"),
+                             tr("Cannot write file %1:\n%2.")
+                             .arg(fileName)
+                             .arg(file.errorString()));
+        file.close();
+        return;
+    }
+
+    QString copyPath = file.fileName();
+
+    file.remove();
+    file.close();
+
+    QFile::copy(outFilePath, copyPath);
+
+    QFileInfo fi(copyPath);
+    setWindowTitle(fi.fileName());
 }
 
 void MainWindow::about() {

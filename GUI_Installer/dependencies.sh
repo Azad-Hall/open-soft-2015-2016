@@ -10,6 +10,7 @@ install_dependency libopencv-dev
 install_dependency tesseract-ocr
 install_dependency tesseract-ocr-eng
 install_dependency tesseract-ocr-equ
+install_dependency imagemagick
 install_dependency qt5-default
 install_dependency qt5-qmake
 install_dependency qtbase5-dev-tools
