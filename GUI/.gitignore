@@ -1,6 +1,4 @@
-ocr/build/*
-build/*
-
+!.gitignore
 # Compiled Object files
 *.slo
 *.lo
@@ -33,5 +31,3 @@ build/*
 # QtCreator files
 *.user
 *.user.*
-
-*~
