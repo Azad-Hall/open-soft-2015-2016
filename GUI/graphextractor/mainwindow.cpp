@@ -1,8 +1,6 @@
 /*
-                          qpdf
+                          graphextractor
 
-    Copyright (C) 2015 Arthur Benilov,
-    arthur.benilov@gmail.com
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
     License as published by the Free Software Foundation; either
@@ -19,7 +17,7 @@ MainWindow::MainWindow(QWidget *pParent, Qt::WindowFlags flags)
     : QMainWindow(pParent, flags)
 {
     setWindowTitle("Graph Extractor");
-    setWindowIcon(QIcon(":/icons/pdf.png"));
+    setWindowIcon(QIcon(":/icons/app.png"));
 
     statusProgressBar = new QProgressBar();
     statusProgressBar->setMinimum(0);
@@ -46,10 +44,16 @@ void MainWindow::loadFile(const QString &path)
 
 void MainWindow::createActions()
 {
-    openAct = new QAction(QIcon(":/icons/folder.png"), tr("&Open..."), this);
+    openAct = new QAction(QIcon(":/icons/open.png"), tr("&Open..."), this);
     openAct->setShortcuts(QKeySequence::Open);
     openAct->setStatusTip(tr("Open an existing file"));
     connect(openAct, SIGNAL(triggered()), this, SLOT(openFile()));
+
+    saveAsAct = new QAction(QIcon(":/icons/save.png"),tr("Save &As..."), this);
+    saveAsAct->setShortcuts(QKeySequence::SaveAs);
+    saveAsAct->setStatusTip(tr("Save the document under a new name"));
+    connect(saveAsAct, SIGNAL(triggered()), this, SLOT(saveToFile()));
+    saveAsAct->setEnabled(false);
 
     exitAct = new QAction(tr("E&xit"), this);
     exitAct->setShortcuts(QKeySequence::Quit);
@@ -69,6 +73,8 @@ void MainWindow::createMenus() {
 
     fileMenu = menuBar()->addMenu(tr("&File"));
     fileMenu->addAction(openAct);
+    fileMenu->addAction(saveAsAct);
+    fileMenu->addSeparator();
     fileMenu->addAction(exitAct);
 
     helpMenu = menuBar()->addMenu(tr("&Help"));
@@ -81,6 +87,7 @@ void MainWindow::createToolBar()
     QToolBar *pToolBar = addToolBar(tr("File"));
     pToolBar->setMovable(false);
     pToolBar->addAction(openAct);
+    pToolBar->addAction(saveAsAct);
 }
 
 void MainWindow::createStatusBar() {
@@ -90,7 +97,7 @@ void MainWindow::createStatusBar() {
 
 void MainWindow::openFile()
 {
-    //Initialize status bar to Done!!
+    //Initialize status bar to Loading!!
     statusBar()->showMessage("Loading...");
     statusProgressBar->setValue(0);
 
@@ -103,9 +110,46 @@ void MainWindow::openFile()
 
     loadFile(fileName);
 
-    //Update status bar to Done!!
+    // Set the processed file path here
+    outFilePath = fileName;
+
+    // Enable SaveAs
+    saveAsAct->setEnabled(true);
+
+    //Update status bar message to Done!!
     statusBar()->showMessage("Done!!");
     statusProgressBar->setValue(100);
+}
+
+void MainWindow::saveToFile() {
+    QFileDialog dialog(this);
+    dialog.setWindowModality(Qt::WindowModal);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setDefaultSuffix("pdf");
+    QStringList files;
+    if(dialog.exec())
+        files = dialog.selectedFiles();
+    else
+        return;
+
+    return saveFile(files.at(0));
+}
+
+void MainWindow::saveFile(const QString &fileName) {
+    // No need to copy to same path
+    if(fileName == outFilePath)
+        return;
+
+    if(!QFile::copy(outFilePath, fileName)) {
+        QMessageBox::warning(this, tr("Error"),
+                             tr("Cannot write file %1:\n.")
+                             .arg(fileName));
+        return;
+    }
+
+    QFileInfo fi(fileName);
+    setWindowTitle(fi.fileName());
+
 }
 
 void MainWindow::about() {

@@ -1,8 +1,6 @@
 /*
-                          qpdf
+                          graphextractor
 
-    Copyright (C) 2015 Arthur Benilov,
-    arthur.benilov@gmail.com
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
     License as published by the Free Software Foundation; either
@@ -32,7 +30,6 @@
 #include "QPdfWidget"
 
 class QMenu;
-class QLabel;
 class QProgressBar;
 class QAction;
 class QPdfWidget;
@@ -54,6 +51,7 @@ public slots:
 private slots:
 
     void openFile();
+    void saveToFile();
     void about();
 
 private:
@@ -61,15 +59,18 @@ private:
     void createActions();
     void createToolBar();
     void createStatusBar();
+    void saveFile(const QString &fileName);
 
     QMenu *fileMenu;
     QMenu *helpMenu;
     QProgressBar *statusProgressBar;
     QAction *openAct;
+    QAction *saveAsAct;
     QAction *exitAct;
     QAction *aboutAct;
     QAction *aboutQtAct;
     QPdfWidget *pdfWidget;
+    QString outFilePath;
 };
 
 #endif // MAINWINDOW_H
