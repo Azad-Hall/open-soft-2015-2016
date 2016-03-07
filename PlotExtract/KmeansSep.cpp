@@ -21,21 +21,57 @@ struct Color {
 	bool operator<(const Color& c) const {
 		return (r + (g << 8) + (b << 16)) < (c.r + (c.g << 8) + (c.b << 16));
 	}
+	Color operator+(const Color &c) const {
+		return Color(r+c.r, g+c.g, b+c.b);
+	}
+	Color &operator+=(const Color &c) {
+		*(this) = *(this)+c;
+		return *this;
+	}
+	Color operator/(int x) const {
+		assert (x != 0);
+		return Color(r/x, g/x, b/x);
+	}
+	Color &operator/=(int x) {
+		return (*this) = (*this)/x;
+	}
+	Color operator*(int x) const {
+		return Color(r*x, g*x, b*x);
+	}
+	Color &operator*=(int x) {
+		return (*this) = (*this)*x;
+	}
 };
+
+struct ColorClass {
+	Color avgColor;
+	Color qColor;
+	int numPixels;
+	ColorClass(): avgColor(), qColor(), numPixels(0) {}
+	ColorClass(Color qColor) : avgColor(), qColor(qColor), numPixels(0) {}
+	bool operator<(const ColorClass &c) const {
+		return qColor < c.qColor;
+	}
+};
+
+struct MergedColorClass {
+	Color avgColor;
+	vector<Color> qColors;
+	int numPixels;
+	MergedColorClass(): avgColor(Vec3b(0,0,0)), numPixels(0) {}
+};
+
 
 
 using namespace std;
 using namespace cv;
 
-typedef struct R{
-	int l;
-	int r;
-}range;
+
 bool sortFunc(const pair<Color, int> &p1, const pair<Color, int> &p2) {
 	return p1.second > p2.second;
 }
 
-void colorReduce(cv::Mat& image, int div =140)
+void colorReduce(cv::Mat& image, int div =32)
 {
 	int nl = image.rows;                    // number of lines
 	int nc = image.cols * image.channels(); // number of elements per line
@@ -53,12 +89,15 @@ void colorReduce(cv::Mat& image, int div =140)
 	}
 }
 
+int colorDistSq (const Color &a, const Color &b) {
+	return (a.r-b.r)*(a.r-b.r) + (a.g-b.g)*(a.g-b.g) + (a.b-b.b)*(a.b-b.b);
+}
 
 
-int main(){
+int main(int argc, char **argv){
 	int d=25;
-	Mat img1 = imread("./pics/4.png", CV_LOAD_IMAGE_COLOR);
-	Mat img2 = img1;
+	Mat img1 = imread(argv[1], CV_LOAD_IMAGE_COLOR);
+	Mat img2 = img1.clone();
 	colorReduce(img2);
 	cv::imshow("colorReduce", img2);
 
@@ -86,175 +125,69 @@ int main(){
 
 	namedWindow("img", WINDOW_AUTOSIZE);
 	imshow("img", img);
-	map<Color, int> histogram;
+	map<Color, ColorClass> histogram;
 	for (int i = 0; i < img.rows; i++) {
 		for (int j = 0; j < img.cols; j++) {
 			::Color c(img.at<Vec3b>(i,j));
 			if (histogram.find(c) == histogram.end())
-				histogram[c] = 0;
-			histogram[c]++;
+				histogram[c] = ColorClass(c);
+			histogram[c].avgColor = histogram[c].avgColor + Color(img1.at<Vec3b>(i,j));
+			histogram[c].numPixels++;
 		}
 	}
-
-	int maxCount = 20;
-	int cnt = 0;
+	vector<ColorClass> classes;
+	
 	cout << "map elements = " << histogram.size() << endl;
-	vector<pair<Color, int> > output;
-	for (map<Color, int>::reverse_iterator it = histogram.rbegin(); it != histogram.rend(); it++) {
-		output.push_back(make_pair(it->first, it->second));
+	for (map<Color, ColorClass>::reverse_iterator it = histogram.rbegin(); it != histogram.rend(); it++) {
+		ColorClass c = it->second;
+		assert(c.numPixels > 0);
+		c.avgColor /= c.numPixels;
+		classes.push_back(c);
+		Color &avg = c.avgColor;
+		printf("qColor: (%d, %d, %d), avgColor = (%d, %d, %d), numPixels = %d\n", c.qColor.r, c.qColor.g, c.qColor.b, 
+			avg.r, avg.g, avg.b, c.numPixels);
 	}
 
-	sort(output.begin(), output.end(), sortFunc);
-	for (int i = 0; i < 20 && i<output.size(); i++) {
-		cout << "count = " << output[i].second << "color : " << output[i].first.r << " " << output[i].first.g << " " <<
-			output[i].first.b << endl;
-	}
-
-	/*Mat temp = Mat(img.rows,img.cols, CV_8UC3);
-	for(int i=0;i<output.size();i++)
+	int distThreshSq = 80*80;
+	vector<bool> classDone(classes.size(), false);
+	vector<MergedColorClass> mergedClasses;
+	// remove white and black. they are the first and last class respectivley.
+	classDone[0] = true;
+	classDone[classDone.size()-1] = true;
+	for (int i = 0; i < classes.size(); ++i)
 	{
-		//int i=5;
-		temp=Scalar(output[i].first.r,output[i].first.g,output[i].first.b);
-		imshow("colours",temp);
-		waitKey(0);
-
-	}*/
-
-
-
-	//imwrite("imgout.png",img);
-	//Mat temp = Mat(img.rows,img.cols, CV_8UC1);
-	//temp=Scalar(0);
-
-
-	/*int count=0;
-	for(int i=0;i<output.size();i++)
-	{
-		//int i=2;
-		Mat temp = Mat(img.rows,img.cols, CV_8UC3);
-		Vec3b comparator;//= Scalar(output[i].first.r,output[i].first.g,output[i].first.b);
-		comparator[0]=output[i].first.r;
-		comparator[1]=output[i].first.g;
-		comparator[2]=output[i].first.b;
-		cout <<"color : " << output[i].first.r << " " << output[i].first.g << " " <<
-			output[i].first.b << endl;
-		for(int j=0;j<img.rows;j++)
-		{
-			for(int k=0;k<img.cols;k++)
-			{
-				//::Color c(img.at<Vec3b>(i,j));
-				//cout<<"Comparator : ("<<comparator[0]<<","<<comparator[1]<<","<<comparator[2]<<")\n";
-				//cout<<"Img values : ("<<img.at<Vec3b>(i,j)<<")\n";
-				if(comparator == img.at<Vec3b>(j,k))
-				{
-					count++;
-					temp.at<Vec3b>(j,k)[0]=255;//img.at<Vec3b>(j,k);
-					temp.at<Vec3b>(j,k)[1]=255;
-					temp.at<Vec3b>(j,k)[2]=255;
-				}
+		if (classDone[i])
+			continue;
+		classDone[i] = true;
+		MergedColorClass mc;
+		mc.qColors.push_back(classes[i].qColor);
+		// right now avg holds the sum.
+		mc.numPixels = classes[i].numPixels;
+		mc.avgColor = classes[i].avgColor*mc.numPixels;
+		for (int j = i+1; j < classes.size(); ++j) {
+			if (classDone[j])
+				continue;
+			int distSq = colorDistSq(classes[i].avgColor, classes[j].avgColor);
+			if (distSq < distThreshSq) {
+				// merge it
+				classDone[j] = true;
+				mc.qColors.push_back(classes[j].qColor);
+				mc.numPixels += classes[j].numPixels;
+				mc.avgColor += classes[j].avgColor * classes[j].numPixels;
 			}
 		}
-		imshow("temp", temp);
-		//imshow("temp img", img);
-		
-		cout<<"count="<<count<<"\n";
-		waitKey(0);
-		//temp = Scalar(0);
-		count=0;
-
-
-	}*/
-	
-
-
-	std::vector<cv::Mat> imgRGB;
-	cv::split(img, imgRGB);
-	int k = 10;
-	int n = img.rows *img.cols;
-	cv::Mat img3xN(n, 3, CV_8U);
-	for (int i = 0; i != 3; ++i)
-		imgRGB[i].reshape(1, n).copyTo(img3xN.col(i));
-	img3xN.convertTo(img3xN, CV_32F);
-	cv::Mat bestLables;
-	cv::kmeans(img3xN, k, bestLables, cv::TermCriteria(), 5, cv::KMEANS_RANDOM_CENTERS);
-	bestLables = bestLables.reshape(0, img.rows);
-	cv::convertScaleAbs(bestLables, bestLables, int(255 / k));
-	cv::imshow("result", bestLables);
-	cout<<"rows cols"<<bestLables.rows<<" "<<bestLables.cols<<"\n";
-
-	cout<<bestLables.type()<<" "<<bestLables.channels()<<" "<<bestLables.at<Vec2b>(0,0)<<"\n";
-	/*for(int i=0;i<bestLables.rows;i++)
+		mc.avgColor /= mc.numPixels;
+		mergedClasses.push_back(mc);
+	}
+	printf("merged classes=  %d\n", mergedClasses.size());
+	for (int i = 0; i < mergedClasses.size(); ++i)
 	{
-		for(int j=0;j<bestLables.cols;j++)
-		{
-			cout<<bestLables.at<Vec3b>(i,j)<<"\n";
+		MergedColorClass &mc = mergedClasses[i];
+		for (int j= 0; j < mc.qColors.size();j++) {
+			printf("(%d, %d, %d), ", mc.qColors[j].r, mc.qColors[j].g, mc.qColors[j].b);
 		}
-	}*/
-	//bestLables=Scalar(70,70,210);
-	/*colorReduce(bestLables);
-	cv::imshow("result reduced", bestLables);
-*/
-
-
-
-	map<int, int> histogram2;
-	for (int i = 0; i < bestLables.rows; i++) {
-		for (int j = 0; j < bestLables.cols; j++) {
-			int c= bestLables.at<uchar>(i,j);
-			if (histogram2.find(c) == histogram2.end())
-				histogram2[c] = 0;
-			histogram2[c]++;
-		}
-	}
-
-	cout << "map elements = " << histogram2.size() << endl;
-	vector<pair<int, int> > output2;
-	for (map<int, int>::reverse_iterator it = histogram2.rbegin(); it != histogram2.rend(); it++) {
-		output2.push_back(make_pair(it->first, it->second));
-	}
-
-	sort(output2.begin(), output2.end(), sortFunc);
-	for (int i = 0; i < 20 && i<output2.size(); i++) {
-		cout << "count2 = " << output2[i].second << "color2 : " << output2[i].first << endl;
-	}
-
-
-	int count=0;
-	for(int i=0;i<output2.size();i++)
-	{
-		//int i=2;
-		Mat temp = Mat(bestLables.rows,bestLables.cols, CV_8UC1);
-		int comparator=output2[i].first;//= Scalar(output[i].first.r,output[i].first.g,output[i].first.b);
-		cout <<"color2 : " << output2[i].first<< endl;
-		for(int j=0;j<bestLables.rows;j++)
-		{
-			for(int k=0;k<bestLables.cols;k++)
-			{
-				//::Color c(img.at<Vec3b>(i,j));
-				//cout<<"Comparator : ("<<comparator[0]<<","<<comparator[1]<<","<<comparator[2]<<")\n";
-				//cout<<"Img values : ("<<img.at<Vec3b>(i,j)<<")\n";
-				if(comparator == bestLables.at<uchar>(j,k))
-				{
-					count++;
-					temp.at<uchar>(j,k)=255;//img.at<Vec3b>(j,k);
-				}
-			}
-		}
-		imshow("temp", temp);
-		//imshow("temp bestLables", bestLables);
-		
-		cout<<"count="<<count<<"\n";
-		waitKey(0);
-		//temp = Scalar(0);
-		if(count<50)
-			break;
-		count=0;
-
-
-	}
-
-
-	
+		printf(". avg Color = %d, %d, %d. Num Pixels = %d\n", mc.avgColor.r, mc.avgColor.g, mc.avgColor.b, mc.numPixels);
+	}	
 	cv::waitKey();
 
 

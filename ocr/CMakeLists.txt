@@ -12,3 +12,6 @@ target_link_libraries( ComputerVision ${OpenCV_LIBS} )
 
 add_executable(graph-candidates  graph-candidates.cpp pugixml.cpp)
 target_link_libraries( graph-candidates ${OpenCV_LIBS} )
+
+add_executable(box-detection  box-detection.cpp pugixml.cpp)
+target_link_libraries( box-detection ${OpenCV_LIBS} )
