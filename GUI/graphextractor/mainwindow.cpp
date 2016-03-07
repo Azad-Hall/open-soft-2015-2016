@@ -1,8 +1,6 @@
 /*
-                          qpdf
+                          graphextractor
 
-    Copyright (C) 2015 Arthur Benilov,
-    arthur.benilov@gmail.com
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
     License as published by the Free Software Foundation; either
@@ -19,7 +17,7 @@ MainWindow::MainWindow(QWidget *pParent, Qt::WindowFlags flags)
     : QMainWindow(pParent, flags)
 {
     setWindowTitle("Graph Extractor");
-    setWindowIcon(QIcon(":/icons/pdf.png"));
+    setWindowIcon(QIcon(":/icons/app.png"));
 
     statusProgressBar = new QProgressBar();
     statusProgressBar->setMinimum(0);
@@ -46,7 +44,7 @@ void MainWindow::loadFile(const QString &path)
 
 void MainWindow::createActions()
 {
-    openAct = new QAction(QIcon(":/icons/folder.png"), tr("&Open..."), this);
+    openAct = new QAction(QIcon(":/icons/open.png"), tr("&Open..."), this);
     openAct->setShortcuts(QKeySequence::Open);
     openAct->setStatusTip(tr("Open an existing file"));
     connect(openAct, SIGNAL(triggered()), this, SLOT(openFile()));

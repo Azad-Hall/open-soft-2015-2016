@@ -1,14 +1,14 @@
 #!/bin/bash
 
-if ! sudo true; then
-    echo "You must have root privileges to run this script."
-    echo "Please run the installer as sudo -E ./graph_extract_instal.sh."
+if [ "$EUID" -ne 0 ]; then
+    echo "You must have root privileges to install the libraries."
+    echo "Please run the installer as sudo -E ./graph_extract_install.sh."
     exit 1
 fi
 
 if [ -z "$http_proxy" ]; then
-    echo "Need http proxy to run the installer."
-    echo "Please run the installer as: sudo -E ./graph_extract_instal.sh."
+    echo "Need http proxy to run the installer. Use -E to export the environment variables."
+    echo "Please run the installer as: sudo -E ./graph_extract_install.sh."
     exit 1
 fi
 
