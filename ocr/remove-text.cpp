@@ -34,9 +34,12 @@ int main(int argc, char const *argv[])
     pugi::xpath_node node = *it;
     string coords = node.node().attribute("title").value();
     string val = node.node().child_value();
+    for (pugi::xml_node n = node.node().first_child(); n; n = n.next_sibling()) {
+      val.append(n.child_value());
+    }
     if (val.size() == 0 || val == " ")
       continue;
-    // printf("val = %s, title = %s\n", val.c_str(), coords.c_str());
+    printf("val = %s, title = %s\n", val.c_str(), coords.c_str());
     int x1, y1, x2, y2;
     sscanf(coords.c_str(), "%*s %d %d %d %d;", &x1, &y1, &x2, &y2);
     // coords >> dummy >> x1 >> y1 >> x2 >> y2;
