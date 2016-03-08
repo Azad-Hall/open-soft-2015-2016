@@ -7,25 +7,69 @@
 #include "pugixml.hpp"
 #include <iostream>
 #include <math.h>
+#include <algorithm>
 
 using namespace cv;
+
+void rotate_90n(cv::Mat &src, cv::Mat &dst, int angle)
+{
+    dst.create(src.size(), src.type());
+    if(angle == 270 || angle == -90){
+        // Rotate clockwise 270 degrees
+        cv::transpose(src, dst);
+        cv::flip(dst, dst, 0);
+    }else if(angle == 180 || angle == -180){
+        // Rotate clockwise 180 degrees
+        cv::flip(src, dst, -1);
+    }else if(angle == 90 || angle == -270){
+        // Rotate clockwise 90 degrees
+        cv::transpose(src, dst);
+        cv::flip(dst, dst, 1);
+    }else if(angle == 360 || angle == 0){
+        if(src.data != dst.data){
+            src.copyTo(dst);
+        }
+    }
+}
 int main(int argc, char const *argv[])
 {
-  if (argc != 4) {
-    printf("usage: ./graph-candidates <img> <hocr-xml> <graph-base-name>\n");
+  if (argc != 3) {
+    printf("usage: ./graph-candidates <img> <graph-base-name>\n");
     return 0;
   }
   cv::Mat input = cv::imread(argv[1]);//input image
-  
+  // do the OCR here itself.
+  // {
+  //   char buf[1000];
+  //   sprintf(buf, "tesseract %s /tmp/out -l eng hocr", argv[1]);
+  //   system(buf);
+  // }
+  // // rotate image by 90 and do OCR again. sometimes vertical text is only found in rotated image.
+  // {
+  //   Mat rot;
+  //   rotate_90n(input, rot, 90);
+  //   imwrite("/tmp/tmp-rot.png", rot);
+  //   char buf[1000];
+  //   sprintf(buf, "tesseract /tmp/tmp-rot.png /tmp/out-rot -l eng hocr");
+  //   // imshow("rotated", rot);
+  //   // waitKey();
+  //   system(buf);
+  // }
   cv::Mat gray;
   // will threshold this gray image
   cv::cvtColor(input, gray, CV_BGR2GRAY);
   cv::Mat mask;
   // threshold white/non-white
   cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
+  // dilate here to close some gaps
+  dilate(mask, mask, Mat());
+  imshow("thresholded", mask);
+  imwrite("/tmp/thrsholded.png", mask);
   std::vector<std::vector<cv::Point> > contours, rectContours;
   std::vector<cv::Vec4i> hierarchy;
   cv::findContours(mask, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+  cv::Mat drawing = cv::Mat::zeros(mask.size(), CV_8UC3);
+
   for (int i = 0; i < contours.size(); i++)
   {
     float ctArea = cv::contourArea(contours[i]);
@@ -33,13 +77,17 @@ int main(int argc, char const *argv[])
     // contours that have 80% of area of bounding box are rectangles for consideration
     float percentRect = ctArea / (float)(boundingBox.height * boundingBox.width);
     assert (percentRect >= 0 && percentRect <= 1.0);
-    if (percentRect > 80/100.)
+    if (percentRect > 80/100. || 1) {
       rectContours.push_back(contours[i]);
+      cv::Scalar color = cv::Scalar(0, 255, 0);
+      drawContours(drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point());
+    }
   }
-  printf("num rect contours = %d\n", rectContours.size());
+  
+  printf("num rect contours = %d\n", (int)rectContours.size());
   // xml stuff to find vertical text
   pugi::xml_document doc;
-  pugi::xml_parse_result result = doc.load_file(argv[2]);
+  pugi::xml_parse_result result = doc.load_file("/tmp/out.hocr");
   // finds all paragraph nodes that have a child ocr_line node that has textangle 90 attribute
   pugi::xpath_node_set nodes_vert= doc.select_nodes("//span[contains(@title, 'textangle 90')]/parent::*");
   vector<cv::Rect> vertical_pars;
@@ -50,6 +98,28 @@ int main(int argc, char const *argv[])
     sscanf(title.c_str(), "%*s %d %d %d %d;", &x1, &y1, &x2, &y2);
     vertical_pars.push_back(Rect(Point(x1, y1), Point(x2, y2)));
   }
+  printf("normal vertical pars = %d\n", (int)vertical_pars.size());
+  // select vertical texts from the rotated image.
+  {
+    pugi::xml_document doc;
+    pugi::xml_parse_result result = doc.load_file("/tmp/out-rot.hocr");
+    // finds all paragraph nodes that have a child ocr_line node that has textangle 90 attribute
+    pugi::xpath_node_set nodes_vert= doc.select_nodes("//span[not(contains(@title, 'textangle 270')) and (@class='ocr_line')]/parent::*");
+    // maybe check if para is empty or not?
+    int cnt = 0;
+    for (pugi::xpath_node_set::const_iterator it = nodes_vert.begin(); it != nodes_vert.end(); ++it) {
+      pugi::xpath_node node = *it;
+      string title = node.node().attribute("title").value();
+      int x1, y1, x2, y2;
+      sscanf(title.c_str(), "%*s %d %d %d %d;", &x1, &y1, &x2, &y2);
+      // convert to original coordinates;
+      std::swap(y1,x1); std::swap(y2, x2); y1 = input.rows - y1-1; y2 = input.rows-y2-1;
+      vertical_pars.push_back(Rect(Point(x1, y1), Point(x2, y2)));
+      cnt++;
+    }
+    printf("vertical pars found after rotation by -90: %d\n", cnt);
+  }
+  printf("total num vertial pars = %d\n", (int)vertical_pars.size());
   // now match the contours with the vertical paragraphs to figure out graphs.
   vector<cv::Rect> imgCandidates;
   vector<bool> vertParUsed(vertical_pars.size(), false);
@@ -77,13 +147,17 @@ int main(int argc, char const *argv[])
           Mat croppedGraph = input(cv::Rect(tl, br));
           char buf[1000];
           printf("writinh.\n");
-          sprintf(buf, "%s-%d.png", argv[3], imgCandidates.size());
+          // draw the contour of the graph box we identified 
+          cv::Scalar color = cv::Scalar(255, 255, 255);
+          drawContours(drawing, rectContours, i, color, 1, 8, hierarchy, 0, cv::Point());
+          sprintf(buf, "%s-%d.png", argv[2], (int)imgCandidates.size());
           imgCandidates.push_back(imgRect);
           imwrite(buf, croppedGraph);
         }
       }
     }
   }
+  imwrite("/tmp/contours.png", drawing);
   // imgCandidates rect has the boundary boxes for the graph (excluding axis labels/numbers)
   // print it out if needed. currently only output is in the graph images generated
   return 0;
