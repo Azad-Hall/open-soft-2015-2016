@@ -26,12 +26,19 @@ echo "--- Installing GraphExtract"
 rm -rf `pwd`/../build/
 mkdir `pwd`/../build
 cd `pwd`/../build
+
 qmake `pwd`/../GUI/GUI.pro
 make
+
 touch Graph_Extractor_run.sh
 echo "#!/bin/sh" >> Graph_Extractor_run.sh
 echo "export LD_LIBRARY_PATH=`pwd`/qpdflib"  >> Graph_Extractor_run.sh
 echo "exec `pwd`/graphextractor/graphextractor" >> Graph_Extractor_run.sh
 chmod +x Graph_Extractor_run.sh
+
+find . -type f -name '*.o' -exec rm {} +
+find . -type f -name '*.cpp' -exec rm {} +
+find . -type f -name '*.c' -exec rm {} +
+find . -type f -name 'Makefile' -exec rm {} +
 
 echo "--- Installation Complete"
