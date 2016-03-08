@@ -29,7 +29,8 @@ void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew
       if (visited.at<uchar>(ii,jj))
         continue;
       visited.at<uchar>(ii,jj) = 1;
-      if (hsv[1] <= lowSatThresh && whiteMask.at<uchar>(ii,jj) ) {
+      // add special conditions for brown and blue to counter anti aliasing
+      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-30) < 20 || fabs(hsv[0]-200) < 20)&& whiteMask.at<uchar>(ii,jj) ) {
         visited.at<uchar>(ii,jj) = 1;
         bmaskNew.at<uchar>(ii,jj) = 0;
         traverse(bmask, visited, imgHSV, ii, jj, bmaskNew, whiteMask, lowSatThresh);
@@ -72,17 +73,17 @@ int main(int argc, char const *argv[])
       Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
       if (cRGB[0] >= 210 && cRGB[1] >= 210 && cRGB[2] >= 210) {
         mask.at<uchar>(i,j) = 0;
-      } else if (cRGB[0] <= 30 && cRGB[1] <= 30 && cRGB[2] <= 30) {
+      } else if (cRGB[0] <= 120 && cRGB[1] <= 120 && cRGB[2] <= 120) {
         bmask.at<uchar>(i,j) = 0;
       }  // if saturation is low i.e less than 10%, it could be black/grey, we don't need that.
-      else if (cHSV[1] <= .08*255) {
+      else if (cHSV[1] <= .03*255) {
         bmask.at<uchar>(i,j) = 0;
       }      
     }
   }
   //anti aliasing correction
   // using search method
-  bmask = expandBMask(bmask, imgHSV, mask, 0.18*255);
+  bmask = expandBMask(bmask, imgHSV, mask, 0.2*255);
   bool got=false;
   /*for (int i = 1; i < mask.rows-1; ++i)
   {
