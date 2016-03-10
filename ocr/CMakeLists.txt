@@ -10,8 +10,11 @@ target_link_libraries( remove-text ${OpenCV_LIBS} )
 add_executable(ComputerVision ComputerVision.cpp pugixml.cpp)
 target_link_libraries( ComputerVision ${OpenCV_LIBS} )
 
-add_executable(graph-candidates  graph-candidates.cpp pugixml.cpp)
+add_executable(graph-candidates  graph-candidates.cpp box-detection.cpp pugixml.cpp)
 target_link_libraries( graph-candidates ${OpenCV_LIBS} )
 
-add_executable(box-detection  box-detection.cpp pugixml.cpp)
-target_link_libraries( box-detection ${OpenCV_LIBS} )
+# add_executable(box-detection  box-detection.cpp pugixml.cpp)
+# target_link_libraries( box-detection ${OpenCV_LIBS} )
+
+add_executable(preprocessing  preprocessing.cpp pugixml.cpp)
+target_link_libraries( preprocessing ${OpenCV_LIBS} )

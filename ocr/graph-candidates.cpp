@@ -10,7 +10,7 @@
 #include <algorithm>
 
 using namespace cv;
-
+std::vector<std::vector<cv::Point> > getBoxes(Mat input);
 void rotate_90n(cv::Mat &src, cv::Mat &dst, int angle)
 {
     dst.create(src.size(), src.type());
@@ -33,57 +33,31 @@ void rotate_90n(cv::Mat &src, cv::Mat &dst, int angle)
 }
 int main(int argc, char const *argv[])
 {
-  if (argc != 3) {
-    printf("usage: ./graph-candidates <img> <graph-base-name>\n");
+  if (argc != 4) {
+    printf("usage: ./graph-candidates <img> <img-notext> <graph-base-name>\n");
     return 0;
   }
   cv::Mat input = cv::imread(argv[1]);//input image
   // do the OCR here itself.
-  // {
-  //   char buf[1000];
-  //   sprintf(buf, "tesseract %s /tmp/out -l eng hocr", argv[1]);
-  //   system(buf);
-  // }
-  // // rotate image by 90 and do OCR again. sometimes vertical text is only found in rotated image.
-  // {
-  //   Mat rot;
-  //   rotate_90n(input, rot, 90);
-  //   imwrite("/tmp/tmp-rot.png", rot);
-  //   char buf[1000];
-  //   sprintf(buf, "tesseract /tmp/tmp-rot.png /tmp/out-rot -l eng hocr");
-  //   // imshow("rotated", rot);
-  //   // waitKey();
-  //   system(buf);
-  // }
-  cv::Mat gray;
-  // will threshold this gray image
-  cv::cvtColor(input, gray, CV_BGR2GRAY);
-  cv::Mat mask;
-  // threshold white/non-white
-  cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
-  // dilate here to close some gaps
-  dilate(mask, mask, Mat());
-  imshow("thresholded", mask);
-  imwrite("/tmp/thrsholded.png", mask);
-  std::vector<std::vector<cv::Point> > contours, rectContours;
-  std::vector<cv::Vec4i> hierarchy;
-  cv::findContours(mask, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-  cv::Mat drawing = cv::Mat::zeros(mask.size(), CV_8UC3);
-
-  for (int i = 0; i < contours.size(); i++)
   {
-    float ctArea = cv::contourArea(contours[i]);
-    cv::Rect boundingBox = cv::boundingRect(contours[i]);
-    // contours that have 80% of area of bounding box are rectangles for consideration
-    float percentRect = ctArea / (float)(boundingBox.height * boundingBox.width);
-    assert (percentRect >= 0 && percentRect <= 1.0);
-    if (percentRect > 80/100. || 1) {
-      rectContours.push_back(contours[i]);
-      cv::Scalar color = cv::Scalar(0, 255, 0);
-      drawContours(drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point());
-    }
+    char buf[1000];
+    sprintf(buf, "tesseract %s /tmp/out -l eng hocr", argv[1]);
+    system(buf);
   }
-  
+  // rotate image by 90 and do OCR again. sometimes vertical text is only found in rotated image.
+  {
+    Mat rot;
+    rotate_90n(input, rot, 90);
+    imwrite("/tmp/tmp-rot.png", rot);
+    char buf[1000];
+    sprintf(buf, "tesseract /tmp/tmp-rot.png /tmp/out-rot -l eng hocr");
+    // imshow("rotated", rot);
+    // waitKey();
+    system(buf);
+  }
+  Mat input_notext = imread(argv[2]);
+  std::vector<std::vector<cv::Point> >  rectContours = getBoxes(input_notext);
+  cv::Mat drawing = cv::Mat::zeros(input_notext.size(), CV_8UC3);
   printf("num rect contours = %d\n", (int)rectContours.size());
   // xml stuff to find vertical text
   pugi::xml_document doc;
@@ -149,8 +123,8 @@ int main(int argc, char const *argv[])
           printf("writinh.\n");
           // draw the contour of the graph box we identified 
           cv::Scalar color = cv::Scalar(255, 255, 255);
-          drawContours(drawing, rectContours, i, color, 1, 8, hierarchy, 0, cv::Point());
-          sprintf(buf, "%s-%d.png", argv[2], (int)imgCandidates.size());
+          drawContours(drawing, rectContours, i, color, 1, 8);
+          sprintf(buf, "%s-%d.png", argv[3], (int)imgCandidates.size());
           imgCandidates.push_back(imgRect);
           imwrite(buf, croppedGraph);
         }
