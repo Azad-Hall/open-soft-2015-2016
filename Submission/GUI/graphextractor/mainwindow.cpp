@@ -98,8 +98,7 @@ void MainWindow::createStatusBar() {
 void MainWindow::openFile()
 {
     //Initialize status bar to Loading!!
-    statusBar()->showMessage("Loading...");
-    statusProgressBar->setValue(0);
+    updateStatusBar("Loading...", 0);
 
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open PDF file"),
                                                     QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
@@ -117,8 +116,7 @@ void MainWindow::openFile()
     saveAsAct->setEnabled(true);
 
     //Update status bar message to Done!!
-    statusBar()->showMessage("Done!!");
-    statusProgressBar->setValue(100);
+    updateStatusBar("Done!!",100);
 }
 
 void MainWindow::saveToFile() {
@@ -152,8 +150,14 @@ void MainWindow::saveFile(const QString &fileName) {
 
 }
 
+void MainWindow::updateStatusBar(QString msg, int value) {
+    statusBar()->showMessage(msg);
+    statusProgressBar->setValue(value);
+}
+
 void MainWindow::about() {
     QMessageBox::about(this, tr("About"),
                 tr("<b>Graph Extractor</b> is a graph extracting tool "
-                   "from scanned PDF files. This application is developed by Team ID."));
+                   "from scanned PDF files. For user guide and software documentation "
+                   "please open the Documentation.pdf file."));
 }

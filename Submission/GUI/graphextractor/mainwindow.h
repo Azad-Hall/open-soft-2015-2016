@@ -53,6 +53,7 @@ private slots:
     void openFile();
     void saveToFile();
     void about();
+    void updateStatusBar(QString msg, int value);
 
 private:
     void createMenus();
