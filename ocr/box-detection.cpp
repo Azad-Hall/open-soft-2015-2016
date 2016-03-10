@@ -121,18 +121,22 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input) {
     // check if horizontal or vertical. if not, don't draw it.
     double angle = atan2(lines[i][1]-lines[i][3], lines[i][0] - lines[i][2]);
     double eps = (1e-2)*M_PI; // 0.1% error
-    if (fabs(angle-M_PI/2)>eps && fabs(angle) >eps && fabs(angle-M_PI) > eps && fabs(angle-3*M_PI/2)>eps && fabs(angle-2*M_PI) > eps)
+    if (fabs(angle-M_PI/2)>eps && fabs(angle) >eps && fabs(angle-M_PI) > eps && fabs(angle+M_PI/2)>eps && fabs(angle+M_PI) > eps)
       continue;
     if (fabs(lines[i][1]-lines[i][3]) > fabs(lines[i][0] - lines[i][2]))
       vlines.push_back(lines[i]);
     else
       hlines.push_back(lines[i]);
     // extend line by 1% each side.
-    double r = 0.01 * dist (lines[i][0], lines[i][1], lines[i][2], lines[i][3]);
+    // actually don't extend. just dilate image afterwards.
+    double r = 0.00 * dist (lines[i][0], lines[i][1], lines[i][2], lines[i][3]);
     line( linesImg, Point(lines[i][0]+r*cos(angle), lines[i][1]+r*sin(angle)),
         Point(lines[i][2]-r*cos(angle), lines[i][3]-r*sin(angle)), Scalar(255), 3, 8 );
   }
-
+  // dilate to close the rectangles
+  dilate(linesImg, linesImg, Mat());
+  dilate(linesImg, linesImg, Mat());
+  imwrite("/tmp/lines.png", linesImg);
   // find contours. keep rectangle contours.
   std::vector<std::vector<cv::Point> > contours, rectContours;
   std::vector<cv::Vec4i> hierarchy;
@@ -146,9 +150,10 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input) {
     // contours that have 80% of area of bounding box are rectangles for consideration
     float percentRect = ctArea / (float)(boundingBox.height * boundingBox.width);
     assert (percentRect >= 0 && percentRect <= 1.0);
-    if (percentRect > 80/100.) {
+    if (percentRect > 70/100.) {
       vector<Point> approxContour;
-      approxPolyDP(contours[i], approxContour, 20, true);
+      // approx to rectangle maybe?
+      approxPolyDP(contours[i], approxContour, 5, true);
       rectContours.push_back(approxContour);
       cv::Scalar color = cv::Scalar(0, 255, 0);
       drawContours(drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point());
