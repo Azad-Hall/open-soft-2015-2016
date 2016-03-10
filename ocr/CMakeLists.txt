@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project( test )
-find_package( OpenCV REQUIRED )
+find_package( OpenCV  REQUIRED )
+find_package(GSL REQUIRED)
 add_executable( test test.cpp pugixml.cpp)
 target_link_libraries( test ${OpenCV_LIBS} )
 
@@ -21,3 +22,6 @@ target_link_libraries( graph-box ${OpenCV_LIBS} )
 
 add_executable(preprocessing  preprocessing.cpp pugixml.cpp)
 target_link_libraries( preprocessing ${OpenCV_LIBS} )
+
+add_executable(skew-detection  skew-detection.cpp)
+target_link_libraries( skew-detection ${OpenCV_LIBS} ${GSL_LIBRARIES} )
