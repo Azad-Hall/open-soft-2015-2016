@@ -17,7 +17,7 @@ set -e
 echo "--- Installing Dependencies"
 
 # add-apt-repository -y ppa:ethereum/ethereum-qt
-apt-get update || echo "--- Continuing Installation"
+# apt-get update || echo "--- Continuing Installation"
 
 source dependencies.sh
 
