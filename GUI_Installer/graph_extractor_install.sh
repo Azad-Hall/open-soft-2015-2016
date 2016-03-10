@@ -21,7 +21,7 @@ apt-get update || echo "--- Continuing Installation"
 
 source dependencies.sh
 
-echo "--- Installing GraphExtract"
+echo "--- Installing Graph Extractor"
 
 rm -rf `pwd`/../build/
 mkdir `pwd`/../build
