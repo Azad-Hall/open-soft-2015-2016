@@ -27,7 +27,9 @@
 #include <QMessageBox>
 #include <QProgressBar>
 #include <QStatusBar>
+#include <QThread>
 #include "QPdfWidget"
+#include <pdfprocessor.h>
 
 class QMenu;
 class QProgressBar;
@@ -53,7 +55,10 @@ private slots:
     void openFile();
     void saveToFile();
     void about();
+    void initializeOpenFile();
     void updateStatusBar(QString msg, int value);
+    void wrapUpOpenFileWithSuccess();
+    void wrapUpOpenFileWithFailure();
 
 private:
     void createMenus();
@@ -71,6 +76,8 @@ private:
     QAction *aboutAct;
     QAction *aboutQtAct;
     QPdfWidget *pdfWidget;
+    QThread *processorThread;
+    PDFProcessor *processor;
     QString outFilePath;
 };
 
