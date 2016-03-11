@@ -36,6 +36,8 @@ MainWindow::MainWindow(QWidget *pParent, Qt::WindowFlags flags)
 void MainWindow::loadFile(const QString &path)
 {
     if (pdfWidget->loadFile(path)) {
+        // Set the output file path for save as
+        outFilePath = path;
         // Update window title with the file name
         QFileInfo fi(path);
         setWindowTitle(fi.fileName());
@@ -97,29 +99,39 @@ void MainWindow::createStatusBar() {
 
 void MainWindow::openFile()
 {
-    //Initialize status bar to Loading!!
-    updateStatusBar("Loading...", 0);
-
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open PDF file"),
                                                     QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation),
                                                     tr("PDF file (*.pdf)"));
     if (fileName.isEmpty()) {
+        wrapUpOpenFileWithFailure();
         return;
     }
 
-    loadFile(fileName);
+    processorThread = new QThread();
+    processor = new PDFProcessor(fileName);
+    processor->moveToThread(processorThread);
 
-    // Set the processed file path here
-    outFilePath = fileName;
+    connect(processorThread, SIGNAL(started()), processor, SLOT(run()));
+    connect(processor, SIGNAL(finished()), processorThread, SLOT(quit()));
 
-    // Enable SaveAs
-    saveAsAct->setEnabled(true);
+    connect(processor, SIGNAL(finished()), processor, SLOT(deleteLater()));
+    connect(processorThread, SIGNAL(finished()), processorThread, SLOT(deleteLater()));
 
-    //Update status bar message to Done!!
-    updateStatusBar("Done!!",100);
+    connect(processor, SIGNAL(initialize()), this, SLOT(initializeOpenFile()));
+    connect(processor, SIGNAL(updateStatus(QString,int)), this, SLOT(updateStatusBar(QString,int)));
+    connect(processor, SIGNAL(loadOutputFile(QString)), this, SLOT(loadFile(QString)));
+    connect(processor, SIGNAL(wrapUpSuccessfully()), this, SLOT(wrapUpOpenFileWithSuccess()));
+    connect(processor, SIGNAL(wrapUpWithError()), this, SLOT(wrapUpOpenFileWithFailure()));
+
+    processorThread->start();
 }
 
 void MainWindow::saveToFile() {
+
+    if(outFilePath.isEmpty()) {
+        QMessageBox::warning(this, tr("Error"), tr("Nothing to save!!"));
+    }
+
     QFileDialog dialog(this);
     dialog.setWindowModality(Qt::WindowModal);
     dialog.setAcceptMode(QFileDialog::AcceptSave);
@@ -150,9 +162,27 @@ void MainWindow::saveFile(const QString &fileName) {
 
 }
 
+void MainWindow::initializeOpenFile() {
+    //Disable Open
+    openAct->setEnabled(false);
+    // Initialize status bar
+    updateStatusBar("Loading!!", 0);
+}
+
 void MainWindow::updateStatusBar(QString msg, int value) {
     statusBar()->showMessage(msg);
     statusProgressBar->setValue(value);
+}
+
+void MainWindow::wrapUpOpenFileWithSuccess() {
+    // Enable Open and SaveAs
+    openAct->setEnabled(true);
+    saveAsAct->setEnabled(true);
+}
+
+void MainWindow::wrapUpOpenFileWithFailure() {
+    // Enable Open
+    openAct->setEnabled(true);
 }
 
 void MainWindow::about() {
