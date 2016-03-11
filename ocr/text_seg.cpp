@@ -13,8 +13,7 @@
 
 using namespace cv;
 using namespace std;
-std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0);
-vector<Point> getRectangularContour(vector<Point> largest);
+#include "box-detection.hpp"
 
 int main(int argc, char const *argv[])
 {

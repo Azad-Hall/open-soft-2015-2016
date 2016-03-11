@@ -119,7 +119,7 @@ vector<Point> shrinkContour(vector<Point> contour, double pix)  {
   return shrinked;
 }
 // minLineLength = min length in pixels for a line to be detectes
-std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0) {
+std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0, int houghLineThresh = 230) {
   cv::Mat gray;
   // will threshold this gray image
   cv::cvtColor(input, gray, CV_BGR2GRAY);
@@ -128,7 +128,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0) 
   cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
   vector<Vec4i> lines;
   vector<Vec4i> hlines, vlines; // horizontal and vertical lines
-  HoughLinesP( mask, lines, 1, CV_PI/180, 230, max(30, minLineLength), 20 );
+  HoughLinesP( mask, lines, 1, CV_PI/180, houghLineThresh, max(30, minLineLength), 20 );
   cv::Mat linesImg = cv::Mat::zeros(mask.size(), CV_8UC1), fullLinesImg = linesImg.clone();
   // fullLinesImg has full lines, linesImg only has line segments.
   for( size_t i = 0; i < lines.size(); i++ )

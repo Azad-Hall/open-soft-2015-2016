@@ -12,12 +12,7 @@
 
 using namespace cv;
 using namespace std;
-std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength);
-vector<Point> getRectangularContour(vector<Point> largest);
-// experimental, not yet done. will need to finish this (or modify getRectangularContouur) because does not wokr
-// whjen there is grid.
-vector<Point> getRectangularContour2(vector<Point> largest);
-vector<Point> shrinkContour(vector<Point> contour, double pix) ;
+#include "box-detection.hpp"
 int main(int argc, char const *argv[])
 {
   if (argc != 3) {

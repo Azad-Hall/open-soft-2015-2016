@@ -10,8 +10,7 @@
 #include <algorithm>
 
 using namespace cv;
-std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength);
-vector<Point> getRectangularContour(vector<Point> largest);
+#include "box-detection.hpp"
 void rotate_90n(cv::Mat &src, cv::Mat &dst, int angle)
 {
     dst.create(src.size(), src.type());
