@@ -10,11 +10,43 @@
 #include <fstream>
 #include <math.h>
 #include <algorithm>
+#include "pugixml.hpp"
+#include <string>
+#include <queue>
 
 using namespace cv;
 using namespace std;
+using namespace pugi;
 std::vector<std::vector<cv::Point> > getBoxes(Mat input);
 vector<Point> getRectangularContour(vector<Point> largest);
+
+queue<string> Q_str;
+queue<pair<string, pair<Point, Point> > > Q_str_point;
+
+const char* node_types[] =
+{
+    "null", "document", "element", "pcdata", "cdata", "comment", "pi", "declaration"
+};
+
+//[code_traverse_walker_impl
+struct simple_walker: pugi::xml_tree_walker
+{
+    virtual bool for_each(pugi::xml_node& node)
+    {
+        for (int i = 0; i < depth(); ++i) std::cout << "  "; // indentation
+
+        std::cout << node_types[node.type()] << ": name='" << node.name() << "', value='" << node.value() << "'\n";
+        if(node_types[node.type()] == "pcdata") {
+          Q_str.push(node.value());
+        }
+        return true; // continue traversal
+    }
+};
+//]
+
+
+
+
 
 int main(int argc, char const *argv[])
 {
@@ -69,6 +101,7 @@ int main(int argc, char const *argv[])
   double thres = 3;
   Mat vert_text;
   Mat y_label;
+  Point to_add;
   while(1)
   {
   int first_start = 0;
@@ -127,7 +160,8 @@ int main(int argc, char const *argv[])
 
   vert_text = Mat(img, Rect(Point2f(first_start - (mid - first_start), corners[0].y - img.rows*1/100), Point2f(mid, corners[3].y + img.rows*1/100))); // change the random value
   y_label = Mat(img, Rect(Point2f(mid, corners[0].y - img.rows*1/100), Point2f(corners[3].x + img.cols*1/100, corners[3].y + img.rows*1/100)));
-  
+  to_add.x = mid;
+  to_add.y = corners[0].y - img.rows*1/100;
   if(second_start)
     break;
   }
@@ -145,23 +179,39 @@ int main(int argc, char const *argv[])
   cout<<"\nvert_text: "<<txt_ver;
   system("rm vert_text.jpg");
   imwrite("y_label.jpg", y_label);
-  system("tesseract y_label.jpg tes_out");
+  system("tesseract y_label.jpg tes_out hocr");
 
-  string line;
-  stringstream s;
-  ifstream myfile ("tes_out.txt");
-  if (myfile.is_open())
+  pugi::xml_document doc;
+  pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
+  simple_walker walker;
+  doc.traverse(walker);
+  xml_node main_wrapper = doc.child("html").child("body").child("div");
+
+  for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
   {
-    while ( getline (myfile,line) )
-    {
-      s<<line<<"\n";
-    }
-    myfile.close();
+    for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
+      for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
+      for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
+        if(gist_inside.attribute("title")) {
+          std::istringstream iss;
+          iss.str(gist_inside.attribute("title").value());
+          cout<<"\n"<<gist_inside.attribute("title").value();
+          string bbox;
+          iss>>bbox;
+          Point a, b;
+          iss>>a.x;
+          iss>>a.y;
+          iss>>b.x;
+          iss>>b.y;
+          
+          Q_str_point.push({Q_str.front(), {a, b}});
+          Q_str.pop();
+          rectangle(y_label, a, b, Scalar(10, 100, 100), 2, 8, 0);
+                   
+        }
   }
-  else cout << "Unable to open file tes_out"; 
-  string txt_y_label = s.str();
-  replace( txt_y_label.begin(), txt_y_label.end(), 'U', '0');
-  cout<<"\nY label:\n"<<txt_y_label;
+  pair<string, pair<Point, Point> > a = Q_str_point.front();
+  cout<<"a->"<<a.first;
   imshow("vert_text", vert_text);
   imshow("y_label", y_label);
   waitKey(0);

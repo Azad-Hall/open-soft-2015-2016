@@ -26,5 +26,5 @@ target_link_libraries( preprocessing ${OpenCV_LIBS} )
 add_executable(text_seg  text_seg.cpp box-detection.cpp pugixml.cpp)
 target_link_libraries( text_seg ${OpenCV_LIBS} )
 
-add_executable(skew-detection  skew-detection.cpp)
-target_link_libraries( skew-detection ${OpenCV_LIBS} ${GSL_LIBRARIES} )
+#add_executable(skew-detection  skew-detection.cpp)
+#target_link_libraries( skew-detection ${OpenCV_LIBS} ${GSL_LIBRARIES} )
