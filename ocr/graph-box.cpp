@@ -41,10 +41,6 @@ int main(int argc, char const *argv[])
   Mat drawing = input.clone();
   // for some reason we need final contour in an array for drawing..
   vector<vector<Point> > dummy(1, finalContour);
-  for (int i = 0; i < contours.size(); ++i)
-  {
-    drawContours(drawing, dummy, 0, Scalar(255,0,255), 2, 8);
-  }
   imwrite("/tmp/boxes.png", drawing);
   return 0;
 }
