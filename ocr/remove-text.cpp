@@ -11,6 +11,16 @@
 using namespace std;
 using namespace cv;
 
+string getText(pugi::xml_node node) {
+  string val = node.child_value();
+  // if (val.size())
+  //   return val;
+  for (pugi::xml_node n = node.first_child(); n; n = n.next_sibling()) {
+    string v = getText(n);
+    val.append(v);
+  }
+  return val;
+}
 
 int main(int argc, char const *argv[])
 {
@@ -35,10 +45,7 @@ int main(int argc, char const *argv[])
   {
     pugi::xpath_node node = *it;
     string coords = node.node().attribute("title").value();
-    string val = node.node().child_value();
-    for (pugi::xml_node n = node.node().first_child(); n; n = n.next_sibling()) {
-      val.append(n.child_value());
-    }
+    string val = getText(node.node());
     if (val.size() == 0 || val == " ")
       continue;
     printf("val = %s, title = %s\n", val.c_str(), coords.c_str());
