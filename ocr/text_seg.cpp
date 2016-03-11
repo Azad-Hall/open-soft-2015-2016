@@ -88,7 +88,7 @@ int main(int argc, char const *argv[])
   //////////////////////////////////////
   Mat img = imread(argv[1], 0);
   long long contain_sum = 0;
-  Vector<int> contain(img.cols/3,0);
+  vector<int> contain(img.cols/3,0);
   for(int j=0; j<img.cols/3; j++) {
     for (int i=0;i<img.rows;i++) {
       if(img.at<uchar>(i,j) < 200) {                                     ///////////////////Threshold used
