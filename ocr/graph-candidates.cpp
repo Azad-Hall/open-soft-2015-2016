@@ -11,6 +11,7 @@
 
 using namespace cv;
 std::vector<std::vector<cv::Point> > getBoxes(Mat input);
+vector<Point> getRectangularContour(vector<Point> largest);
 void rotate_90n(cv::Mat &src, cv::Mat &dst, int angle)
 {
     dst.create(src.size(), src.type());
@@ -56,7 +57,11 @@ int main(int argc, char const *argv[])
     system(buf);
   }
   Mat input_notext = imread(argv[2]);
-  std::vector<std::vector<cv::Point> >  rectContours = getBoxes(input_notext);
+  std::vector<std::vector<cv::Point> >  rectContoursTemp = getBoxes(input_notext), rectContours;
+  // get more precise rectangles by using getRectangularContour
+  for (int i = 0; i < rectContoursTemp.size(); i++) {
+    rectContours.push_back(getRectangularContour(rectContoursTemp[i]));
+  }
   cv::Mat drawing = cv::Mat::zeros(input_notext.size(), CV_8UC3);
   printf("num rect contours = %d\n", (int)rectContours.size());
   // xml stuff to find vertical text

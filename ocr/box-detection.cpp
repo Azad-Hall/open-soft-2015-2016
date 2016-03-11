@@ -161,6 +161,58 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input) {
   }
   return rectContours;
 }
+
+bool sortFnRev(const pair<double, Vec4i> &s1, const pair<double, Vec4i> &s2)  {
+  return s1.first > s2.first;
+}
+// sort line segments ccw around the image
+// uses global variable imgCentre. zzzzz. set that variable every time getRectangularContour is called....
+Point imgCentre;
+bool sortCCW(const Vec4i &s1, const Vec4i &s2) {
+  Point p1((s1[0]+s1[2])/2., (s1[1]+s1[3])/2.);
+  Point p2((s2[0]+s2[2])/2., (s2[1]+s2[3])/2.);
+  return atan2(p1.y-imgCentre.y, p1.x-imgCentre.x) < atan2(p2.y-imgCentre.y,p2.x-imgCentre.x);
+}
+// given a contour, tries to find a rectangular (actually quadrilateral) approximation to it.
+vector<Point> getRectangularContour(vector<Point> largest) {
+  // find centroid of the contour
+  Moments mu = moments(largest, false);
+  imgCentre = Point( mu.m10/mu.m00 , mu.m01/mu.m00 );
+  vector<pair<double, Vec4i> > segments;
+  Point p1 = largest[0];
+  for (int i = 1; i < largest.size(); i++) {
+    Point p2 = largest[i];
+    segments.push_back(make_pair(dist(p1.x, p1.y, p2.x, p2.y), Vec4i(p1.x, p1.y, p2.x, p2.y)));
+    p1 = largest[i];
+  }
+  // add last segment
+  Point p2 = largest[0];
+  segments.push_back(make_pair(dist(p1.x, p1.y, p2.x, p2.y), Vec4i(p1.x, p1.y, p2.x, p2.y)));
+  sort(segments.begin(), segments.end(), sortFnRev );
+  assert(largest.size() >= 4);
+  vector<Vec4i> rectSegments;
+  vector<Point> finalContour;
+  for (int i = 0; i < 4; i++) {
+    rectSegments.push_back(segments[i].second);
+  }
+  sort(rectSegments.begin(), rectSegments.end(), sortCCW);
+  // add first segment again to the last since we need intersections only
+  rectSegments.push_back(rectSegments[0]);
+  for (int i = 1; i < rectSegments.size(); i++) {
+    Point p = intersection(rectSegments[i-1], rectSegments[i]);
+    finalContour.push_back(p);
+  }
+  // Mat drawing = input.clone();
+  // // for some reason we need final contour in an array for drawing..
+  // vector<vector<Point> > dummy(1, finalContour);
+  // for (int i = 0; i < contours.size(); ++i)
+  // {
+  //   drawContours(drawing, dummy, 0, Scalar(255,0,0), 2, 8);
+  // }
+  // imwrite("/tmp/boxes.png", drawing);
+
+  return finalContour;
+}
 // int main(int argc, char const *argv[])
 // {
 //   cv::Mat input = cv::imread(argv[1]);//input image
