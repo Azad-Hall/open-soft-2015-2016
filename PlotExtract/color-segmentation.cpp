@@ -83,8 +83,22 @@ int main(int argc, char const *argv[])
   }
   //anti aliasing correction
   // using search method
-  bmask = expandBMask(bmask, imgHSV, mask, 0.2*255);
+  //again adding all black pixels to bmask for higher threshold of saturation
+  bmask = expandBMask(bmask, imgHSV, mask, 0.1*255);
   bool got=false;
+  for (int i = 0; i < mask.rows; ++i)
+  {
+    for (int j = 0; j < mask.cols; ++j)
+    {
+      Vec3b cRGB = img.at<Vec3b>(i,j);
+      Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
+       if (cHSV[1] <= .05*255) {
+        bmask.at<uchar>(i,j) = 0;
+      }      
+    }
+  }
+
+
   /*for (int i = 1; i < mask.rows-1; ++i)
   {
     for (int j = 1; j < mask.cols-1; ++j)
@@ -141,34 +155,35 @@ int main(int argc, char const *argv[])
   //bool got=false;
   Mat avgImg=imgHSV.clone();
   int Max,avg,values[9];
-  // for(int times=0;times<1;times++)
-  // {
-  //   for (int i = 1; i < mask.rows-1; ++i)
-  //   {
-  //     for (int j = 1; j < mask.cols-1; ++j)
-  //     {
-  //       if(mask.at<uchar>(i,j)==0)
-  //         continue;
-  //       got=false;
-  //       avg=0;
-  //       vector<int>values;
-  //       int count=0;
-  //       for(int m=i-1;m<=i+1;m++)
-  //       {
-  //         for(int n=j-1;n<=j+1;n++)
-  //         {
-  //           if(mask.at<uchar>(i,j)==0)
-  //             continue;
-  //           values.push_back(imgHSV.at<Vec3b>(m,n)[0]);
-  //           avg+=imgHSV.at<Vec3b>(m,n)[0];
-  //         }
-  //       }
-  //       sort(values.begin(),values.end());
-  //       avg/=values.size();
-  //       avgImg.at<Vec3b>(i,j)[0]=values.back();//values[8];//avg;//values[4];
-  //     }
-  //   }
-  // }
+  for(int times=0;times<1;times++)
+  {
+    for (int i = 1; i < mask.rows-1; ++i)
+    {
+      for (int j = 1; j < mask.cols-1; ++j)
+      {
+        if(mask.at<uchar>(i,j)==0)
+          continue;
+        got=false;
+        avg=0;
+        vector<int>values;
+        int count=0;
+        for(int m=i-1;m<=i+1;m++)
+        {
+          for(int n=j-1;n<=j+1;n++)
+          {
+            if(mask.at<uchar>(i,j)==0)
+              continue;
+            values.push_back(imgHSV.at<Vec3b>(m,n)[0]);
+            avg+=imgHSV.at<Vec3b>(m,n)[0];
+          }
+        }
+        sort(values.begin(),values.end());
+        avg/=values.size();
+        avgImg.at<Vec3b>(i,j)[0]=values.back();//values[8];//avg;//values[4];
+      }
+    }
+  }
+  // imgHSV=avgImg;
   //imwrite("")
 
   // we will now classify with H value only.
@@ -183,6 +198,24 @@ int main(int argc, char const *argv[])
       hist[imgHSV.at<Vec3b>(i,j)[0]]++;
     }
   }
+  /*vector<int> histArea;
+  histArea.push_back(hist[0]);  
+  for(int i=1;i<183;i++){
+    histArea.push_back(histArea[i-1] + hist[i]);
+  }
+  vector<int> histD;
+  for(int i=1;i<183;i++){
+    histD.push_back(hist[i]-hist[i-1]);
+  }
+  vector<int> histDD;
+  for(int i=1;i<histD.size();i++){
+    histDD.push_back(histD[i]-histD[i-1]);
+  }
+  for(int i=0;i<histDD.size();i++){
+    cout<<histDD[i]<<" ";
+  }
+  cout<<endl;*/
+
   int maxH = 0;
   for (int i = 0; i < 256; ++i)
   {
@@ -230,6 +263,13 @@ int main(int argc, char const *argv[])
       //   yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
     }
   }
+  Mat imgBW = Mat(imgHSV.rows,imgHSV.cols,CV_8UC1);
+  for(int i=0;i<imgHSV.rows;i++){
+    for(int j=0;j<imgHSV.cols;j++){
+      imgBW.at<uchar>(i,j)=imgHSV.at<Vec3b>(i,j)[1]*2;
+    }
+  }
+  imshow("BW",imgBW);
   imshow("weird", yellow);
   imwrite("weird2.png", yellow);
   waitKey();

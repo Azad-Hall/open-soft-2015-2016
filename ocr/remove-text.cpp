@@ -19,6 +19,7 @@ int main(int argc, char const *argv[])
     return 0;
   }
   Mat img = imread(argv[1]);
+  Mat copy = imread(argv[1], 0);
   // do ocr here
   {
     char buf[1000];
@@ -29,6 +30,7 @@ int main(int argc, char const *argv[])
   pugi::xml_parse_result result = doc.load_file("/tmp/out.hocr");
   pugi::xpath_node_set tools= doc.select_nodes("//span[@class='ocrx_word']");
   printf("num of words = %d\n", tools.size());
+  Mat textMask = Mat::zeros(img.size(), CV_8U);
   for (pugi::xpath_node_set::const_iterator it = tools.begin(); it != tools.end(); ++it)
   {
     pugi::xpath_node node = *it;
@@ -44,7 +46,11 @@ int main(int argc, char const *argv[])
     sscanf(coords.c_str(), "%*s %d %d %d %d;", &x1, &y1, &x2, &y2);
     // coords >> dummy >> x1 >> y1 >> x2 >> y2;
     cv::rectangle(img, Point(x1, y1), Point(x2, y2), Scalar(255,255,255), CV_FILLED);
+    cv::rectangle(textMask, Point(x1, y1), Point(x2, y2), Scalar(255,255,255), CV_FILLED);
   }
+  Mat white = Mat(img.size(), CV_8U, 255);
+  Mat res = white&~textMask + copy&textMask;
+  imwrite("/tmp/only-text.png", res);
   imwrite(argv[2], img);
   return 0;
 }
