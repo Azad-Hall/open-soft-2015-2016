@@ -2,10 +2,12 @@ TEMPLATE = app
 
 QT += widgets
 
-HEADERS += mainwindow.h
+HEADERS += mainwindow.h \
+    pdfprocessor.h
 
 SOURCES += mainwindow.cpp\
-           main.cpp
+           main.cpp \
+    pdfprocessor.cpp
 
 RESOURCES += \
     graphextractor.qrc
