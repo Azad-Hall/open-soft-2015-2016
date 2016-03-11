@@ -6,7 +6,9 @@
 
 using namespace cv;
 using namespace std;
-
+double dist(Point p1, Point p2) {
+  return sqrt((p1.x-p2.x)*(p1.x-p2.x) + (p1.y-p2.y)*(p1.y-p2.y));
+}
 // check if intervals on a 1d line overlap
 bool overlap(int a1, int a2, int b1, int b2) {
   if (a2<a1)
@@ -103,8 +105,21 @@ float rectScore(Point p1, Point p2, Mat img) {
     score = min(score, cnt[i]/(double)tot[i]);
   return score;
 }
-
-std::vector<std::vector<cv::Point> > getBoxes(Mat input) {
+// shrink the contour
+vector<Point> shrinkContour(vector<Point> contour, double pix)  {
+  vector<Point> shrinked;
+  Moments mu = moments(contour, false);
+  Point centroid = Point( mu.m10/mu.m00 , mu.m01/mu.m00 );
+  for (int j = 0; j < contour.size(); j++) {
+    double d = dist(centroid, contour[j]);
+    double percent = pix/d;
+    Point p = percent*centroid + (1-percent)*contour[j];
+    shrinked.push_back(p);
+  }
+  return shrinked;
+}
+// minLineLength = min length in pixels for a line to be detectes
+std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0) {
   cv::Mat gray;
   // will threshold this gray image
   cv::cvtColor(input, gray, CV_BGR2GRAY);
@@ -113,7 +128,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input) {
   cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
   vector<Vec4i> lines;
   vector<Vec4i> hlines, vlines; // horizontal and vertical lines
-  HoughLinesP( mask, lines, 1, CV_PI/180, 230, 30, 20 );
+  HoughLinesP( mask, lines, 1, CV_PI/180, 230, max(30, minLineLength), 20 );
   cv::Mat linesImg = cv::Mat::zeros(mask.size(), CV_8UC1), fullLinesImg = linesImg.clone();
   // fullLinesImg has full lines, linesImg only has line segments.
   for( size_t i = 0; i < lines.size(); i++ )
@@ -150,6 +165,11 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input) {
     // contours that have 80% of area of bounding box are rectangles for consideration
     float percentRect = ctArea / (float)(boundingBox.height * boundingBox.width);
     assert (percentRect >= 0 && percentRect <= 1.0);
+    // srhink the contour a little, by moving every point toward the centre.
+    // this is needed since dilation in actually increased the size of the contoouur
+    // shrink contour by 2%. actually, we need to shrink by exactly 4 pix... 
+    
+    contours[i] = shrinkContour(contours[i], 4);
     if (percentRect > 70/100.) {
       vector<Point> approxContour;
       // approx to rectangle maybe?
@@ -174,6 +194,13 @@ bool sortCCW(const Vec4i &s1, const Vec4i &s2) {
   return atan2(p1.y-imgCentre.y, p1.x-imgCentre.x) < atan2(p2.y-imgCentre.y,p2.x-imgCentre.x);
 }
 // given a contour, tries to find a rectangular (actually quadrilateral) approximation to it.
+enum LineClass {
+  TOP,
+  LEFT,
+  BOTTOM,
+  RIGHT
+};
+
 vector<Point> getRectangularContour(vector<Point> largest) {
   // find centroid of the contour
   Moments mu = moments(largest, false);
@@ -202,6 +229,7 @@ vector<Point> getRectangularContour(vector<Point> largest) {
     Point p = intersection(rectSegments[i-1], rectSegments[i]);
     finalContour.push_back(p);
   }
+
   // Mat drawing = input.clone();
   // // for some reason we need final contour in an array for drawing..
   // vector<vector<Point> > dummy(1, finalContour);
@@ -212,6 +240,30 @@ vector<Point> getRectangularContour(vector<Point> largest) {
   // imwrite("/tmp/boxes.png", drawing);
 
   return finalContour;
+}
+
+// another way to get rectangular contour is to simply draw the contour, 
+// then run hough lines on that drawing!
+vector<Point> getRectangularContour2(vector<Point> contour) {
+  cv::Rect imgRect = cv::boundingRect(contour);
+  Mat img = Mat::zeros(imgRect.height, imgRect.width, CV_8U), linesImg = img.clone();
+  // find centroid of the contour
+  Moments mu = moments(contour, false);
+  Point centroid = Point( mu.m10/mu.m00 , mu.m01/mu.m00 );
+  Point imgCentre(img.cols/2, img.rows/2);
+  vector<vector<Point> > dummy(1, contour);
+  drawContours(img, dummy, 0, Scalar(255,0,255), 2, 8, noArray(), INT_MAX, -centroid+imgCentre);
+  vector<Vec4i> lines;
+  // define min line length and line merge distance
+  int minLineLength = max(30, min(imgRect.width, imgRect.height)/2);
+  int mergeDist = minLineLength*0.75;
+  HoughLinesP( img, lines, 1, CV_PI/180, 230, minLineLength, mergeDist );
+  for (int i =0 ; i < lines.size(); i++)
+    line( linesImg, Point(lines[i][0], lines[i][1]),
+        Point(lines[i][2], lines[i][3]), Scalar(255), 1, 8 );
+  imshow("lines", linesImg);
+  imshow("contour", img);
+  waitKey();
 }
 // int main(int argc, char const *argv[])
 // {

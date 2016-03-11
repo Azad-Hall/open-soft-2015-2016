@@ -17,7 +17,7 @@
 using namespace cv;
 using namespace std;
 using namespace pugi;
-std::vector<std::vector<cv::Point> > getBoxes(Mat input);
+std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0);
 vector<Point> getRectangularContour(vector<Point> largest);
 
 queue<string> Q_str;

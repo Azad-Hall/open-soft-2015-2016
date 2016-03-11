@@ -11,6 +11,7 @@
 #include <math.h>
 #include <vector>
 #include <map>
+#include <string>
 
 using namespace cv;
 using namespace std;
@@ -56,6 +57,63 @@ Mat expandBMask(Mat bmask, Mat imgHSV, Mat whiteMask, int lowSatThresh) {
   return bmaskNew;
 }
 
+void histRGB(Mat src){
+  vector<Mat> bgr_planes;
+  split( src, bgr_planes );
+
+  /// Establish the number of bins
+  int histSize = 256;
+
+  /// Set the ranges ( for B,G,R) )
+  float range[] = { 0, 256 } ;
+  const float* histRange = { range };
+
+  bool uniform = true; bool accumulate = false;
+
+  Mat b_hist, g_hist, r_hist;
+
+  /// Compute the histograms:
+  calcHist( &bgr_planes[0], 1, 0, Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
+  calcHist( &bgr_planes[1], 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
+  calcHist( &bgr_planes[2], 1, 0, Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate );
+
+  /*imshow("blue hist",b_hist);
+  imshow("red hist",r_hist);
+  imshow("green hist",g_hist);*/
+
+  // Draw the histograms for B, G and R
+  int hist_w = 512; int hist_h = 400;
+  int bin_w = cvRound( (double) hist_w/histSize );
+
+  Mat histImage( hist_h, hist_w, CV_8UC3, Scalar( 0,0,0) );
+
+  /// Normalize the result to [ 0, histImage.rows ]
+  normalize(b_hist, b_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
+  normalize(g_hist, g_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
+  normalize(r_hist, r_hist, 0, histImage.rows, NORM_MINMAX, -1, Mat() );
+
+  /// Draw for each channel
+  for( int i = 1; i < histSize; i++ )
+  {
+      line( histImage, Point( bin_w*(i-1), hist_h - cvRound(b_hist.at<float>(i-1)) ) ,
+                       Point( bin_w*(i), hist_h - cvRound(b_hist.at<float>(i)) ),
+                       Scalar( 255, 0, 0), 2, 8, 0  );
+      line( histImage, Point( bin_w*(i-1), hist_h - cvRound(g_hist.at<float>(i-1)) ) ,
+                       Point( bin_w*(i), hist_h - cvRound(g_hist.at<float>(i)) ),
+                       Scalar( 0, 255, 0), 2, 8, 0  );
+      line( histImage, Point( bin_w*(i-1), hist_h - cvRound(r_hist.at<float>(i-1)) ) ,
+                       Point( bin_w*(i), hist_h - cvRound(r_hist.at<float>(i)) ),
+                       Scalar( 0, 0, 255), 2, 8, 0  );
+  }
+
+  /// Display
+  namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
+  imshow("calcHist Demo", histImage );
+  //namedWindow("blue hist", CV_WINDOW_AUTOSIZE );
+ 
+
+}
+
 int main(int argc, char const *argv[])
 {
   Mat img = imread(argv[1], CV_LOAD_IMAGE_COLOR);
@@ -71,7 +129,7 @@ int main(int argc, char const *argv[])
       bmask.at<uchar>(i,j) = 1;
       Vec3b cRGB = img.at<Vec3b>(i,j);
       Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
-      if (cRGB[0] >= 210 && cRGB[1] >= 210 && cRGB[2] >= 210) {
+      if (cRGB[0] >= 210 && cRGB[1] >= 210 && cRGB[2] >= 210) {//210
         mask.at<uchar>(i,j) = 0;
       } else if (cRGB[0] <= 120 && cRGB[1] <= 120 && cRGB[2] <= 120) {
         bmask.at<uchar>(i,j) = 0;
@@ -84,7 +142,7 @@ int main(int argc, char const *argv[])
   //anti aliasing correction
   // using search method
   //again adding all black pixels to bmask for higher threshold of saturation
-  bmask = expandBMask(bmask, imgHSV, mask, 0.1*255);
+  bmask = expandBMask(bmask, imgHSV, mask, 0.11*255);//0.11
   bool got=false;
   for (int i = 0; i < mask.rows; ++i)
   {
@@ -92,12 +150,14 @@ int main(int argc, char const *argv[])
     {
       Vec3b cRGB = img.at<Vec3b>(i,j);
       Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
-       if (cHSV[1] <= .05*255) {
+       if (cHSV[1] <= .06*255)// || (cHSV[0]<166+5 && cHSV[0]>166-5)) //because 166 was the text hue//0.06
+      {
         bmask.at<uchar>(i,j) = 0;
       }      
     }
   }
-
+  //histRGB(img);
+  
 
   /*for (int i = 1; i < mask.rows-1; ++i)
   {
@@ -151,9 +211,10 @@ int main(int argc, char const *argv[])
   // mask = mask & bmask;
   mask = mask & bmask;
   // mask = bmask;
+
   //crisp up the plots
   //bool got=false;
-  Mat avgImg=imgHSV.clone();
+  /*Mat avgImg=imgHSV.clone();
   int Max,avg,values[9];
   for(int times=0;times<1;times++)
   {
@@ -183,7 +244,8 @@ int main(int argc, char const *argv[])
       }
     }
   }
-  // imgHSV=avgImg;
+  imgHSV=avgImg;
+  */
   //imwrite("")
 
   // we will now classify with H value only.
@@ -198,6 +260,8 @@ int main(int argc, char const *argv[])
       hist[imgHSV.at<Vec3b>(i,j)[0]]++;
     }
   }
+
+  //histogram peak detect
   /*vector<int> histArea;
   histArea.push_back(hist[0]);  
   for(int i=1;i<183;i++){
@@ -211,12 +275,56 @@ int main(int argc, char const *argv[])
   for(int i=1;i<histD.size();i++){
     histDD.push_back(histD[i]-histD[i-1]);
   }
-  for(int i=0;i<histDD.size();i++){
-    cout<<histDD[i]<<" ";
+  for(int i=0;i<histArea.size();i++){
+    cout<<histArea[i]<<" ";
   }
   cout<<endl;*/
 
   int maxH = 0;
+  for (int i = 0; i < 256; ++i)
+  {
+    maxH = max(maxH, hist[i]);
+  }
+  
+  for(int k = 0 ; k < 1; k++){
+
+    int nhist[260] = {0};
+    for(int i = 5 ; i < 250 ;i++){
+      nhist[i] = 0;
+      for(int j = -4 ; j <= 4 ; j++){
+        nhist[i] += (1/(abs(j)/3.0 + 1.0))*hist[i + j];
+      }
+    }
+    for(int i = 5 ; i < 250 ; i++){
+      hist[i] = nhist[i];
+    }
+  }
+  cout<<"maxH : "<<maxH<<endl;
+   maxH = 0;
+  ////////////////////////////file peak detect
+  FILE* fp = fopen("res.csv","w");
+  for(int i=0;i<256;i++){
+    fprintf(fp,"%d,%d\n",i,hist[i]);
+  }
+  fclose(fp);
+  system("./peakdetect -i res.csv -d 1e2 -o out.csv");
+  ifstream FP("out.csv");
+  int i,j;
+  string as;
+  vector<float> maxima;
+  while(getline(FP,as)){
+    cout<<stof(as)<<"\n";
+    maxima.push_back(stof(as));
+    //hist[stof(as)]=10000;
+
+  }
+  for(int i=0;i<maxima.size()/2;i++){
+    hist[maxima[i]]=10000;
+  }
+  //fclose(fp);
+
+
+  ////////////////////////////////////file peak detect
   for (int i = 0; i < 256; ++i)
   {
     maxH = max(maxH, hist[i]);
@@ -227,7 +335,8 @@ int main(int argc, char const *argv[])
       if(hist[i]>0.5*maxH)
         Hpeaks.push_back(i);
     }
-  
+  //Mat area=Mat()
+  //////////////////////////
 
   // normalize histogram
   int hist_w = 512; int hist_h = 400;
@@ -235,6 +344,7 @@ int main(int argc, char const *argv[])
   {
     hist[i] = (hist[i] *hist_h)/maxH;
   }
+  
   
 
   int bin_w = cvRound( (double) hist_w/256. );
@@ -248,7 +358,7 @@ int main(int argc, char const *argv[])
   // draw all pixels with H < 50 degrees. Troublesome in 1.png?
   
   Mat yellow;
-  cvtColor(avgImg,yellow,CV_HSV2BGR);
+  cvtColor(imgHSV,yellow,CV_HSV2BGR);
   //Mat yellow = img.clone();
   for (int i = 0; i < yellow.rows; ++i)
   {
@@ -269,7 +379,7 @@ int main(int argc, char const *argv[])
       imgBW.at<uchar>(i,j)=imgHSV.at<Vec3b>(i,j)[1]*2;
     }
   }
-  imshow("BW",imgBW);
+  //imshow("BW",imgBW);
   imshow("weird", yellow);
   imwrite("weird2.png", yellow);
   waitKey();
