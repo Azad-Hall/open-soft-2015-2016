@@ -14,11 +14,13 @@ using namespace cv;
 using namespace std;
 std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength);
 vector<Point> getRectangularContour(vector<Point> largest);
+// experimental, not yet done. will need to finish this (or modify getRectangularContouur) because does not wokr
+// whjen there is grid.
 vector<Point> getRectangularContour2(vector<Point> largest);
-
+vector<Point> shrinkContour(vector<Point> contour, double pix) ;
 int main(int argc, char const *argv[])
 {
-  if (argc != 2) {
+  if (argc != 3) {
     printf("usage: ./graph-box <graph-img> <output-img>\n");
     return 0;
   }
@@ -44,6 +46,12 @@ int main(int argc, char const *argv[])
     }
   }
   vector<Point> finalContour = getRectangularContour(largest);
+  // need to shrink alittle, since we don't want the black boundary to be there
+  // in the output image.
+  // shirnk by 5% contour height
+  finalContour = shrinkContour(finalContour, 0.03*boundingRect(finalContour).height);
+  Mat cropped = input(boundingRect(finalContour));
+  imwrite(argv[2], cropped);
   Mat drawing = input.clone();
   // for some reason we need final contour in an array for drawing..
   vector<vector<Point> > dummy(1, finalContour);

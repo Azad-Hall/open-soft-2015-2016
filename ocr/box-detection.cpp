@@ -105,6 +105,19 @@ float rectScore(Point p1, Point p2, Mat img) {
     score = min(score, cnt[i]/(double)tot[i]);
   return score;
 }
+// shrink the contour
+vector<Point> shrinkContour(vector<Point> contour, double pix)  {
+  vector<Point> shrinked;
+  Moments mu = moments(contour, false);
+  Point centroid = Point( mu.m10/mu.m00 , mu.m01/mu.m00 );
+  for (int j = 0; j < contour.size(); j++) {
+    double d = dist(centroid, contour[j]);
+    double percent = pix/d;
+    Point p = percent*centroid + (1-percent)*contour[j];
+    shrinked.push_back(p);
+  }
+  return shrinked;
+}
 // minLineLength = min length in pixels for a line to be detectes
 std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0) {
   cv::Mat gray;
@@ -154,17 +167,9 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0) 
     assert (percentRect >= 0 && percentRect <= 1.0);
     // srhink the contour a little, by moving every point toward the centre.
     // this is needed since dilation in actually increased the size of the contoouur
-    Moments mu = moments(contours[i], false);
-    Point centroid = Point( mu.m10/mu.m00 , mu.m01/mu.m00 );
-    vector<Point> shrinked;
-    for (int j = 0; j < contours[i].size(); j++) {
-      double d = dist(centroid, contours[i][j]);
-      // shrink it by 2%. actually, we need to shrink by exactly 2*sqrt(2)~3 pix...
-      double percent = 4/d;
-      Point p = percent*centroid + (1-percent)*contours[i][j];
-      shrinked.push_back(p);
-    }
-    contours[i] = shrinked;
+    // shrink contour by 2%. actually, we need to shrink by exactly 4 pix... 
+    
+    contours[i] = shrinkContour(contours[i], 4);
     if (percentRect > 70/100.) {
       vector<Point> approxContour;
       // approx to rectangle maybe?
