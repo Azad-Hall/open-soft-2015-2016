@@ -10,6 +10,7 @@
 #include <algorithm>
 
 using namespace cv;
+using namespace std;
 #include "box-detection.hpp"
 void rotate_90n(cv::Mat &src, cv::Mat &dst, int angle)
 {

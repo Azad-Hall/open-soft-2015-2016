@@ -116,7 +116,13 @@ void histRGB(Mat src){
 
 int main(int argc, char const *argv[])
 {
-  Mat img = imread(argv[1], CV_LOAD_IMAGE_COLOR);
+  string path=argv[1];
+  char Path[]="../ocr/build/graph-box ";
+  strcat(Path,path.c_str()); 
+  strcat(Path," ../ocr/clippedImages/img.png");
+  cout<<Path<<endl;
+  system(Path);
+  Mat img = imread("../ocr/clippedImages/img.png", CV_LOAD_IMAGE_COLOR);
   Mat imgHSV;
   cvtColor(img, imgHSV, CV_BGR2HSV);
   Mat mask(img.rows, img.cols, CV_8U, Scalar(1)), bmask = mask.clone(); // to mask away all colorless pixels
@@ -307,6 +313,7 @@ int main(int argc, char const *argv[])
     fprintf(fp,"%d,%d\n",i,hist[i]);
   }
   fclose(fp);
+  system("g++ peakdetect.c -o peakdetect");
   system("./peakdetect -i res.csv -d 1e2 -o out.csv");
   ifstream FP("out.csv");
   int i,j;
@@ -316,11 +323,13 @@ int main(int argc, char const *argv[])
     cout<<stof(as)<<"\n";
     maxima.push_back(stof(as));
     //hist[stof(as)]=10000;
-
   }
-  for(int i=0;i<maxima.size()/2;i++){
+  maxima.push_back(256);
+  int maxNo=maxima.size()/2;
+  for(int i=0;i<maxima.size()/2 ;i++){
     hist[maxima[i]]=10000;
   }
+
   //fclose(fp);
 
 
@@ -364,8 +373,9 @@ int main(int argc, char const *argv[])
   {
     for (int j = 0; j < yellow.cols; ++j)
     {
-      if (!mask.at<uchar>(i,j))
+      if (!mask.at<uchar>(i,j)){
         yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
+      }
       // else
       //   yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
 
@@ -373,6 +383,18 @@ int main(int argc, char const *argv[])
       //   yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
     }
   }
+  /*for(int k=maxNo;k<2*maxNo;k++){
+
+    for(int i=0;i<imgHSV.rows;i++){
+
+      for(int j=0;j<imgHSV.cols;j++){
+
+        if (mask.at<uchar>(i,j) && imgHSV.at<Vec3b>(i,j)[0]>=maxima[k] && imgHSV.at<Vec3b>(i,j)[0]<maxima[k+1]){
+          yellow.at<Vec3b>(i,j) = Vec3b(255,0,0);
+        }
+      }
+    }
+  }*/
   Mat imgBW = Mat(imgHSV.rows,imgHSV.cols,CV_8UC1);
   for(int i=0;i<imgHSV.rows;i++){
     for(int j=0;j<imgHSV.cols;j++){
