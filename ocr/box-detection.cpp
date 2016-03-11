@@ -121,18 +121,22 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input) {
     // check if horizontal or vertical. if not, don't draw it.
     double angle = atan2(lines[i][1]-lines[i][3], lines[i][0] - lines[i][2]);
     double eps = (1e-2)*M_PI; // 0.1% error
-    if (fabs(angle-M_PI/2)>eps && fabs(angle) >eps && fabs(angle-M_PI) > eps && fabs(angle-3*M_PI/2)>eps && fabs(angle-2*M_PI) > eps)
+    if (fabs(angle-M_PI/2)>eps && fabs(angle) >eps && fabs(angle-M_PI) > eps && fabs(angle+M_PI/2)>eps && fabs(angle+M_PI) > eps)
       continue;
     if (fabs(lines[i][1]-lines[i][3]) > fabs(lines[i][0] - lines[i][2]))
       vlines.push_back(lines[i]);
     else
       hlines.push_back(lines[i]);
     // extend line by 1% each side.
-    double r = 0.01 * dist (lines[i][0], lines[i][1], lines[i][2], lines[i][3]);
+    // actually don't extend. just dilate image afterwards.
+    double r = 0.00 * dist (lines[i][0], lines[i][1], lines[i][2], lines[i][3]);
     line( linesImg, Point(lines[i][0]+r*cos(angle), lines[i][1]+r*sin(angle)),
         Point(lines[i][2]-r*cos(angle), lines[i][3]-r*sin(angle)), Scalar(255), 3, 8 );
   }
-
+  // dilate to close the rectangles
+  dilate(linesImg, linesImg, Mat());
+  dilate(linesImg, linesImg, Mat());
+  imwrite("/tmp/lines.png", linesImg);
   // find contours. keep rectangle contours.
   std::vector<std::vector<cv::Point> > contours, rectContours;
   std::vector<cv::Vec4i> hierarchy;
@@ -146,15 +150,68 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input) {
     // contours that have 80% of area of bounding box are rectangles for consideration
     float percentRect = ctArea / (float)(boundingBox.height * boundingBox.width);
     assert (percentRect >= 0 && percentRect <= 1.0);
-    if (percentRect > 80/100.) {
+    if (percentRect > 70/100.) {
       vector<Point> approxContour;
-      approxPolyDP(contours[i], approxContour, 20, true);
+      // approx to rectangle maybe?
+      approxPolyDP(contours[i], approxContour, 5, true);
       rectContours.push_back(approxContour);
       cv::Scalar color = cv::Scalar(0, 255, 0);
       drawContours(drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point());
     }
   }
   return rectContours;
+}
+
+bool sortFnRev(const pair<double, Vec4i> &s1, const pair<double, Vec4i> &s2)  {
+  return s1.first > s2.first;
+}
+// sort line segments ccw around the image
+// uses global variable imgCentre. zzzzz. set that variable every time getRectangularContour is called....
+Point imgCentre;
+bool sortCCW(const Vec4i &s1, const Vec4i &s2) {
+  Point p1((s1[0]+s1[2])/2., (s1[1]+s1[3])/2.);
+  Point p2((s2[0]+s2[2])/2., (s2[1]+s2[3])/2.);
+  return atan2(p1.y-imgCentre.y, p1.x-imgCentre.x) < atan2(p2.y-imgCentre.y,p2.x-imgCentre.x);
+}
+// given a contour, tries to find a rectangular (actually quadrilateral) approximation to it.
+vector<Point> getRectangularContour(vector<Point> largest) {
+  // find centroid of the contour
+  Moments mu = moments(largest, false);
+  imgCentre = Point( mu.m10/mu.m00 , mu.m01/mu.m00 );
+  vector<pair<double, Vec4i> > segments;
+  Point p1 = largest[0];
+  for (int i = 1; i < largest.size(); i++) {
+    Point p2 = largest[i];
+    segments.push_back(make_pair(dist(p1.x, p1.y, p2.x, p2.y), Vec4i(p1.x, p1.y, p2.x, p2.y)));
+    p1 = largest[i];
+  }
+  // add last segment
+  Point p2 = largest[0];
+  segments.push_back(make_pair(dist(p1.x, p1.y, p2.x, p2.y), Vec4i(p1.x, p1.y, p2.x, p2.y)));
+  sort(segments.begin(), segments.end(), sortFnRev );
+  assert(largest.size() >= 4);
+  vector<Vec4i> rectSegments;
+  vector<Point> finalContour;
+  for (int i = 0; i < 4; i++) {
+    rectSegments.push_back(segments[i].second);
+  }
+  sort(rectSegments.begin(), rectSegments.end(), sortCCW);
+  // add first segment again to the last since we need intersections only
+  rectSegments.push_back(rectSegments[0]);
+  for (int i = 1; i < rectSegments.size(); i++) {
+    Point p = intersection(rectSegments[i-1], rectSegments[i]);
+    finalContour.push_back(p);
+  }
+  // Mat drawing = input.clone();
+  // // for some reason we need final contour in an array for drawing..
+  // vector<vector<Point> > dummy(1, finalContour);
+  // for (int i = 0; i < contours.size(); ++i)
+  // {
+  //   drawContours(drawing, dummy, 0, Scalar(255,0,0), 2, 8);
+  // }
+  // imwrite("/tmp/boxes.png", drawing);
+
+  return finalContour;
 }
 // int main(int argc, char const *argv[])
 // {
