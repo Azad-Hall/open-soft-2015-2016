@@ -1,5 +1,5 @@
 // for detecting the graph's bounding box inside a single graph's image.
-
+// outputs a reduced box.
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <stdio.h>
@@ -19,7 +19,7 @@ vector<Point> getRectangularContour2(vector<Point> largest);
 int main(int argc, char const *argv[])
 {
   if (argc != 2) {
-    printf("usage: ./graph-box <graph-img>\n");
+    printf("usage: ./graph-box <graph-img> <output-img>\n");
     return 0;
   }
   Mat input = imread(argv[1]);

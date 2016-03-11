@@ -6,7 +6,9 @@
 
 using namespace cv;
 using namespace std;
-
+double dist(Point p1, Point p2) {
+  return sqrt((p1.x-p2.x)*(p1.x-p2.x) + (p1.y-p2.y)*(p1.y-p2.y));
+}
 // check if intervals on a 1d line overlap
 bool overlap(int a1, int a2, int b1, int b2) {
   if (a2<a1)
@@ -150,6 +152,19 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0) 
     // contours that have 80% of area of bounding box are rectangles for consideration
     float percentRect = ctArea / (float)(boundingBox.height * boundingBox.width);
     assert (percentRect >= 0 && percentRect <= 1.0);
+    // srhink the contour a little, by moving every point toward the centre.
+    // this is needed since dilation in actually increased the size of the contoouur
+    Moments mu = moments(contours[i], false);
+    Point centroid = Point( mu.m10/mu.m00 , mu.m01/mu.m00 );
+    vector<Point> shrinked;
+    for (int j = 0; j < contours[i].size(); j++) {
+      double d = dist(centroid, contours[i][j]);
+      // shrink it by 2%. actually, we need to shrink by exactly 2*sqrt(2)~3 pix...
+      double percent = 4/d;
+      Point p = percent*centroid + (1-percent)*contours[i][j];
+      shrinked.push_back(p);
+    }
+    contours[i] = shrinked;
     if (percentRect > 70/100.) {
       vector<Point> approxContour;
       // approx to rectangle maybe?
@@ -180,6 +195,7 @@ enum LineClass {
   BOTTOM,
   RIGHT
 };
+
 vector<Point> getRectangularContour(vector<Point> largest) {
   // find centroid of the contour
   Moments mu = moments(largest, false);
@@ -208,6 +224,7 @@ vector<Point> getRectangularContour(vector<Point> largest) {
     Point p = intersection(rectSegments[i-1], rectSegments[i]);
     finalContour.push_back(p);
   }
+
   // Mat drawing = input.clone();
   // // for some reason we need final contour in an array for drawing..
   // vector<vector<Point> > dummy(1, finalContour);
