@@ -48,6 +48,7 @@ double pixToVal(int pix, double scale, double refPix, double refVal) {
 // column for data of a graph
 vector<string> getColumn(string title, vector<pair<bool, int> > samples, double scale, double refPix, double refVal) {
   vector<string> ret;
+  ret.push_back(title);
   for (int i = 0; i < samples.size(); i++) {
     if (samples[i].first == false)
       ret.push_back(" - ");
@@ -85,17 +86,19 @@ int main(int argc, char const *argv[])
   }
   // read xml
   pugi::xml_document doc;
+  printf("loading xml %s\n", argv[1]);
   pugi::xml_parse_result result = doc.load_file(argv[1]);
-
+  std::cout << "Load result: " << result.description() <<  std::endl;
   double xscale, yscale;
   double xrefPix, xrefVal, yrefPix, yrefVal;
   string htext, vtext, title;
   pugi::xml_node xs = doc.child("xscale");
   pugi::xml_node ys = doc.child("yscale");
   htext = doc.child("horizontal_text").attribute("htxt").value();
-  vtext = doc.child("vertical_text").attribute("vtxt").value();
+  vtext = doc.child("Vertical_text").attribute("vtxt").value();
   title = doc.child("Title_text").attribute("ttxt").value();
   xscale = stof(xs.attribute("valPerPix").value());
+  printf("htext = %s, vtext = %s\n", htext.c_str(), vtext.c_str());
   yscale = stof(ys.attribute("valPerPix").value());
   xrefPix = stof(xs.attribute("xrefCoord").value());
   xrefVal = stof(xs.attribute("xrefValue").value());
@@ -115,7 +118,15 @@ int main(int argc, char const *argv[])
     // need leegend text here
     table.push_back(getColumn(buf, ysamples, yscale, yrefPix, yrefVal));
   }
-
+  for (int i = 0; i < table.size(); ++i)
+  {
+    printf("col %d: \n", i);
+    for (int j = 0; j < table[i].size(); ++j)
+    {
+      printf("%s ", table[i][j].c_str());
+    }
+    printf("\n");
+  }
   // PDFbuilder builder;
 
   // builder.beginDocument();

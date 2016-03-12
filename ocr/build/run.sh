@@ -16,7 +16,10 @@ function graphFn {
   # make a new file for input to gen-table
   cp bb.txt gen.txt
   ../color-segmentation $img_cropped "bin" >> gen.txt
+  # run granularity detction
+  ../xaxis-granularity "$1" < bb.txt >> gen.txt
   # fingers crossed
+  ../gen-table scale.xml bin < gen.txt
   exit
 }
 

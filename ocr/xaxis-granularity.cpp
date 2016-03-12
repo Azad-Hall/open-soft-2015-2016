@@ -72,7 +72,7 @@ int main(int argc, char const *argv[])
   vector<pair<int, int> > contour;
   int x, y;
   for(int i = 0 ; i < 4 ; i++){
-  	scanf("%d%d", &x, &y);
+  	scanf("%d %d\n", &x, &y);
   	//reversed for sorting
   	contour.push_back(make_pair(y, x));
   }
@@ -80,16 +80,16 @@ int main(int argc, char const *argv[])
 
   Mat img = imread(argv[1]);
   Mat grayimg(img.size(), CV_8U);
-  cvtColor(img, grayimg, CV_RGB2GRAY);
+  cvtColor(img, grayimg, CV_BGR2GRAY);
   Mat binimg(grayimg.size(), grayimg.type());
   Mat binimgdilated(grayimg.size(), grayimg.type());
   threshold(grayimg, binimg, 240, 255, CV_THRESH_BINARY);
   
-  for(int i = 0 ; i < 3 ; i++)
-  	erode(binimg, binimg, Mat());
+  // for(int i = 0 ; i < 3 ; i++)
+  // 	erode(binimg, binimg, Mat());
   namedWindow("Output", cv::WINDOW_AUTOSIZE);
-  imshow("Output", binimgdilated);
-  waitKey(0);
+  imshow("Output", binimg);
+  // waitKey(0);
   //imwrite("/tmp/tmp.png", img);
   vector<int> ugranularPoints, diff;
   if(contour[2].ss < contour[3].ss)
@@ -97,6 +97,7 @@ int main(int argc, char const *argv[])
   else
   	ugranularPoints = getXGranularity(binimg, Point(contour[3].ss, contour[3].ff), Point(contour[2].ss, contour[2].ff), -1);
   int val = 0;
+  assert(ugranularPoints.size() > 1);
   for(int i = 1 ; i < ugranularPoints.size() ; i++)
   	diff.push_back(ugranularPoints[i] - ugranularPoints[i - 1]);
   sort(diff.begin(), diff.end());
