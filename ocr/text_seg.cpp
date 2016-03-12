@@ -23,67 +23,17 @@ queue<string> Q_str;
 queue<pair<string, pair<Point, Point> > > Q_str_point_ver;
 queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
 
-const char* node_types[] =
-{
-  "null", "document", "element", "pcdata", "cdata", "comment", "pi", "declaration"
-};
-
-//[code_traverse_walker_impl
-struct simple_walker: pugi::xml_tree_walker
-{
-  virtual bool for_each(pugi::xml_node& node)
-  {
-        for (int i = 0; i < depth(); ++i) std::cout << "  "; // indentation
-
-          std::cout << node_types[node.type()] << ": name='" << node.name() << "', value='" << node.value() << "'\n";
-        if(node_types[node.type()] == "pcdata") {
-          Q_str.push(node.value());
-        }
-        return true; // continue traversal
-      }
-    };
-//]
-
-
-
-
 
     int main(int argc, char const *argv[])
     {
-      if (argc != 2) {
-        printf("usage: ./test_seg <graph-img>\n");
+      if (argc != 6) {
+        printf("usage: ./test_seg <graph-img> <left-up-corner-x> <left-up-corner-y> <left-down-corner-x> <left-down-corner-y>\n");
         return 0;
       }
-      Mat input = imread(argv[1]);
-      Mat drawing = input.clone();
-      vector<vector<Point> > contours = getBoxes(input);
-      if (contours.size() == 0) {
-        printf("no contours.?\n");
-        return 0;
-      }
-  // get max area contour
-      vector<Point> largest = contours[0];
-      int maxArea = contourArea(largest);
-      for (int i = 1; i < contours.size(); i++) {
-        int area = contourArea(contours[i]);
-        if (area > maxArea) {
-          maxArea = area;
-          largest = contours[i];
-        }
-      }
-      vector<Point> finalContour = getRectangularContour(largest);
 
-  // for some reason we need final contour in an array for drawing..
-      vector<vector<Point> > dummy(1, finalContour);
-
-      Rect boundRect;
-      boundRect = boundingRect( Mat(finalContour) );
-      rectangle( drawing, boundRect.tl(), boundRect.br(), Scalar(100,100,100), 2, 8, 0 );
       cv::Point2f corners[4];
-      corners[0] = boundRect.tl();
-      corners[1] = Point2f(boundRect.tl().x + boundRect.width, boundRect.tl().y);
-      corners[2] = boundRect.br();
-      corners[3] = Point2f(boundRect.br().x - boundRect.width, boundRect.br().y);
+      corners[0] = Point2f(atoi(argv[2]), atoi(argv[3]));
+      corners[3] = Point2f(atoi(argv[4]), atoi(argv[5]));
 
 
   //////////////////////////////////////
@@ -114,7 +64,6 @@ struct simple_walker: pugi::xml_tree_walker
     {
       if(contain[i]>img.rows/15)
       {
-        cout<<"\n"<<i<<" "<<contain[i];
         if(first_start==0) {
           first_start = i;
           first_end = i;
@@ -135,7 +84,6 @@ struct simple_walker: pugi::xml_tree_walker
           second_end = i;
       }
     }
-    cout<<"\n"<<first_start<<" "<<first_end<<" "<<second_start<<" "<<second_end;
     bool not_special = true;
     if(second_start == 0)
     {
@@ -177,41 +125,11 @@ FILE *pPipe;
 pPipe = popen("tesseract vert_text.jpg stdout -psm 7", "r");
 char txt_ver[1024];
 fgets(txt_ver, 128, pPipe);
-cout<<"\nvert_text: "<<txt_ver;
+cout<<"\nvertical text: "<<txt_ver;
 system("rm vert_text.jpg");
 imwrite("y_label.jpg", y_label);
-system("tesseract y_label.jpg tes_out digits hocr");
+system("tesseract y_label.jpg tes_out0 digits hocr");
 
-pugi::xml_document doc;
-pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
-simple_walker walker;
-doc.traverse(walker);
-xml_node main_wrapper = doc.child("html").child("body").child("div");
-
-for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
-{
-  for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
-    for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
-      for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
-        if(gist_inside.attribute("title")) {
-          std::istringstream iss;
-          iss.str(gist_inside.attribute("title").value());
-          cout<<"\n"<<gist_inside.attribute("title").value();
-          string bbox;
-          iss>>bbox;
-          Point a, b;
-          iss>>a.x;
-          iss>>a.y;
-          iss>>b.x;
-          iss>>b.y;
-
-          Q_str_point_ver.push({Q_str.front(), {a, b}});
-          Q_str.pop();
-          rectangle(y_label, a, b, Scalar(10, 100, 100), 2, 8, 0);
-
-        }
-      }
-      pair<string, pair<Point, Point> > a = Q_str_point_ver.front();
       imshow("vert_text", vert_text);
       imshow("y_label", y_label);
 
@@ -233,14 +151,12 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
  int second_end =0;
  int third_start = 0;
  int third_end = 0;
-    //cout<<"\n-->"<<corners[0].x;
     //for(int i=0; i<corners[0].x; i++)
 
  for(int i=img.rows-1; i>corners[3].y; i--)
  {
    if(contain_hor[i]>img.cols/20)
    {
-     cout<<"\n"<<i<<" "<<contain_hor[i];
      if(first_start==0) {
        first_start = i;
        first_end = i;
@@ -277,7 +193,6 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
 
      if(third_start == third_end)
        third_start = 0;
-     cout<<"\n-->"<<first_start<<" "<<first_end<<" "<<second_start<<" "<<second_end<<" "<<third_start<<" "<<third_end;
      Mat hor_text, x_label, title;
      if(third_start!=0) {
       int mid_first_second = (first_end+second_start)/2;
@@ -302,7 +217,7 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
     imwrite("hor_text.jpg", hor_text);
     pPipe = popen("tesseract hor_text.jpg stdout -psm 7", "r");
     fgets(txt_hor, 128, pPipe);
-    cout<<"\nhor_text: "<<txt_hor;
+    cout<<"\nhorizontal text: "<<txt_hor;
     
     if(title.rows) {
      imshow("Title", title);
@@ -314,43 +229,8 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
 
 
 imwrite("x_label.jpg", x_label);
-system("tesseract x_label.jpg tes_out digits hocr");
-{
-  while(!Q_str.empty())
-    Q_str.pop();
-
-pugi::xml_document doc;
-pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
-simple_walker walker;
-doc.traverse(walker);
-xml_node main_wrapper = doc.child("html").child("body").child("div");
-
-for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
-{
-  for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
-    for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
-      for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
-        if(gist_inside.attribute("title")) {
-          std::istringstream iss;
-          iss.str(gist_inside.attribute("title").value());
-          cout<<"\n"<<gist_inside.attribute("title").value();
-          string bbox;
-          iss>>bbox;
-          Point a, b;
-          iss>>a.x;
-          iss>>a.y;
-          iss>>b.x;
-          iss>>b.y;
-
-          Q_str_point_hor.push({Q_str.front(), {a, b}});
-          Q_str.pop();
-          rectangle(x_label, a, b, Scalar(10, 100, 100), 2, 8, 0);
-
-        }
-      }
-}
-
-    imshow("x_label", x_label);
+system("tesseract x_label.jpg tes_out1 digits hocr");
+imshow("x_label", x_label);
 
 
 
