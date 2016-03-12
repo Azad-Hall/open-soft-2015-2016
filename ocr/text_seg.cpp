@@ -20,7 +20,8 @@ using namespace std;
 using namespace pugi;
 
 queue<string> Q_str;
-queue<pair<string, pair<Point, Point> > > Q_str_point;
+queue<pair<string, pair<Point, Point> > > Q_str_point_ver;
+queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
 
 const char* node_types[] =
 {
@@ -87,11 +88,11 @@ struct simple_walker: pugi::xml_tree_walker
 
   //////////////////////////////////////
 
-  Mat img = imread(argv[1], 0);
-  long long contain_sum = 0;
-  vector<int> contain(img.cols/3,0);
-  for(int j=0; j<img.cols/3; j++) {
-    for (int i=0;i<img.rows;i++) {
+      Mat img = imread(argv[1], 0);
+      long long contain_sum = 0;
+      vector<int> contain(img.cols/3,0);
+      for(int j=0; j<img.cols/3; j++) {
+        for (int i=0;i<img.rows;i++) {
       if(img.at<uchar>(i,j) < 200) {                                     ///////////////////Threshold used
         contain[j] += 1;
       }
@@ -181,47 +182,46 @@ system("rm vert_text.jpg");
 imwrite("y_label.jpg", y_label);
 system("tesseract y_label.jpg tes_out digits hocr");
 
-  // pugi::xml_document doc;
-  // pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
-  // simple_walker walker;
-  // doc.traverse(walker);
-  // xml_node main_wrapper = doc.child("html").child("body").child("div");
+pugi::xml_document doc;
+pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
+simple_walker walker;
+doc.traverse(walker);
+xml_node main_wrapper = doc.child("html").child("body").child("div");
 
-  // for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
-  // {
-  //   for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
-  //     for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
-  //     for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
-  //       if(gist_inside.attribute("title")) {
-  //         std::istringstream iss;
-  //         iss.str(gist_inside.attribute("title").value());
-  //         cout<<"\n"<<gist_inside.attribute("title").value();
-  //         string bbox;
-  //         iss>>bbox;
-  //         Point a, b;
-  //         iss>>a.x;
-  //         iss>>a.y;
-  //         iss>>b.x;
-  //         iss>>b.y;
+for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
+{
+  for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
+    for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
+      for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
+        if(gist_inside.attribute("title")) {
+          std::istringstream iss;
+          iss.str(gist_inside.attribute("title").value());
+          cout<<"\n"<<gist_inside.attribute("title").value();
+          string bbox;
+          iss>>bbox;
+          Point a, b;
+          iss>>a.x;
+          iss>>a.y;
+          iss>>b.x;
+          iss>>b.y;
 
-  //         Q_str_point.push({Q_str.front(), {a, b}});
-  //         Q_str.pop();
-  //         rectangle(y_label, a, b, Scalar(10, 100, 100), 2, 8, 0);
+          Q_str_point_ver.push({Q_str.front(), {a, b}});
+          Q_str.pop();
+          rectangle(y_label, a, b, Scalar(10, 100, 100), 2, 8, 0);
 
-  //       }
-  // }
-  // pair<string, pair<Point, Point> > a = Q_str_point.front();
-  // cout<<"a->"<<a.first;
-imshow("vert_text", vert_text);
-imshow("y_label", y_label);
+        }
+      }
+      pair<string, pair<Point, Point> > a = Q_str_point_ver.front();
+      imshow("vert_text", vert_text);
+      imshow("y_label", y_label);
 
 
 /////////////////////////Horizontal Text
 
-Vector<int> contain_hor(img.rows/2,0);
-for(int i=img.rows-1; i>corners[3].y; i--) {
+      Vector<int> contain_hor(img.rows/2,0);
+      for(int i=img.rows-1; i>corners[3].y; i--) {
 
- for (int j=0;j<img.cols;j++) {
+       for (int j=0;j<img.cols;j++) {
      if(img.at<uchar>(i, j) < 200) {                                     ///////////////////Threshold used
        contain_hor[i] += 1;
      }
@@ -241,40 +241,39 @@ for(int i=img.rows-1; i>corners[3].y; i--) {
    if(contain_hor[i]>img.cols/20)
    {
      cout<<"\n"<<i<<" "<<contain_hor[i];
-     if(first_start==0)
-     {
+     if(first_start==0) {
        first_start = i;
        first_end = i;
      }
-         else if(first_end-i < img.rows*1/100)                   //////////////////Threshold used
-           first_end = i;
-         else if(second_start==0) {
-           if(first_start == first_end)
-           {
-             i--;
-             first_start = 0;
-             continue;
-           }
-           second_start = i;
-           second_end = i;
-         }         
-         else if(second_end-i < img.rows*1/100)                    //////////////////Threshold used
-           second_end = i; 
-         else if(third_start == 0) {
-           if(second_start == second_end)
-           {
-             i--;
-             second_start = 0;
-             continue;
-           }
-           third_start = i;
-           third_end = i;
+       else if(first_end-i < img.rows*1/100)                   //////////////////Threshold used
+         first_end = i;
+       else if(second_start==0) {
+         if(first_start == first_end)
+         {
+           i--;
+           first_start = 0;
+           continue;
          }
-         else if(third_end-i < img.rows*1/100) {
-           third_end = i;
+         second_start = i;
+         second_end = i;
+       }         
+       else if(second_end-i < img.rows*1/100)                    //////////////////Threshold used
+         second_end = i; 
+       else if(third_start == 0) {
+         if(second_start == second_end)
+         {
+           i--;
+           second_start = 0;
+           continue;
          }
+         third_start = i;
+         third_end = i;
        }
-     }
+       else if(third_end-i < img.rows*1/100) {
+         third_end = i;
+       }
+    }
+  }
 
      if(third_start == third_end)
        third_start = 0;
@@ -296,9 +295,65 @@ for(int i=img.rows-1; i>corners[3].y; i--) {
     imshow("NEw", img);
     
     imshow("hor_text", hor_text);
-    imshow("x_labelt", x_label);
-    if(title.rows)
+    
+    char txt_title[1024];
+    char txt_hor[1024];    
+    
+    imwrite("hor_text.jpg", hor_text);
+    pPipe = popen("tesseract hor_text.jpg stdout -psm 7", "r");
+    fgets(txt_hor, 128, pPipe);
+    cout<<"\nhor_text: "<<txt_hor;
+    
+    if(title.rows) {
      imshow("Title", title);
-   waitKey(0);
+     imwrite("title.jpg", title);
+     pPipe = popen("tesseract title.jpg stdout -psm 7", "r");
+     fgets(txt_title, 128, pPipe);
+     cout<<"\ntitle: "<<txt_title;
+   }
+
+
+imwrite("x_label.jpg", x_label);
+system("tesseract x_label.jpg tes_out digits hocr");
+{
+  while(!Q_str.empty())
+    Q_str.pop();
+
+pugi::xml_document doc;
+pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
+simple_walker walker;
+doc.traverse(walker);
+xml_node main_wrapper = doc.child("html").child("body").child("div");
+
+for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
+{
+  for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
+    for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
+      for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
+        if(gist_inside.attribute("title")) {
+          std::istringstream iss;
+          iss.str(gist_inside.attribute("title").value());
+          cout<<"\n"<<gist_inside.attribute("title").value();
+          string bbox;
+          iss>>bbox;
+          Point a, b;
+          iss>>a.x;
+          iss>>a.y;
+          iss>>b.x;
+          iss>>b.y;
+
+          Q_str_point_hor.push({Q_str.front(), {a, b}});
+          Q_str.pop();
+          rectangle(x_label, a, b, Scalar(10, 100, 100), 2, 8, 0);
+
+        }
+      }
+}
+
+    imshow("x_label", x_label);
+
+
+
+    waitKey(0);
    return 0;
  }
