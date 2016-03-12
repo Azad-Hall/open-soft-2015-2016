@@ -10,21 +10,21 @@
 #include <math.h>
 #include <algorithm>
 
+
 using namespace cv;
 using namespace std;
 #include "box-detection.hpp"
-int main(int argc, char const *argv[])
+
+
+// returns finalContour and cropped image which is shrunk
+
+vector<Point> get_outer_box(Mat& input, Mat& cropped)
 {
-  if (argc != 3) {
-    printf("usage: ./graph-box <graph-img> <output-img>\n");
-    return 0;
-  }
-  Mat input = imread(argv[1]);
   Mat contourImg = input.clone();
   vector<vector<Point> > contours = getBoxes(input, input.rows/4);
   if (contours.size() == 0) {
     printf("no contours.?\n");
-    return 0;
+    return vector<Point>();
   }
   for (int i =0; i < contours.size(); i++) {
     drawContours(contourImg, contours, i, Scalar(255,0,0), 1, 8);
@@ -40,31 +40,87 @@ int main(int argc, char const *argv[])
       largest = contours[i];
     }
   }
-  vector<Point> finalContour = getRectangularContour(largest);
-  // write the contour coordinates to stdout. we don't need to write the shrunk contour,
-  // just the exact one.
-  for (int i = 0; i < finalContour.size(); ++i)
-  {
-    printf("%d %d\n", finalContour[i].x, finalContour[i].y);
-  }
+  vector<Point> finalContour = getRectangularContour2(largest);
   // need to shrink alittle, since we don't want the black boundary to be there
   // in the output image.
   // shirnk by 3% contour height
-  finalContour = shrinkContour(finalContour, 0.03*boundingRect(finalContour).height);
+
+  vector<Point> shrinkedContour = shrinkContour(finalContour, 0.03*boundingRect(finalContour).height);
   // don't crop the image, just make everything outside contour white.
-  Mat cropped = input.clone();
+  cropped = input.clone();
   for (int i =0; i < cropped.rows; i++) {
     for (int j = 0; j < cropped.cols; j++) {
-      if (pointPolygonTest(finalContour, Point(j,i), false) < 0) {
+      if (pointPolygonTest(shrinkedContour, Point(j,i), false) < 0) {
         cropped.at<Vec3b>(i,j) = Vec3b(255,255,255);
       }
     }
   }
-  imwrite(argv[2], cropped);
+  return finalContour;
+}
+
+int main(int argc, char const *argv[])
+{
+  if (argc != 3) {
+    printf("usage: ./graph-box <graph-img> <output-img>\n");
+    return 0;
+  }
+  
+  Mat input = imread(argv[1]);
+  Mat temp1,// cropped 1st time
+    cropped;
+  vector<Point> finalContour=get_outer_box(input,temp1);
+  
+  vector<Point> tempContour=finalContour;
+  if(finalContour.empty())return 0;
+
+  vector<Point> extendedContour;
+  extendedContour=shrinkContour(finalContour,-0.01*boundingRect(finalContour).height);
+
+  
+  // check if there's another box inside it which is the acutal graph
+  int ctr=0;
+  
+  for (int i =0; i < input.rows; i++) {
+    for (int j = 0; j < input.cols; j++) {
+      if (pointPolygonTest(extendedContour, Point(j,i), false) < 0) {
+        if(input.at<uchar>(i,j)<150)
+          ++ctr;
+      }
+    }
+  }
+  
+  // some fixes
+  if(ctr<=input.rows*0.0008*input.cols)
+    {
+      try
+      {
+        finalContour=get_outer_box(temp1,cropped);
+        if(finalContour.empty() || contourArea(finalContour)<0.7*contourArea(tempContour))finalContour.swap(tempContour);
+      }
+      catch(...)
+      {
+        finalContour.swap(tempContour);
+      }
+    }
+  else
+    cropped=temp1.clone();
+  
+
+  // write the contour coordinates to stdout. we don't need to write the shrunk contour,
+  // just the exact one.
+  
+    // for some reason we need final contour in an array for drawing..  
+  for (int i = 0; i < finalContour.size(); ++i)
+  {
+    printf("%d %d\n", finalContour[i].x, finalContour[i].y);
+  }
+  // don't crop the image, just make everything outside contour white.
   Mat drawing = input.clone();
-  // for some reason we need final contour in an array for drawing..
   vector<vector<Point> > dummy(1, finalContour);
   drawContours(drawing, dummy, 0, Scalar(255,0,255), 2, 8);
   imwrite("/tmp/boxes.png", drawing);
+    
+  imwrite(argv[2], cropped);
+
   return 0;
 }
