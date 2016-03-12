@@ -31,7 +31,7 @@ int main(int argc, char const *argv[])
   }
   input = imread("/tmp/normalized.png");
   Mat contourImg = input.clone();
-  vector<vector<Point> > contours = getBoxes(input, 5, 10, 20);
+  vector<vector<Point> > contours = getBoxes(input, 5, 30, 20, 10e-2);
   if (contours.size() > 0) {
     // find largest contour by area
     vector<Point> largest = contours[0];

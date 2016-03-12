@@ -119,7 +119,8 @@ vector<Point> shrinkContour(vector<Point> contour, double pix)  {
   return shrinked;
 }
 // minLineLength = min length in pixels for a line to be detectes
-std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30, int houghLineThresh = 230, int houghMergeThresh = 20) {
+std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30, int houghLineThresh = 230, int houghMergeThresh = 20
+  , double slopeThresh = 1e-2) {
   cv::Mat gray;
   // will threshold this gray image
   cv::cvtColor(input, gray, CV_BGR2GRAY);
@@ -136,7 +137,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
   {
     // check if horizontal or vertical. if not, don't draw it.
     double angle = atan2(lines[i][1]-lines[i][3], lines[i][0] - lines[i][2]);
-    double eps = (1e-2)*M_PI; // 0.1% error
+    double eps = (slopeThresh)*M_PI; // 0.1% error
     if (fabs(angle-M_PI/2)>eps && fabs(angle) >eps && fabs(angle-M_PI) > eps && fabs(angle+M_PI/2)>eps && fabs(angle+M_PI) > eps)
       continue;
     if (fabs(lines[i][1]-lines[i][3]) > fabs(lines[i][0] - lines[i][2]))
