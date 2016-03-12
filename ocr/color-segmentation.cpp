@@ -117,6 +117,10 @@ void histRGB(Mat src){
 
 int main(int argc, char const *argv[])
 {
+  if (argc != 3) {
+    printf("usage: ./color-segmentation <graph-img-cropped> <out-basename>\n");
+    return 0;
+  }
   /*string path=argv[1];
   char Path[]="../ocr/build/graph-box ";
   strcat(Path,path.c_str()); 
@@ -124,9 +128,8 @@ int main(int argc, char const *argv[])
   cout<<Path<<endl;
   system(Path);
   system("../ocr/build/graph-box  ../ocr/clippedImages/img.png ../ocr/clippedImages/img.png");*/
-  string a=argv[1];
-  string b=argv[2];
-  Mat img = imread(a.append(b), CV_LOAD_IMAGE_COLOR);
+  
+  Mat img = imread(argv[1], CV_LOAD_IMAGE_COLOR);
   Mat imgHSV;
   cvtColor(img, imgHSV, CV_BGR2HSV);
   Mat mask(img.rows, img.cols, CV_8U, Scalar(1)), bmask = mask.clone(); // to mask away all colorless pixels
@@ -309,7 +312,7 @@ int main(int argc, char const *argv[])
       hist[i] = nhist[i];
     }
   }
-  cout<<"maxH : "<<maxH<<endl;
+  // cout<<"maxH : "<<maxH<<endl;
    maxH = 0;
   ////////////////////////////file peak detect
   FILE* fp = fopen("res.csv","w");
@@ -344,11 +347,13 @@ int main(int argc, char const *argv[])
   string as;
   vector<float> maxima;
   while(getline(FP,as)){
-    cout<<stof(as)<<"\n";
+    // cout<<stof(as)<<"\n";
     maxima.push_back(stof(as));
     //hist[stof(as)]=10000;
   }
-  printf("here\n");
+  // print the number of maxima
+  printf("%d\n", (int)maxima.size()/2);
+  // first half of maxima array is max, second half is min
   maxima.push_back(256);
   
 
@@ -414,13 +419,14 @@ int main(int argc, char const *argv[])
       //   yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
     }
   }
-  imshow("unColor",unColor);
-  char un[50];
-  strcpy(un,"../ocr/unColored/");
-  strcat(un,b.c_str());
-  imwrite(un,unColor);
 
-  char name[]="/IndividualPlots/plot";
+  // commenting out uncolor for now.
+  // imshow("unColor",unColor);
+  // char un[50];
+  // strcpy(un,"../ocr/unColored/");
+  // strcat(un,b.c_str());
+  // imwrite(un,unColor);
+
   Mat plots=yellow.clone();//Mat::zeros(yellow.rows,yellow.cols,CV_8UC1);
   plots=Scalar(0);
   for(int k=maxNo;k<2*maxNo;k++){
@@ -434,9 +440,8 @@ int main(int argc, char const *argv[])
         }
       }
     }
-    strcpy(name,"./IndividualPlots/plot");
-    strcat(name,to_string(k-maxNo).c_str());
-    strcat(name,".png");
+    char name[1000];
+    sprintf(name, "%s-%d.png", argv[2], (k-maxNo));
     imwrite(name,plots);
     // imshow(name,plots);
     // waitKey(0);
@@ -451,7 +456,7 @@ int main(int argc, char const *argv[])
   //imshow("BW",imgBW);
   imshow("weird", yellow);
   imwrite("weird2.png", yellow);
-  waitKey();
+  // waitKey();
   /*for(int p=0;p<Hpeaks.size();p++)
   {
     for (int i = 0; i < yellow.rows; ++i)

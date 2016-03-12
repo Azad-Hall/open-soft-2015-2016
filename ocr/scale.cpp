@@ -6,7 +6,6 @@
 #include <vector>
 #include <iostream>
 #include "pugixml.hpp"
-#include "pugixml.cpp"
 #include <sstream>
 #include <fstream>
 #include <string>
