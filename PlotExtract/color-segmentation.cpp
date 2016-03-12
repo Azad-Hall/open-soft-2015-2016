@@ -116,13 +116,16 @@ void histRGB(Mat src){
 
 int main(int argc, char const *argv[])
 {
-  string path=argv[1];
+  /*string path=argv[1];
   char Path[]="../ocr/build/graph-box ";
   strcat(Path,path.c_str()); 
   strcat(Path," ../ocr/clippedImages/img.png");
   cout<<Path<<endl;
   system(Path);
-  Mat img = imread("../ocr/clippedImages/img.png", CV_LOAD_IMAGE_COLOR);
+  system("../ocr/build/graph-box  ../ocr/clippedImages/img.png ../ocr/clippedImages/img.png");*/
+  string a=argv[1];
+  string b=argv[2];
+  Mat img = imread(a.append(b), CV_LOAD_IMAGE_COLOR);
   Mat imgHSV;
   cvtColor(img, imgHSV, CV_BGR2HSV);
   Mat mask(img.rows, img.cols, CV_8U, Scalar(1)), bmask = mask.clone(); // to mask away all colorless pixels
@@ -297,7 +300,7 @@ int main(int argc, char const *argv[])
     int nhist[260] = {0};
     for(int i = 5 ; i < 250 ;i++){
       nhist[i] = 0;
-      for(int j = -4 ; j <= 4 ; j++){
+      for(int j = -4 ; j <= 4 ; j++){//-4 4
         nhist[i] += (1/(abs(j)/3.0 + 1.0))*hist[i + j];
       }
     }
@@ -314,7 +317,7 @@ int main(int argc, char const *argv[])
   }
   fclose(fp);
   system("g++ peakdetect.c -o peakdetect");
-  system("./peakdetect -i res.csv -d 1e2 -o out.csv");
+  system("./peakdetect -i res.csv -d 1e2 -o out.csv");//1e2
   ifstream FP("out.csv");
   int i,j;
   string as;
@@ -325,10 +328,7 @@ int main(int argc, char const *argv[])
     //hist[stof(as)]=10000;
   }
   maxima.push_back(256);
-  int maxNo=maxima.size()/2;
-  for(int i=0;i<maxima.size()/2 ;i++){
-    hist[maxima[i]]=10000;
-  }
+  
 
   //fclose(fp);
 
@@ -353,6 +353,11 @@ int main(int argc, char const *argv[])
   {
     hist[i] = (hist[i] *hist_h)/maxH;
   }
+
+  int maxNo=maxima.size()/2;
+  for(int i=0;i<maxima.size()/2 ;i++){
+    hist[maxima[i]]=hist_h;
+  }
   
   
 
@@ -368,6 +373,7 @@ int main(int argc, char const *argv[])
   
   Mat yellow;
   cvtColor(imgHSV,yellow,CV_HSV2BGR);
+  Mat unColor=yellow.clone();
   //Mat yellow = img.clone();
   for (int i = 0; i < yellow.rows; ++i)
   {
@@ -376,6 +382,9 @@ int main(int argc, char const *argv[])
       if (!mask.at<uchar>(i,j)){
         yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
       }
+      if(mask.at<uchar>(i,j)){
+        unColor.at<Vec3b>(i,j)=Vec3b(255,255,255);
+      }
       // else
       //   yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
 
@@ -383,18 +392,34 @@ int main(int argc, char const *argv[])
       //   yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
     }
   }
-  /*for(int k=maxNo;k<2*maxNo;k++){
+  imshow("unColor",unColor);
+  char un[50];
+  strcpy(un,"../ocr/unColored/");
+  strcat(un,b.c_str());
+  imwrite(un,unColor);
 
+  char name[]="/IndividualPlots/plot";
+  Mat plots=yellow.clone();//Mat::zeros(yellow.rows,yellow.cols,CV_8UC1);
+  plots=Scalar(0);
+  for(int k=maxNo;k<2*maxNo;k++){
+    plots=Scalar(0);
     for(int i=0;i<imgHSV.rows;i++){
 
       for(int j=0;j<imgHSV.cols;j++){
 
         if (mask.at<uchar>(i,j) && imgHSV.at<Vec3b>(i,j)[0]>=maxima[k] && imgHSV.at<Vec3b>(i,j)[0]<maxima[k+1]){
-          yellow.at<Vec3b>(i,j) = Vec3b(255,0,0);
+          plots.at<Vec3b>(i,j) = 255;
         }
       }
     }
-  }*/
+    strcpy(name,"./IndividualPlots/plot");
+    strcat(name,to_string(k-maxNo).c_str());
+    strcat(name,".png");
+    imwrite(name,plots);
+    // imshow(name,plots);
+    // waitKey(0);
+  }
+
   Mat imgBW = Mat(imgHSV.rows,imgHSV.cols,CV_8UC1);
   for(int i=0;i<imgHSV.rows;i++){
     for(int j=0;j<imgHSV.cols;j++){
