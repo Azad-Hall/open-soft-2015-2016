@@ -9,7 +9,7 @@ public:
 	PDFbuilder();
 	void beginDocument();
 	void addImage(const string& image_file);
-	void addTable(const vector< vector<string> >& table);
+	void addTable(const vector< vector<string> >& table, const string& title);
 	void endDocument();
 	bool renderPDF(const string& filename);
 };

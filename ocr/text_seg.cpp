@@ -3,31 +3,42 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <stdio.h>
+#include <vector>
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <math.h>
 #include <algorithm>
 #include "pugixml.hpp"
+#include <exception>
+#include <cstdlib>
 #include <string>
 #include <queue>
+#include <bits/stdc++.h>
 
 using namespace cv;
 using namespace std;
-#include "box-detection.hpp"
 using namespace pugi;
 
 queue<string> Q_str;
 queue<pair<string, pair<Point, Point> > > Q_str_point_ver;
 queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
 
+#include "box-detection.hpp"
+
 const char* node_types[] =
 {
   "null", "document", "element", "pcdata", "cdata", "comment", "pi", "declaration"
 };
 
+// crops rectangle to stay within image.
+Rect cropRect(Rect r, cv::Size size) {
+  Point tl(max(r.tl().x, 0), max(r.tl().y, 0));
+  Point br(min(r.br().x, size.width-1), min(r.br().y, size.height-1));
+  return Rect(tl, br);
+}
 //[code_traverse_walker_impl
 struct simple_walker: pugi::xml_tree_walker
 {
@@ -56,23 +67,14 @@ struct simple_walker: pugi::xml_tree_walker
       }
       Mat input = imread(argv[1]);
       Mat drawing = input.clone();
-      vector<vector<Point> > contours = getBoxes(input);
-      if (contours.size() == 0) {
-        printf("no contours.?\n");
-        return 0;
+      // read the box contour from stdin
+      vector<Point> finalContour;
+      for (int i = 0; i < 4; i++) {
+        int x, y;
+        scanf("%d %d\n", &x, &y);
+        finalContour.push_back(Point(x,y));
       }
-  // get max area contour
-      vector<Point> largest = contours[0];
-      int maxArea = contourArea(largest);
-      for (int i = 1; i < contours.size(); i++) {
-        int area = contourArea(contours[i]);
-        if (area > maxArea) {
-          maxArea = area;
-          largest = contours[i];
-        }
-      }
-      vector<Point> finalContour = getRectangularContour(largest);
-
+     
   // for some reason we need final contour in an array for drawing..
       vector<vector<Point> > dummy(1, finalContour);
 
@@ -158,9 +160,12 @@ struct simple_walker: pugi::xml_tree_walker
   }
 
   int mid = (first_end+second_start)/2;
-
-  vert_text = Mat(img, Rect(Point2f(first_start - (mid - first_start), corners[0].y - img.rows*1/100), Point2f(mid, corners[3].y + img.rows*1/100))); // change the random value
-  y_label = Mat(img, Rect(Point2f(mid, corners[0].y - img.rows*1/100), Point2f(corners[3].x + img.cols*1/100, corners[3].y + img.rows*1/100)));
+  Rect vert_rect = Rect(Point2f(first_start - (mid - first_start), corners[0].y - img.rows*1/100), Point2f(mid, corners[3].y + img.rows*1/100));
+  vert_rect = cropRect(vert_rect, img.size());
+  vert_text = Mat(img, vert_rect); // change the random value
+  Rect y_rect(Point2f(mid, corners[0].y - img.rows*1/100), Point2f(corners[3].x + img.cols*1/100, corners[3].y + img.rows*1/100));
+  y_rect = cropRect(y_rect, img.size());
+  y_label = Mat(img, y_rect);
   to_add.x = mid;
   to_add.y = corners[0].y - img.rows*1/100;
   if(second_start)
@@ -180,10 +185,10 @@ fgets(txt_ver, 128, pPipe);
 cout<<"\nvert_text: "<<txt_ver;
 system("rm vert_text.jpg");
 imwrite("y_label.jpg", y_label);
-system("tesseract y_label.jpg tes_out digits hocr");
+system("tesseract y_label.jpg tes_out0 digits hocr");
 
 pugi::xml_document doc;
-pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
+pugi::xml_parse_result result = doc.load_file("tes_out0.hocr");
 simple_walker walker;
 doc.traverse(walker);
 xml_node main_wrapper = doc.child("html").child("body").child("div");
@@ -314,13 +319,13 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
 
 
 imwrite("x_label.jpg", x_label);
-system("tesseract x_label.jpg tes_out digits hocr");
+system("tesseract x_label.jpg tes_out1 digits hocr");
 {
   while(!Q_str.empty())
     Q_str.pop();
 
 pugi::xml_document doc;
-pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
+pugi::xml_parse_result result = doc.load_file("tes_out1.hocr");
 simple_walker walker;
 doc.traverse(walker);
 xml_node main_wrapper = doc.child("html").child("body").child("div");
@@ -351,9 +356,32 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
 }
 
     imshow("x_label", x_label);
+    pugi::xml_document indoc;
+    pugi::xml_node to_add_x = indoc.append_child();
+    to_add_x.set_name("to_add_x");
+    to_add_x.append_attribute("y_axis_offset_x") = to_add.x;
 
+    pugi::xml_node to_add_y = indoc.append_child();
+    to_add_y.set_name("to_add_y");
+    to_add_y.append_attribute("y_axis_offset_y") = to_add.y;
 
+    pugi::xml_node ver_text = indoc.append_child();
+    ver_text.set_name("ver_text");
+    ver_text.append_attribute("vertical_text") = txt_ver;
 
-    waitKey(0);
+    pugi::xml_node hori_text = indoc.append_child();
+    hori_text.set_name("hori_text");
+    hori_text.append_attribute("horizontal_text") = txt_hor;
+
+    pugi::xml_node title_text = indoc.append_child();
+    title_text.set_name("title_text");
+    title_text.append_attribute("title_text") = txt_title;
+
+  ofstream xml_out;
+  xml_out.open("indoc.xml");
+  indoc.print(xml_out);
+  xml_out.close();
+
+    // waitKey(0);
    return 0;
  }

@@ -19,14 +19,14 @@ void PDFbuilder::addImage(const string& image_file) {
 	latex_string += "\\includegraphics[width=\\paperwidth,height=\\paperheight]{" + image_file +"}\n";
 }
 
-void PDFbuilder::addTable(const vector< vector<string> >& table) {
+void PDFbuilder::addTable(const vector< vector<string> >& table, const string& title) {
 	int rows = table.size();
 	if(rows == 0)
 		return;
 	int cols = table[0].size();
 
-	latex_string += "\\begin{center}\n";
-
+	latex_string += "\\begin{table}\n";
+	latex_string += "\\centering\n";
 	latex_string += "\\begin{tabular}{ |";
 	for (int i = 0; i < cols; ++i)
 	{
@@ -49,7 +49,10 @@ void PDFbuilder::addTable(const vector< vector<string> >& table) {
 	}
 
 	latex_string += "\\end{tabular}\n";
-	latex_string += "\\end{center}\n";
+
+	if(!title.empty())
+		latex_string += "\\caption{" + title +"}\n";
+	latex_string += "\\end{table}\n";
 }
 
 void PDFbuilder::endDocument() {
@@ -78,7 +81,7 @@ int main(int argc, char const *argv[])
 								  {"cell4", "cell5", "cell6"},
 								  {"cell7", "cell8", "cell9"}
 								};
-	builder.addTable(table);
+	builder.addTable(table, "Cell Table");
 	builder.addImage("/home/utkarsh/Desktop/images/scan-1.png");
 	builder.addImage("/home/utkarsh/Desktop/images/scan-2.png");
 	builder.addImage("/home/utkarsh/Desktop/images/scan-3.png");
