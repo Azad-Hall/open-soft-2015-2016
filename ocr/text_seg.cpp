@@ -3,25 +3,31 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <stdio.h>
+#include <vector>
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <math.h>
 #include <algorithm>
 #include "pugixml.hpp"
+#include <exception>
+#include <cstdlib>
 #include <string>
 #include <queue>
+#include <bits/stdc++.h>
 
 using namespace cv;
 using namespace std;
-#include "box-detection.hpp"
 using namespace pugi;
 
 queue<string> Q_str;
 queue<pair<string, pair<Point, Point> > > Q_str_point_ver;
 queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
+
+std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0);
+vector<Point> getRectangularContour(vector<Point> largest);
 
 const char* node_types[] =
 {
@@ -180,10 +186,10 @@ fgets(txt_ver, 128, pPipe);
 cout<<"\nvert_text: "<<txt_ver;
 system("rm vert_text.jpg");
 imwrite("y_label.jpg", y_label);
-system("tesseract y_label.jpg tes_out digits hocr");
+system("tesseract y_label.jpg tes_out0 digits hocr");
 
 pugi::xml_document doc;
-pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
+pugi::xml_parse_result result = doc.load_file("tes_out0.hocr");
 simple_walker walker;
 doc.traverse(walker);
 xml_node main_wrapper = doc.child("html").child("body").child("div");
@@ -314,13 +320,13 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
 
 
 imwrite("x_label.jpg", x_label);
-system("tesseract x_label.jpg tes_out digits hocr");
+system("tesseract x_label.jpg tes_out1 digits hocr");
 {
   while(!Q_str.empty())
     Q_str.pop();
 
 pugi::xml_document doc;
-pugi::xml_parse_result result = doc.load_file("tes_out.hocr");
+pugi::xml_parse_result result = doc.load_file("tes_out1.hocr");
 simple_walker walker;
 doc.traverse(walker);
 xml_node main_wrapper = doc.child("html").child("body").child("div");
@@ -351,8 +357,31 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
 }
 
     imshow("x_label", x_label);
+    pugi::xml_document indoc;
+    pugi::xml_node to_add_x = indoc.append_child();
+    to_add_x.set_name("to_add_x");
+    to_add_x.append_attribute("y_axis_offset_x") = to_add.x;
 
+    pugi::xml_node to_add_y = indoc.append_child();
+    to_add_y.set_name("to_add_y");
+    to_add_y.append_attribute("y_axis_offset_y") = to_add.y;
 
+    pugi::xml_node ver_text = indoc.append_child();
+    ver_text.set_name("ver_text");
+    ver_text.append_attribute("vertical_text") = txt_ver;
+
+    pugi::xml_node hori_text = indoc.append_child();
+    hori_text.set_name("hori_text");
+    hori_text.append_attribute("horizontal_text") = txt_hor;
+
+    pugi::xml_node title_text = indoc.append_child();
+    title_text.set_name("title_text");
+    title_text.append_attribute("title_text") = txt_title;
+
+  ofstream xml_out;
+  xml_out.open("indoc.xml");
+  indoc.print(xml_out);
+  xml_out.close();
 
     waitKey(0);
    return 0;

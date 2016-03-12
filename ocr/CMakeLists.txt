@@ -36,5 +36,8 @@ target_link_libraries( text_seg ${OpenCV_LIBS} )
 add_executable(color-segmentation peakdetect.cpp color-segmentation.cpp )
 target_link_libraries( color-segmentation ${OpenCV_LIBS} )
 
+add_executable(helper  helper.cpp box-detection.cpp pugixml.cpp)
+target_link_libraries( helper ${OpenCV_LIBS} )
+
 #add_executable(skew-detection  skew-detection.cpp)
 #target_link_libraries( skew-detection ${OpenCV_LIBS} ${GSL_LIBRARIES} )

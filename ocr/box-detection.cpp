@@ -6,6 +6,75 @@
 
 using namespace cv;
 using namespace std;
+
+struct _vect
+  {
+    double x,y;
+    pair<double,double> init;
+    double operator*(const _vect& B)                        //dot product
+    {
+      return ((this->x)*(B.x)+(this->y)*(B.y));
+    }
+    double operator^(const _vect& B)                        //cross product
+    {
+      return ((this->x)*(B.y)-(this->y)*(B.x));
+    }
+  };
+  struct _point
+  {
+    double x,y;
+    _point(double x,double y):x(x),y(y){}
+    double operator-(const _point& B)                      //distance b/w two points
+    {
+      return sqrt((this->x-B.x)*(this->x-B.x)+(this->y-B.y)*(this->y-B.y));
+    }
+    double sqdist(_point B)                                   //square of distance b/w two points
+    {
+      return (this->x-B.x)*(this->x-B.x)+(this->y-B.y)*(this->y-B.y);
+    }
+    _point operator+(const _point& B)                       //sum of two points
+    {
+      _point sum(this->x+B.x,this->y+B.y);
+      //  sum.x=this->x+B.x;
+      //  sum.y=this->y+B.y;
+      return sum;
+    }
+    _vect vector_with(_point B);
+  };
+
+
+  struct _line
+  {
+    double A,B,C;
+
+    _line(_point P, _point Q)
+    {
+      A=Q.y-P.y;
+      B=P.x-Q.x;
+      C=A*P.x+B*P.y;
+    }
+    double det_with(_line second)
+    {
+      return (this->A*second.B-this->B*second.A);
+    }
+    pair<double,double> intersection(const _line &second)          //using pair instead of point for int-double issues
+            {
+      double det=(*this).det_with(second);
+      if(det!=0)
+      {
+        double x = (second.B*this->C - this->B*second.C)/(double)det;
+        double y = (this->A*second.C - second.A*this->C)/(double)det;
+        return make_pair(x,y);
+      }
+      else
+      {
+        assert(0);                                        // lines are parallel
+      }
+            }
+  };
+
+
+
 double dist(Point p1, Point p2) {
   return sqrt((p1.x-p2.x)*(p1.x-p2.x) + (p1.y-p2.y)*(p1.y-p2.y));
 }
@@ -246,9 +315,11 @@ vector<Point> getRectangularContour(vector<Point> largest) {
 }
 
 // another way to get rectangular contour is to simply draw the contour, 
-// then run hough lines on that drawing!
+// then run hough lines on that drawing! Points : CW from Top Left
+#include <iostream>
 vector<Point> getRectangularContour2(vector<Point> contour) {
   cv::Rect imgRect = cv::boundingRect(contour);
+  // std::cout<<imgRect<<"\n";
   Mat img = Mat::zeros(imgRect.height, imgRect.width, CV_8U), linesImg = img.clone();
   // find centroid of the contour
   Moments mu = moments(contour, false);
@@ -256,17 +327,74 @@ vector<Point> getRectangularContour2(vector<Point> contour) {
   Point imgCentre(img.cols/2, img.rows/2);
   vector<vector<Point> > dummy(1, contour);
   drawContours(img, dummy, 0, Scalar(255,0,255), 2, 8, noArray(), INT_MAX, -centroid+imgCentre);
+  // cout<<-centroid +imgCentre<<"\n";
   vector<Vec4i> lines;
   // define min line length and line merge distance
   int minLineLength = max(30, min(imgRect.width, imgRect.height)/2);
   int mergeDist = minLineLength*0.75;
+  // imshow("img",img);
+  // waitKey(0);
   HoughLinesP( img, lines, 1, CV_PI/180, 230, minLineLength, mergeDist );
+
+  const int _EPS=10;
+  vector<pair<int,int> > val(4);
+  val[0]=make_pair(1e9,-1);
+  val[1]=make_pair(-1e9,-1);
+  val[2]=make_pair(1e9,-1);
+  val[3]=make_pair(-1e9,-1);
+
+  for( int i = 0;i < lines.size(); ++i)
+  {
+    line( linesImg, Point(lines[i][0], lines[i][1]),
+        Point(lines[i][2], lines[i][3]), Scalar(255), 1, 8 );
+
+    Vec4i &l = lines[i];
+    int x = min(l[0],l[2]);int X = max(l[0],l[2]);
+    int y = min(l[1],l[3]);int Y = max(l[1],l[3]);
+    if(abs(l[0]-l[2])<=_EPS)
+      val[0]=min(val[0],make_pair(x,i)),
+      val[1]=max(val[1],make_pair(X,i));
+    if(abs(l[1]-l[3])<=_EPS)
+      val[2]=min(val[2],make_pair(y,i)),
+      val[3]=max(val[3],make_pair(Y,i));
+  }
+  int x = val[0].second;int X = val[1].second;
+  int y = val[2].second;int Y = val[3].second;
+
+  // all lines :
+  _line T(_point(lines[y][0],lines[y][1]),_point(lines[y][2],lines[y][3]));
+  _line B(_point(lines[Y][0],lines[Y][1]),_point(lines[Y][2],lines[Y][3]));
+  _line L(_point(lines[x][0],lines[x][1]),_point(lines[x][2],lines[x][3]));
+  _line R(_point(lines[X][0],lines[X][1]),_point(lines[X][2],lines[X][3]));
+
+
+  pair<double,double> TL,TR,BL,BR;
+
+  TL = T.intersection(L);
+  TR = T.intersection(R);
+  BL = B.intersection(L);
+  BR = B.intersection(R);
+
+  
+
+
   for (int i =0 ; i < lines.size(); i++)
     line( linesImg, Point(lines[i][0], lines[i][1]),
         Point(lines[i][2], lines[i][3]), Scalar(255), 1, 8 );
-  imshow("lines", linesImg);
-  imshow("contour", img);
-  waitKey();
+  // imshow("lines", linesImg);
+  // imshow("contour", img);
+  // waitKey();
+
+  vector<Point> ans ;
+  ans.push_back(Point(TL.first,TL.second));
+  ans.push_back(Point(TR.first,TR.second));
+  ans.push_back(Point(BR.first,BR.second));
+  ans.push_back(Point(BL.first,BL.second));
+
+  for(int i=0;i<=3;++i)
+    ans[i]-=-centroid+imgCentre;
+
+  return ans;
 }
 // int main(int argc, char const *argv[])
 // {
