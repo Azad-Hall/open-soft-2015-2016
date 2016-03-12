@@ -41,11 +41,25 @@ int main(int argc, char const *argv[])
     }
   }
   vector<Point> finalContour = getRectangularContour(largest);
+  // write the contour coordinates to stdout. we don't need to write the shrunk contour,
+  // just the exact one.
+  for (int i = 0; i < finalContour.size(); ++i)
+  {
+    printf("%d %d\n", finalContour[i].x, finalContour[i].y);
+  }
   // need to shrink alittle, since we don't want the black boundary to be there
   // in the output image.
   // shirnk by 3% contour height
   finalContour = shrinkContour(finalContour, 0.03*boundingRect(finalContour).height);
-  Mat cropped = input(boundingRect(finalContour));
+  // don't crop the image, just make everything outside contour white.
+  Mat cropped = input.clone();
+  for (int i =0; i < cropped.rows; i++) {
+    for (int j = 0; j < cropped.cols; j++) {
+      if (pointPolygonTest(finalContour, Point(j,i), false) < 0) {
+        cropped.at<Vec3b>(i,j) = Vec3b(255,255,255);
+      }
+    }
+  }
   imwrite(argv[2], cropped);
   Mat drawing = input.clone();
   // for some reason we need final contour in an array for drawing..
