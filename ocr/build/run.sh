@@ -8,13 +8,15 @@ function graphFn {
   img_cropped="$basename-cropped.png"
   ../graph-box $1 $img_cropped > bb.txt
   # this should also have written the coordinates of the bounding rect to bb.txt (its actually a contour, not rect)
-  # color processing will be done on the cropped image
-  ../color-segmentation $img_cropped "bin" > num_colors.txt
   # ocr / label processing will be done on input image
   ../text_seg "$1" < bb.txt
   # now run scale detection
   ../scale
-  # fingers crosseds
+  # color processing will be done on the cropped image
+  # make a new file for input to gen-table
+  cp bb.txt gen.txt
+  ../color-segmentation $img_cropped "bin" >> gen.txt
+  # fingers crossed
   exit
 }
 
