@@ -16,9 +16,8 @@
 
 using namespace cv;
 using namespace std;
+#include "box-detection.hpp"
 using namespace pugi;
-std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0);
-vector<Point> getRectangularContour(vector<Point> largest);
 
 queue<string> Q_str;
 queue<pair<string, pair<Point, Point> > > Q_str_point;
@@ -87,11 +86,12 @@ struct simple_walker: pugi::xml_tree_walker
 
 
   //////////////////////////////////////
-      Mat img = imread(argv[1], 0);
-      long long contain_sum = 0;
-      Vector<int> contain(img.cols/3,0);
-      for(int j=0; j<img.cols/3; j++) {
-        for (int i=0;i<img.rows;i++) {
+
+  Mat img = imread(argv[1], 0);
+  long long contain_sum = 0;
+  vector<int> contain(img.cols/3,0);
+  for(int j=0; j<img.cols/3; j++) {
+    for (int i=0;i<img.rows;i++) {
       if(img.at<uchar>(i,j) < 200) {                                     ///////////////////Threshold used
         contain[j] += 1;
       }
