@@ -443,7 +443,6 @@ int main(int argc, char const *argv[])
         
         // else
         //   yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
-
         // if (imgHSV.at<Vec3b>(i,j)[0] >= 50/2.) // since H = deg/2 to fit in 255
         //   yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
       }
