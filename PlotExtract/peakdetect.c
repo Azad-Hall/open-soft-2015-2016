@@ -164,7 +164,7 @@ int main(int argc, const char *argv[])
                 if(!in)
                 {
                     fprintf(stderr, "Failed to open file \"");
-                    fprintf(stderr, argv[i]);
+                    fprintf(stderr, "%s",argv[i]);
                     fprintf(stderr, "\".\n");
                     exit(2);
                 }
@@ -176,7 +176,7 @@ int main(int argc, const char *argv[])
                 if(!out)
                 {
                     fprintf(stderr, "Failed to open file \"");
-                    fprintf(stderr, argv[i]);
+                    fprintf(stderr, "%s",argv[i]);
                     fprintf(stderr, "\".\n");
                     exit(2);
                 }
@@ -193,7 +193,7 @@ int main(int argc, const char *argv[])
                 {
                     fprintf(stderr,
                             "Argument parsing error: Unknown mode \"");
-                    fprintf(stderr, argv[i]);
+                    fprintf(stderr,  "%s",argv[i]);
                     fprintf(stderr, "\"\n");
                     exit(4);
                 }
@@ -215,7 +215,7 @@ int main(int argc, const char *argv[])
             else
             {
                 fprintf(stderr, "Unknown option \"");
-                fprintf(stderr, argv[i]);
+                fprintf(stderr,  "%s",argv[i]);
                 fprintf(stderr, "\".\n");
                 exit(3);
             }
