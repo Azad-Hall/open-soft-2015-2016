@@ -2,6 +2,10 @@
 # usage: ./run.sh <page img>
 
 function graphFn {
+  if [ "$#" -ne 2 ]; then
+    echo "Illegal number of parameters"
+    exit
+  fi
   # make the cropped image
   basename=`basename $1 .png`
   # do skew removal
@@ -29,6 +33,10 @@ function pageFn {
   # this function should be thread safe.
   # assuming this is called from the build directory only.
   # make a temp directory for the page
+  if [ "$#" -ne 1 ]; then
+    echo "Illegal number of parameters"
+    exit
+  fi
   basename=`basename $1 .png`
   dirname=$basename"-dir"
   rm -rf $dirname
@@ -61,6 +69,10 @@ function pageFn {
 }
 
 function pdfFn {
+  if [ "$#" -ne 1 ]; then
+    echo "Illegal number of parameters"
+    exit
+  fi
   basename=`basename $1 .pdf`
   folder="$basename-dir"
   # commenting these out for now
@@ -68,20 +80,22 @@ function pdfFn {
   mkdir "$folder"
   convert -density 300 $1 "$folder/scan.png"
   cd "$folder"
-  i=0
+  $cnt=0
   for file in $(ls | grep .png)
   do
     # correct orientation
     ../orientation "$file" "$file"
     echo "calling pageFn on image $file"
-    pageFn $file "$i.xml"
-    ((i=i+1))
+    pageFn $file
+    ((cnt=cnt+1))
   done
-
+  $pth=`pwd`"$basename"
+  $outname="$basename-out"
+  echo "$cnt\n" | ../make-pdf $pth $outname
   exit
 }
 
 
-#pdfFn $1
-cd scan0004-dir/scan-3-dir
-graphFn $1
+pdfFn $1
+# cd scan0004-dir/scan-3-dir
+# graphFn $1

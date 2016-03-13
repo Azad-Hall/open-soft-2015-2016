@@ -73,25 +73,25 @@ bool PDFbuilder::renderPDF(const string& filename) {
 	system(command.c_str());
 }
 
-int main(int argc, char const *argv[])
-{
-	PDFbuilder builder;
+// int main(int argc, char const *argv[])
+// {
+// 	PDFbuilder builder;
 
-	builder.beginDocument();
-	builder.addImage("/home/utkarsh/Desktop/images/scan-0.png");
-	vector< vector <string> > table = { {"cell1", "cell2", "cell3"},
-								  {"cell4", "cell5", "cell6"},
-								  {"cell7", "cell8", "cell9"}
-								};
-	builder.addTable(table, "Cell Table");
-	builder.addImage("/home/utkarsh/Desktop/images/scan-1.png");
-	builder.addImage("/home/utkarsh/Desktop/images/scan-2.png");
-	builder.addImage("/home/utkarsh/Desktop/images/scan-3.png");
-	builder.addImage("/home/utkarsh/Desktop/images/scan-4.png");
-	builder.endDocument();
+// 	builder.beginDocument();
+// 	builder.addImage("/home/utkarsh/Desktop/images/scan-0.png");
+// 	vector< vector <string> > table = { {"cell1", "cell2", "cell3"},
+// 								  {"cell4", "cell5", "cell6"},
+// 								  {"cell7", "cell8", "cell9"}
+// 								};
+// 	builder.addTable(table, "Cell Table");
+// 	builder.addImage("/home/utkarsh/Desktop/images/scan-1.png");
+// 	builder.addImage("/home/utkarsh/Desktop/images/scan-2.png");
+// 	builder.addImage("/home/utkarsh/Desktop/images/scan-3.png");
+// 	builder.addImage("/home/utkarsh/Desktop/images/scan-4.png");
+// 	builder.endDocument();
 
-	builder.renderPDF("output");
+// 	builder.renderPDF("output");
 
-	return 0;
-}
+// 	return 0;
+// }
 
