@@ -30,8 +30,12 @@ typedef struct b  {
   int z;
 } scale; 
 
+stack<pair<Point, Point> > aa;
+
 double startx=0,starty=0,startCoordinatex=0,startCoordinatey=0,to_add=0;
 queue<string> Q_str;
+
+queue<pair<string, pair<Point, Point> > > Q_str_point;
 queue<pair<string, pair<Point, Point> > > Q_str_point_ver;
 queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
 double yValue(double yCoordinate,double scale){
@@ -57,8 +61,25 @@ struct simple_walker: pugi::xml_tree_walker
         for (int i = 0; i < depth(); ++i) std::cout << "  "; // indentation
 
           std::cout << node_types[node.type()] << ": name='" << node.name() << "', value='" << node.value() << "'\n";
+        if(string(node.name()) == "span") {
+          std::istringstream iss;
+          iss.str(node.attribute("title").value());
+          //cout<<"\n"<<node.attribute("title").value();
+          string bbox;
+          iss>>bbox;
+          Point a, b;
+          iss>>a.x;
+          iss>>a.y;
+          iss>>b.x;
+          iss>>b.y;
+          aa.push({a, b});
+          //cout<<"\n pushed";
+        }
         if(node_types[node.type()] == "pcdata") {
           Q_str.push(node.value());
+          Q_str_point.push({node.value(), aa.top()});
+          while(!aa.empty())
+            aa.pop();
         }
         return true; // continue traversal
       }
@@ -322,31 +343,16 @@ xml_node main_wrapper = doc.child("html").child("body").child("div");
 vector<labels> labelh,labelv1,labelv;
 labels temp2;
 double v,h;
-for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
-{
-  for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
-    for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
-      for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
-        if(gist_inside.attribute("title")) {
-          std::istringstream iss;
-          iss.str(gist_inside.attribute("title").value());
-          cout<<"\n"<<gist_inside.attribute("title").value();
-          string bbox;
-          iss>>bbox;
-          Point a, b;
-          iss>>a.x;
-          iss>>a.y;
-          iss>>b.x;
-          iss>>b.y;
-          temp2.text=Q_str.front();
-          temp2.a=a;
-          temp2.b=b;
-          temp2.x=(a.y+b.y)/2;
+          while(!Q_str_point.empty()) {
+          pair<string, pair<Point, Point> > ss = Q_str_point.front();
+          Q_str_point.pop();
+          temp2.text=ss.first;
+          temp2.a=ss.second.first;
+          temp2.b=ss.second.second;
+          temp2.x=(temp2.a.y+temp2.b.y)/2;
           labelv1.push_back(temp2);
-          Q_str_point_ver.push({Q_str.front(), {a, b}});
-          Q_str.pop();
         }
-      }
+
   labelv=labelv1;
   for(int i=0;i<labelv1.size();i++) {
     labelv[labelv1.size()-1-i]=labelv1[i];
@@ -360,34 +366,19 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
 pugi::xml_document doc1;
 pugi::xml_parse_result result1 = doc1.load_file("tes_out1.hocr");
 simple_walker walker1;
+while(!Q_str_point.empty())
+  Q_str_point.pop();
 doc1.traverse(walker1);
-xml_node main_wrapper1 = doc1.child("html").child("body").child("div");
-
-for(xml_node x = main_wrapper1.child("div"); x; x = x.next_sibling("div") )
-{
-  for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
-    for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
-      for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
-        if(gist_inside.attribute("title")) {
-          std::istringstream iss;
-          iss.str(gist_inside.attribute("title").value());
-          cout<<"\n"<<gist_inside.attribute("title").value();
-          string bbox;
-          iss>>bbox;
-          Point a, b;
-          iss>>a.x;
-          iss>>a.y;
-          iss>>b.x;
-          iss>>b.y;
-          temp2.text=Q_str.front();
-          temp2.a=a;
-          temp2.b=b;
-          temp2.x=(a.x+b.x)/2;
+        while(!Q_str_point.empty()) {
+          pair<string, pair<Point, Point> > ss = Q_str_point.front();
+          Q_str_point.pop();
+          
+          temp2.text=ss.first;
+          temp2.a=ss.second.first;
+          temp2.b=ss.second.second;
+          temp2.x=(temp2.a.x+temp2.b.x)/2;
           labelh.push_back(temp2);
-          Q_str_point_hor.push({Q_str.front(), {a, b}});
-          Q_str.pop();
-        }
-      }
+          }
 for(int i=0;i<labelh.size();i++) {
     cout<<"\n"<<labelh[i].text;
   }

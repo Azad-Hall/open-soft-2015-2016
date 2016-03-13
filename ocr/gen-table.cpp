@@ -109,8 +109,10 @@ int main(int argc, char const *argv[])
   // read number of binary images from stdin
   scanf("%d\n", &n);
   // read the least count granularity
-  int lc = 0;
+  int lc = 10;
   scanf("%d\n", &lc);
+  if (lc == 0)
+    lc = 10;
   // make the samples array
   vector<int> xsamples;
   for (int x = bl.x; x <= br.x; x += lc/10.) {
@@ -131,7 +133,8 @@ int main(int argc, char const *argv[])
   title = doc.child("Title_text").attribute("ttxt").value();
   xscale = stof(xs.attribute("valPerPix").value());
   printf("htext = %s, vtext = %s\n", htext.c_str(), vtext.c_str());
-  yscale = stof(ys.attribute("valPerPix").value());
+  // since yscale shoudl decrease
+  yscale = -stof(ys.attribute("valPerPix").value());
   xrefPix = stof(xs.attribute("xrefCoord").value());
   xrefVal = stof(xs.attribute("xrefValue").value());
   yrefPix = stof(ys.attribute("yrefCoord").value());
@@ -175,8 +178,9 @@ int main(int argc, char const *argv[])
   // write it out in xml format so it can be read later
   using namespace pugi;
   pugi::xml_document odoc;
+  xml_node tablenode = odoc.append_child("html").append_child("body").append_child("table");
   for (int i = 0; i < table.size(); i++) {
-    xml_node tr = odoc.append_child();
+    xml_node tr = tablenode.append_child();
     tr.set_name("tr");
     for (int j = 0; j < table[i].size(); j++) {
       xml_node td = tr.append_child();

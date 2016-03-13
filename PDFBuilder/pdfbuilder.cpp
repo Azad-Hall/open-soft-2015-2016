@@ -4,7 +4,7 @@ PDFbuilder::PDFbuilder() {
 	latex_string += "\\documentclass{article}\n";
 	latex_string += "\\usepackage[utf8]{inputenc}\n";
 	latex_string += "\\usepackage{graphicx}\n";
-	latex_string += "\\usepackage[left=0pt,top=0pt,right=0pt,bottom=0pt]{geometry}\n";
+	latex_string += "\\usepackage{geometry}\n";
 	latex_string += "\\title{}\n";
 	latex_string += "\\author{Team 7}\n";
 }
@@ -16,7 +16,9 @@ void PDFbuilder::beginDocument() {
 
 void PDFbuilder::addImage(const string& image_file) {
 	latex_string += "\\newpage\n";
+	latex_string += "\\newgeometry{left=0pt,top=0pt,right=0pt,bottom=0pt}\n";
 	latex_string += "\\includegraphics[width=\\paperwidth,height=\\paperheight]{" + image_file +"}\n";
+	latex_string += "\\restoregeometry\n";
 }
 
 void PDFbuilder::addTable(const vector< vector<string> >& table, const string& title) {

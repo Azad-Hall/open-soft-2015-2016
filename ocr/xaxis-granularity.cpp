@@ -22,7 +22,9 @@ vector<int> getXGranularity(Mat graph, Mat img, Point left, Point right, int dir
 	assert(left.x < right.x);
 	float slope = ((float)(left.y - right.y))/((float)(left.x - right.x));
 	//cout << right.x << " " << left.x << endl;
-	int hist[right.x - left.x + 1] = {0};
+
+	int hist[right.x - left.x + 1] ;
+	memset(hist,0,sizeof(hist));
 	int minval, maxval;
 	vector<int> Points, granularPoints;
 	//cout << "here" << endl;
@@ -79,11 +81,13 @@ int main(int argc, char const *argv[])
   //   return 0;
   // }
   vector<pair<int, int> > contour;
+  vector<Point> cnt;
   int x, y;
   for(int i = 0 ; i < 4 ; i++){
   	scanf("%d %d", &x, &y);
   	//reversed for sorting
   	contour.push_back(make_pair(y, x));
+    cnt.push_back(Point(x,y));
   }
   sort(contour.begin(), contour.end());
   Mat img = imread(argv[1]);
