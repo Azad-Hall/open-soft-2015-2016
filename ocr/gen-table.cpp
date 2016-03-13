@@ -21,6 +21,9 @@ using namespace std;
 #include "pugixml.hpp"
 #include <algorithm>
 #include <fstream>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_spline.h>
+
 using namespace std;
 using namespace cv;
 // take pixels xsamples as input, gives pixels ysamples as output.
@@ -68,6 +71,35 @@ vector<string> getColumn(string title, vector<pair<bool, int> > samples, double 
   }
   return ret;
 }
+
+vector<pair<bool, int> > interpolate(vector<int> xsamples, vector<pair<bool, int> > ysamples){
+  int degree = 3, np = 0;
+  for(int i = 0 ; i < ysamples.size() ; i++){
+    if ( ysamples[i].first == true )
+      np++;
+  }
+  double x[np], y[np];
+  int ind = 0;
+  for(int i = 0 ; i < ysamples.size() ; i++ ){
+    if ( ysamples[i].first == true){
+      x[ind] = xsamples[i];
+      y[ind] = ysamples[i].second;
+      ind++;
+    }
+  }
+  
+  gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+  gsl_spline *spline  = gsl_spline_alloc (gsl_interp_cspline, np);
+
+  gsl_spline_init (spline, x, y, np);
+  for(int i = 0 ; i < ysamples.size() ; i++ ){
+    if ( ysamples[i].first == false){
+      ysamples[i].second = gsl_spline_eval(spline, xsamples[i], acc);
+    }
+  }
+  return ysamples;
+}
+
 int main(int argc, char const *argv[])
 {
   printf("usage: ./gen-table <xml-file> <binimg-basename> <outxml-file>\n");

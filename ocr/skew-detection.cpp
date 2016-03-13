@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include "opencv2/imgproc/imgproc.hpp"
 #include <math.h>
-#include <gsl/gsl_sort.h>
-#include <gsl/gsl_statistics.h>
+// #include <gsl/gsl_sort.h>
+// #include <gsl/gsl_statistics.h>
 
 using namespace cv;
 using namespace std;
@@ -83,23 +83,19 @@ int main(int argc, char const *argv[])
   sort(vangles.begin(), vangles.end());
   sort(hangles.begin(), hangles.end());
   printf("num vertical = %d, horizontal = %d\n", vangles.size(), hangles.size());
-  double medianV 
-    = gsl_stats_median_from_sorted_data (&vangles[0], 
-                                         1, vangles.size());
-  double medianH = gsl_stats_median_from_sorted_data (&hangles[0], 
-                                         1, hangles.size());
-  double meanV = gsl_stats_mean(&vangles[0], 1, vangles.size());
-  double meanH = gsl_stats_mean(&hangles[0], 1, hangles.size());
+  double medianV = vangles[vangles.size()/2];
+  double medianH = hangles[hangles.size()/2];
+  // double meanV = gsl_stats_mean(&vangles[0], 1, vangles.size());
+  // double meanH = gsl_stats_mean(&hangles[0], 1, hangles.size());
 
-  printf("Horizontal: (%lf, %lf), vertical: (%lf, %lf)\n", meanH, medianH, meanV, medianV);
+  printf("Horizontal: (%lf), vertical: (%lf)\n", medianH, medianV);
   // append all the data together and take the median.
   for (int i = 0; i < vangles.size(); ++i)
   {
     hangles.push_back(vangles[i] - M_PI/2);
   }
   sort(hangles.begin(), hangles.end());
-  double median = gsl_stats_median_from_sorted_data (&hangles[0], 
-                                         1, hangles.size());
+  double median = hangles[hangles.size()/2];
   printf("combined median = %lf\n", median);
   cv::Mat rot_mat = cv::getRotationMatrix2D(Point(input.cols/2., input.rows/2.), median*180/M_PI, 1);
   cv::Mat rotated;

@@ -4,9 +4,10 @@
 function graphFn {
   # make the cropped image
   basename=`basename $1 .png`
+  # do skew removal
+  ../../skew-detection "$1" "$1"
   # not actually cropped, just everything outside the graph region is white.
   img_cropped="$basename-cropped.png"
-
   ../../graph-box $1 $img_cropped > bb.txt
   # this should also have written the coordinates of the bounding rect to bb.txt (its actually a contour, not rect)
   # ocr / label processing will be done on input image
@@ -72,7 +73,7 @@ function pdfFn {
   do
     # correct orientation
     ../orientation "$file" "$file"
-    echo "calling pagFn on image $file"
+    echo "calling pageFn on image $file"
     pageFn $file "$i.xml"
     ((i=i+1))
   done
@@ -81,4 +82,6 @@ function pdfFn {
 }
 
 
-pdfFn $1
+#pdfFn $1
+cd scan0004-dir/scan-3-dir
+graphFn $1
