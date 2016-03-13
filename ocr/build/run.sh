@@ -21,7 +21,6 @@ function graphFn {
   # fingers crossed
   tablexml="$basename-table.xml"
   ../../gen-table scale.xml bin $tablexml < gen.txt
-  exit
 }
 
 function pageFn {
@@ -51,7 +50,7 @@ function pageFn {
   do
     echo "calling graphfn on image $file"
     graphFn $file
-    basename=`basename $1 .png`
+    basename=`basename $file .png`
     tablexml="$basename-table.xml"
     mv "$tablexml" "../$2"
   done
