@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project( test )
+SET(CMAKE_CXX_FLAGS "-std=c++0x")
+set(CMAKE_BUILD_TYPE Debug)
 find_package( OpenCV  REQUIRED )
 #find_package(GSL REQUIRED)
 add_executable( test test.cpp pugixml.cpp)
@@ -26,14 +28,27 @@ target_link_libraries( legend-box ${OpenCV_LIBS} )
 add_executable(preprocessing  preprocessing.cpp pugixml.cpp)
 target_link_libraries( preprocessing ${OpenCV_LIBS} )
 
+
+add_executable(orientation  orientation.cpp)
+target_link_libraries( orientation ${OpenCV_LIBS} )
+
 add_executable(xaxis-granularity  xaxis-granularity.cpp)
 target_link_libraries( xaxis-granularity ${OpenCV_LIBS} )
 
 add_executable(text_seg  text_seg.cpp box-detection.cpp pugixml.cpp)
 target_link_libraries( text_seg ${OpenCV_LIBS} )
 
+add_executable(color-segmentation peakdetect.cpp color-segmentation.cpp )
+target_link_libraries( color-segmentation ${OpenCV_LIBS} )
+
 add_executable(helper  helper.cpp box-detection.cpp pugixml.cpp)
 target_link_libraries( helper ${OpenCV_LIBS} )
 
+add_executable(scale  scale.cpp pugixml.cpp)
+target_link_libraries( scale  )
+
+
+add_executable(gen-table  gen-table.cpp pugixml.cpp)
+target_link_libraries( gen-table ${OpenCV_LIBS} )
 #add_executable(skew-detection  skew-detection.cpp)
 #target_link_libraries( skew-detection ${OpenCV_LIBS} ${GSL_LIBRARIES} )

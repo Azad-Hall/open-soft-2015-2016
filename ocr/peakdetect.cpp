@@ -4,7 +4,7 @@
 
 void print_help(void)
 {
-    fprintf(stderr,
+    fprintf(stdout,
             "Usage: peakdetect [OPTIONS]\n"
             "Peak detection in a wave\n"
             "\n"
@@ -34,7 +34,7 @@ void print_help(void)
 
 void print_version(void)
 {
-    fprintf(stderr,
+    fprintf(stdout,
             "peakdetect version 0.1.3\n"
             "Copyright (C) 2011 Hong Xu <xuphys@gmail.com>\n"
             "Originally inspired by Eli Billauer\'s peakdet for MATLAB:\n"
@@ -123,7 +123,7 @@ int detect_peak(
     return 0;
 }
 
-int main(int argc, const char *argv[])
+int run(int argc,  char **argv)
 {
 #define INITIAL_ROW_COUNT       1500
 #define ROW_COUNT_INCREASEMENT  3000
@@ -163,9 +163,9 @@ int main(int argc, const char *argv[])
                 in = fopen(argv[i], "r");
                 if(!in)
                 {
-                    fprintf(stderr, "Failed to open file \"");
-                    fprintf(stderr, "%s",argv[i]);
-                    fprintf(stderr, "\".\n");
+                    fprintf(stdout, "Failed to open file \"");
+                    fprintf(stdout, "%s",argv[i]);
+                    fprintf(stdout, "\".\n");
                     exit(2);
                 }
                 flag_in = 0;
@@ -175,9 +175,9 @@ int main(int argc, const char *argv[])
                 out = fopen(argv[i], "w");
                 if(!out)
                 {
-                    fprintf(stderr, "Failed to open file \"");
-                    fprintf(stderr, "%s",argv[i]);
-                    fprintf(stderr, "\".\n");
+                    fprintf(stdout, "Failed to open file \"");
+                    fprintf(stdout, "%s",argv[i]);
+                    fprintf(stdout, "\".\n");
                     exit(2);
                 }
                 flag_out = 0;
@@ -191,10 +191,10 @@ int main(int argc, const char *argv[])
                     emission_first = 1;
                 else
                 {
-                    fprintf(stderr,
+                    fprintf(stdout,
                             "Argument parsing error: Unknown mode \"");
-                    fprintf(stderr,  "%s",argv[i]);
-                    fprintf(stderr, "\"\n");
+                    fprintf(stdout,  "%s",argv[i]);
+                    fprintf(stdout, "\"\n");
                     exit(4);
                 }
 
@@ -214,9 +214,9 @@ int main(int argc, const char *argv[])
                 print_version();
             else
             {
-                fprintf(stderr, "Unknown option \"");
-                fprintf(stderr,  "%s",argv[i]);
-                fprintf(stderr, "\".\n");
+                fprintf(stdout, "Unknown option \"");
+                fprintf(stdout,  "%s",argv[i]);
+                fprintf(stdout, "\".\n");
                 exit(3);
             }
 
@@ -258,16 +258,15 @@ int main(int argc, const char *argv[])
                 absorp_peaks, &absorp_count, MAX_PEAK,
                 delta, emission_first))
     {
-        fprintf(stderr, "There are too many peaks.\n");
+        fprintf(stdout, "There are too many peaks.\n");
         exit(1);
     }
-
     for(i = 0; i < emi_count; ++i)
         fprintf(out, "%e,%e\n", data[0][emi_peaks[i]], data[1][emi_peaks[i]]);
     puts("");
     for(i = 0; i < absorp_count; ++i)
         fprintf(out, "%e,%e\n", data[0][absorp_peaks[i]],
                 data[1][absorp_peaks[i]]);
-
+    fclose(out);
     return 0;
 }

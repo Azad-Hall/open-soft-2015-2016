@@ -14,10 +14,16 @@ RNG rng(12345);
 
 int main(int argc, char* argv[])
 {
-	Mat img = imread("sel.png", 0);
-	Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+	if (argc != 2) {
+        cout<<"usage: ./helper <graph-img>\n";
+        return 0;
+      }
+      Mat img = imread(argv[1]);
+      Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
 	pugi::xml_document doc;
-	system("tesseract sel.png out hocr");
+	string to_tesseract;
+	to_tesseract = "tesseract " + string(argv[1]) + " out hocr"; 
+	system(to_tesseract.c_str());
 	pugi::xml_parse_result result = doc.load_file("out.hocr");
 	xml_node main_wrapper = doc.child("html").child("body").child("div");
 
@@ -41,7 +47,7 @@ int main(int argc, char* argv[])
 		    		rectangle(img, a, b, color, 2, 8, 0);
 		    	}
     }
-    imwrite("Final.png", img);
+    imshow("Final.png", img);
     
 }
 
