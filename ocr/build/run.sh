@@ -7,6 +7,7 @@ function graphFn {
   # not actually cropped, just everything outside the graph region is white.
   img_cropped="$basename-cropped.png"
   ../graph-box $1 $img_cropped > bb.txt
+  echo "yolo"
   # this should also have written the coordinates of the bounding rect to bb.txt (its actually a contour, not rect)
   # ocr / label processing will be done on input image
   ../text_seg "$1" < bb.txt

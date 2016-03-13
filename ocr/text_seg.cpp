@@ -28,10 +28,6 @@ queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
 
 #include "box-detection.hpp"
 
-const char* node_types[] =
-{
-  "null", "document", "element", "pcdata", "cdata", "comment", "pi", "declaration"
-};
 
 // crops rectangle to stay within image.
 Rect cropRect(Rect r, cv::Size size) {
@@ -39,21 +35,6 @@ Rect cropRect(Rect r, cv::Size size) {
   Point br(min(r.br().x, size.width-1), min(r.br().y, size.height-1));
   return Rect(tl, br);
 }
-//[code_traverse_walker_impl
-struct simple_walker: pugi::xml_tree_walker
-{
-  virtual bool for_each(pugi::xml_node& node)
-  {
-        for (int i = 0; i < depth(); ++i) std::cout << "  "; // indentation
-
-          std::cout << node_types[node.type()] << ": name='" << node.name() << "', value='" << node.value() << "'\n";
-        if(node_types[node.type()] == "pcdata") {
-          Q_str.push(node.value());
-        }
-        return true; // continue traversal
-      }
-    };
-//]
 
 
 
@@ -76,11 +57,12 @@ struct simple_walker: pugi::xml_tree_walker
       }
      
   // for some reason we need final contour in an array for drawing..
-      vector<vector<Point> > dummy(1, finalContour);
 
       Rect boundRect;
       boundRect = boundingRect( Mat(finalContour) );
       rectangle( drawing, boundRect.tl(), boundRect.br(), Scalar(100,100,100), 2, 8, 0 );
+      imshow("dra",drawing);
+      //waitKey(0);
       cv::Point2f corners[4];
       corners[0] = boundRect.tl();
       corners[1] = Point2f(boundRect.tl().x + boundRect.width, boundRect.tl().y);
@@ -189,34 +171,6 @@ system("tesseract y_label.jpg tes_out0 digits hocr");
 
 pugi::xml_document doc;
 pugi::xml_parse_result result = doc.load_file("tes_out0.hocr");
-simple_walker walker;
-doc.traverse(walker);
-xml_node main_wrapper = doc.child("html").child("body").child("div");
-
-for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
-{
-  for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
-    for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
-      for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
-        if(gist_inside.attribute("title")) {
-          std::istringstream iss;
-          iss.str(gist_inside.attribute("title").value());
-          cout<<"\n"<<gist_inside.attribute("title").value()<<"\n";
-          string bbox;
-          iss>>bbox;
-          Point a, b;
-          iss>>a.x;
-          iss>>a.y;
-          iss>>b.x;
-          iss>>b.y;
-
-          Q_str_point_ver.push({Q_str.front(), {a, b}});
-          Q_str.pop();
-          rectangle(y_label, a, b, Scalar(10, 100, 100), 2, 8, 0);
-
-        }
-      }
-      pair<string, pair<Point, Point> > a = Q_str_point_ver.front();
       imshow("vert_text", vert_text);
       imshow("y_label", y_label);
 
@@ -324,40 +278,6 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
 
 imwrite("x_label.jpg", x_label);
 system("tesseract x_label.jpg tes_out1 digits hocr");
-{
-  while(!Q_str.empty())
-    Q_str.pop();
-
-pugi::xml_document doc;
-pugi::xml_parse_result result = doc.load_file("tes_out1.hocr");
-simple_walker walker;
-doc.traverse(walker);
-xml_node main_wrapper = doc.child("html").child("body").child("div");
-
-for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
-{
-  for(xml_node gist_up = x.child("p"); gist_up; gist_up = gist_up.next_sibling("p"))
-    for(xml_node gist = gist_up.child("span"); gist; gist = gist.next_sibling("span"))
-      for(xml_node gist_inside = gist.child("span"); gist_inside; gist_inside = gist_inside.next_sibling("span"))
-        if(gist_inside.attribute("title")) {
-          std::istringstream iss;
-          iss.str(gist_inside.attribute("title").value());
-          cout<<"\n"<<gist_inside.attribute("title").value();
-          string bbox;
-          iss>>bbox;
-          Point a, b;
-          iss>>a.x;
-          iss>>a.y;
-          iss>>b.x;
-          iss>>b.y;
-
-          Q_str_point_hor.push({Q_str.front(), {a, b}});
-          Q_str.pop();
-          rectangle(x_label, a, b, Scalar(10, 100, 100), 2, 8, 0);
-
-        }
-      }
-}
 
     imshow("x_label", x_label);
     pugi::xml_document indoc;
@@ -386,6 +306,6 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
   indoc.print(xml_out);
   xml_out.close();
 
-    // waitKey(0);
+    //waitKey(0);
    return 0;
  }
