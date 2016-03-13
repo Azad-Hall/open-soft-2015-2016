@@ -26,14 +26,19 @@ queue<string> Q_str;
 queue<pair<string, pair<Point, Point> > > Q_str_point_ver;
 queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
 
-std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 0);
-vector<Point> getRectangularContour(vector<Point> largest);
+#include "box-detection.hpp"
 
 const char* node_types[] =
 {
   "null", "document", "element", "pcdata", "cdata", "comment", "pi", "declaration"
 };
 
+// crops rectangle to stay within image.
+Rect cropRect(Rect r, cv::Size size) {
+  Point tl(max(r.tl().x, 0), max(r.tl().y, 0));
+  Point br(min(r.br().x, size.width-1), min(r.br().y, size.height-1));
+  return Rect(tl, br);
+}
 //[code_traverse_walker_impl
 struct simple_walker: pugi::xml_tree_walker
 {
@@ -62,23 +67,14 @@ struct simple_walker: pugi::xml_tree_walker
       }
       Mat input = imread(argv[1]);
       Mat drawing = input.clone();
-      vector<vector<Point> > contours = getBoxes(input);
-      if (contours.size() == 0) {
-        printf("no contours.?\n");
-        return 0;
+      // read the box contour from stdin
+      vector<Point> finalContour;
+      for (int i = 0; i < 4; i++) {
+        int x, y;
+        scanf("%d %d\n", &x, &y);
+        finalContour.push_back(Point(x,y));
       }
-  // get max area contour
-      vector<Point> largest = contours[0];
-      int maxArea = contourArea(largest);
-      for (int i = 1; i < contours.size(); i++) {
-        int area = contourArea(contours[i]);
-        if (area > maxArea) {
-          maxArea = area;
-          largest = contours[i];
-        }
-      }
-      vector<Point> finalContour = getRectangularContour(largest);
-
+     
   // for some reason we need final contour in an array for drawing..
       vector<vector<Point> > dummy(1, finalContour);
 
@@ -164,9 +160,12 @@ struct simple_walker: pugi::xml_tree_walker
   }
 
   int mid = (first_end+second_start)/2;
-
-  vert_text = Mat(img, Rect(Point2f(first_start - (mid - first_start), corners[0].y - img.rows*1/100), Point2f(mid, corners[3].y + img.rows*1/100))); // change the random value
-  y_label = Mat(img, Rect(Point2f(mid, corners[0].y - img.rows*1/100), Point2f(corners[3].x + img.cols*1/100, corners[3].y + img.rows*1/100)));
+  Rect vert_rect = Rect(Point2f(first_start - (mid - first_start), corners[0].y - img.rows*1/100), Point2f(mid, corners[3].y + img.rows*1/100));
+  vert_rect = cropRect(vert_rect, img.size());
+  vert_text = Mat(img, vert_rect); // change the random value
+  Rect y_rect(Point2f(mid, corners[0].y - img.rows*1/100), Point2f(corners[3].x, corners[3].y));
+  y_rect = cropRect(y_rect, img.size());
+  y_label = Mat(img, y_rect);
   to_add.x = mid;
   to_add.y = corners[0].y - img.rows*1/100;
   if(second_start)
@@ -202,7 +201,7 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
         if(gist_inside.attribute("title")) {
           std::istringstream iss;
           iss.str(gist_inside.attribute("title").value());
-          cout<<"\n"<<gist_inside.attribute("title").value();
+          cout<<"\n"<<gist_inside.attribute("title").value()<<"\n";
           string bbox;
           iss>>bbox;
           Point a, b;
@@ -295,8 +294,12 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
     }
     else {
      int mid_first_second = (first_end+second_start)/2;
-      hor_text = Mat(img, Rect(Point2f(0, mid_first_second), Point2f(img.cols-1, img.rows - 1))); // change the random value
-      x_label = Mat(img, Rect(Point2f(0, corners[3].y), Point2f(img.cols-1, mid_first_second)));
+      Rect hor_rect = Rect(Point2f(0, mid_first_second), Point2f(img.cols-1, img.rows - 1));
+      hor_rect = cropRect(hor_rect, img.size());
+      hor_text = Mat(img, hor_rect); // change the random value
+      Rect xrect = Rect(Point2f(0, corners[3].y), Point2f(img.cols-1, mid_first_second));
+      xrect = cropRect(xrect, img.size());
+      x_label = Mat(img, xrect);
     }
     imshow("NEw", img);
     
@@ -383,6 +386,6 @@ for(xml_node x = main_wrapper.child("div"); x; x = x.next_sibling("div") )
   indoc.print(xml_out);
   xml_out.close();
 
-    waitKey(0);
+    // waitKey(0);
    return 0;
  }

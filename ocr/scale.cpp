@@ -6,7 +6,6 @@
 #include <vector>
 #include <iostream>
 #include "pugixml.hpp"
-#include "pugixml.cpp"
 #include <sstream>
 #include <fstream>
 #include <string>
@@ -404,47 +403,47 @@ cout<<"\nStartcoordinatey:     "<<startCoordinatey;
 	pugi::xml_document outdoc;
 
   // add node with some name
-  pugi::xml_node y_label = outdoc.append_child();
-  y_label.set_name("y_label");
+  // pugi::xml_node y_label = outdoc.append_child();
+  // y_label.set_name("y_label");
 
- /* pugi::xml_node y_label_tl_x = y_label.append_child();
-  y_label_tl_x.set_name("y_label_tl_x");
-   pugi::xml_node y_label_tl_y = y_label.append_child();
-  y_label_tl_y.set_name("y_label_tl_y");
-   pugi::xml_node y_label_br_x = y_label.append_child();
-  y_label_br_x.set_name("y_label_br_x");
-   pugi::xml_node y_label_br_y = y_label.append_child();
-  y_label_br_y.set_name("y_label_br_y");*/
+  // pugi::xml_node y_label_tl_x = y_label.append_child();
+  // y_label_tl_x.set_name("y_label_tl_x");
+  //  pugi::xml_node y_label_tl_y = y_label.append_child();
+  // y_label_tl_y.set_name("y_label_tl_y");
+  //  pugi::xml_node y_label_br_x = y_label.append_child();
+  // y_label_br_x.set_name("y_label_br_x");
+  //  pugi::xml_node y_label_br_y = y_label.append_child();
+  // y_label_br_y.set_name("y_label_br_y");
 
-  for(int i=0;i<labelv.size();i++){
-  	string s=labelv[i].text;
-  	y_label.append_attribute(s.c_str()) = labelv[i].x;
-  	/*y_label_tl_x.append_attribute(s.c_str())=labelv[i].a.x;
-  	y_label_tl_y.append_attribute(s.c_str())=labelv[i].a.y;
-  	y_label_br_x.append_attribute(s.c_str())=labelv[i].b.x;
-  	y_label_br_y.append_attribute(s.c_str())=labelv[i].b.y;*/
-  }
+  // for(int i=0;i<labelv.size();i++){
+  // 	string s=labelv[i].text;
+  // 	y_label.append_attribute(s.c_str()) = labelv[i].x;
+  // 	/*y_label_tl_x.append_attribute(s.c_str())=labelv[i].a.x;
+  // 	y_label_tl_y.append_attribute(s.c_str())=labelv[i].a.y;
+  // 	y_label_br_x.append_attribute(s.c_str())=labelv[i].b.x;
+  // 	y_label_br_y.append_attribute(s.c_str())=labelv[i].b.y;*/
+  // }
 
-  pugi::xml_node x_label = outdoc.append_child();
-  x_label.set_name("x_label");
+  // pugi::xml_node x_label = outdoc.append_child();
+  // x_label.set_name("x_label");
 
- /* pugi::xml_node x_label_tl_x = x_label.append_child();
-  x_label_tl_x.set_name("x_label_tl_x");
-   pugi::xml_node x_label_tl_y = x_label.append_child();
-  x_label_tl_y.set_name("x_label_tl_y");
-   pugi::xml_node x_label_br_x = x_label.append_child();
-  x_label_br_x.set_name("x_label_br_x");
-   pugi::xml_node x_label_br_y= x_label.append_child();
-  x_label_br_y.set_name("x_label_br_y");*/
+  // pugi::xml_node x_label_tl_x = x_label.append_child();
+  // x_label_tl_x.set_name("x_label_tl_x");
+  //  pugi::xml_node x_label_tl_y = x_label.append_child();
+  // x_label_tl_y.set_name("x_label_tl_y");
+  //  pugi::xml_node x_label_br_x = x_label.append_child();
+  // x_label_br_x.set_name("x_label_br_x");
+  //  pugi::xml_node x_label_br_y= x_label.append_child();
+  // x_label_br_y.set_name("x_label_br_y");
 
-  for(int i=0;i<labelh.size();i++){
-  	string s=labelh[i].text;
-  	x_label.append_attribute(s.c_str()) = labelh[i].x;
-  	/*x_label_tl_x.append_attribute(s.c_str())=labelv[i].a.x;
-  	x_label_tl_y.append_attribute(s.c_str())=labelv[i].a.y;
-  	x_label_br_x.append_attribute(s.c_str())=labelv[i].b.x;
-  	x_label_br_y.append_attribute(s.c_str())=labelv[i].b.y;*/
-  }
+  // for(int i=0;i<labelh.size();i++){
+  // 	string s=labelh[i].text;
+  // 	x_label.append_attribute(s.c_str()) = labelh[i].x;
+  // 	/*x_label_tl_x.append_attribute(s.c_str())=labelv[i].a.x;
+  // 	x_label_tl_y.append_attribute(s.c_str())=labelv[i].a.y;
+  // 	x_label_br_x.append_attribute(s.c_str())=labelv[i].b.x;
+  // 	x_label_br_y.append_attribute(s.c_str())=labelv[i].b.y;*/
+  // }
  
   pugi::xml_node xnode = outdoc.append_child();
   xnode.set_name("xscale");

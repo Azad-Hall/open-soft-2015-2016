@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
       Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
 	pugi::xml_document doc;
 	string to_tesseract;
-	to_tesseract = "tesseract " + argv[1] + " out hocr"; 
+	to_tesseract = "tesseract " + string(argv[1]) + " out hocr"; 
 	system(to_tesseract.c_str());
 	pugi::xml_parse_result result = doc.load_file("out.hocr");
 	xml_node main_wrapper = doc.child("html").child("body").child("div");
