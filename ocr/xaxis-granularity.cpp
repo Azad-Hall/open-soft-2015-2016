@@ -106,7 +106,14 @@ int main(int argc, char const *argv[])
   	ugranularPoints = getXGranularity(binimg, img, Point(contour[3].ss, contour[3].ff), Point(contour[2].ss, contour[2].ff), -1);
 
   int val = 0;
-  assert(ugranularPoints.size() > 1);
+  if (ugranularPoints.size() <= 1){
+  		if(contour[2].ss < contour[3].ss ){
+  			cout << (contour[3].ss - contour[2].ss)/10 << endl;
+  		}	
+  		else{
+  			cout << (contour[2].ss - contour[3].ss)/10 << endl;
+  		}
+  }
   for(int i = 1 ; i < ugranularPoints.size() ; i++)
   	diff.push_back(ugranularPoints[i] - ugranularPoints[i - 1]);
   sort(diff.begin(), diff.end());
