@@ -19,7 +19,8 @@ function graphFn {
   # run granularity detction
   ../xaxis-granularity "$1" < bb.txt >> gen.txt
   # fingers crossed
-  ../gen-table scale.xml bin < gen.txt
+  tablexml="$basename-table.xml"
+  ../gen-table scale.xml bin $tablexml < gen.txt
   exit
 }
 
@@ -38,15 +39,16 @@ function pageFn {
   echo "img = $img"
 
   # make the notext image
-  img_notext="$basename-notext.png"
+  img_notext="notext-$basename.png"
   ../remove-text $img $img_notext > /dev/null
 
   # run graph-candidates to detect boxes
   graph_basename="$basename-graphs"
   ../graph-candidates $img $img_notext $graph_basename > /dev/null
 
-  for file in $graph_basename*.png
+  for file in $(ls | grep $graph_basename)
   do
+    echo "calling graphfn on image $file"
     graphFn $file
   done
 }

@@ -17,7 +17,7 @@ using namespace std;
 #include "box-detection.hpp"
 #include "pugixml.hpp"
 #include <algorithm>
-
+#include <fstream>
 using namespace std;
 using namespace cv;
 // take pixels xsamples as input, gives pixels ysamples as output.
@@ -63,7 +63,7 @@ vector<string> getColumn(string title, vector<pair<bool, int> > samples, double 
 }
 int main(int argc, char const *argv[])
 {
-  printf("usage: ./gen-table <xml-file> <binimg-basename>\n");
+  printf("usage: ./gen-table <xml-file> <binimg-basename> <outxml-file>\n");
   vector<Point> contour;
   // read the bb conotur;
   for (int i = 0; i < 4; i++) {
@@ -127,6 +127,35 @@ int main(int argc, char const *argv[])
     }
     printf("\n");
   }
+  // transose the table
+  assert(table.size()>0);
+  for (int i =1 ; i < table.size(); i++) 
+    assert(table[i].size() == table[i-1].size());
+  int sz = table[0].size();
+  vector<vector<string> > table2(sz, vector<string>(table.size(), ""));
+  for (int i = 0; i < table.size(); ++i)
+  {
+    for (int j = 0; j < table[i].size(); j++) {
+      table2[j][i] = table[i][j];
+    }
+  }
+  table = table2;
+  // write it out in xml format so it can be read later
+  using namespace pugi;
+  pugi::xml_document odoc;
+  for (int i = 0; i < table.size(); i++) {
+    xml_node tr = odoc.append_child();
+    tr.set_name("tr");
+    for (int j = 0; j < table[i].size(); j++) {
+      xml_node td = tr.append_child();
+      td.set_name("td");
+      td.text().set(table[i][j].c_str());
+    }
+  }
+  ofstream ofile;
+  ofile.open(argv[3]);
+  odoc.print(ofile);
+  ofile.close();
   // PDFbuilder builder;
 
   // builder.beginDocument();
