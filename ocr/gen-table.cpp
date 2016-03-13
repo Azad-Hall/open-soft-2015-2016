@@ -77,8 +77,10 @@ int main(int argc, char const *argv[])
   // read number of binary images from stdin
   scanf("%d\n", &n);
   // read the least count granularity
-  int lc = 0;
+  int lc = 10;
   scanf("%d\n", &lc);
+  if (lc == 0)
+    lc = 10;
   // make the samples array
   vector<int> xsamples;
   for (int x = bl.x; x <= br.x; x += lc/10.) {

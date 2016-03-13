@@ -70,11 +70,13 @@ int main(int argc, char const *argv[])
   //   return 0;
   // }
   vector<pair<int, int> > contour;
+  vector<Point> cnt;
   int x, y;
   for(int i = 0 ; i < 4 ; i++){
   	scanf("%d %d\n", &x, &y);
   	//reversed for sorting
   	contour.push_back(make_pair(y, x));
+    cnt.push_back(Point(x,y));
   }
   sort(contour.begin(), contour.end());
 
