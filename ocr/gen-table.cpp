@@ -1,7 +1,10 @@
 // given the binary images of each color, and x and y scales,
 // make the table.
 // we also need x,y axis labels , legend labels and graph title also, should keep this in the xml file only.
-
+// TODO:
+// * align xsamples with text detedcted.
+// * take median/mean instead of first pixel in yscan, or more sophisticated
+// * interpolation
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include <stdio.h>
@@ -27,17 +30,21 @@ vector<pair<bool, int> > getData(Mat bin, vector<int> xsamples) {
     int x = xsamples[i];
     assert(x >= 0 && x < bin.cols);
     bool found = false;
-    int val = 0;
+    vector<int> val;
     for (int i = 0; i < bin.rows; i++) {
       int intensity = bin.at<uchar>(i,x);
       // should probably see all non-zero pixels and choose one
       if (intensity > 0) {
         found = true;
-        val = i;
-        break;
+        val.push_back(i);
       }
     }
-    ysamples.push_back(make_pair(found, val));
+    // take median
+    sort(val.begin(), val.end());
+    if (found)
+      ysamples.push_back(make_pair(found, val[val.size()/2]));
+    else
+      ysamples.push_back(make_pair(found, 0));
   }
   return ysamples;
 }
@@ -55,7 +62,7 @@ vector<string> getColumn(string title, vector<pair<bool, int> > samples, double 
     else {
       char buf[1000];
       double v = pixToVal(samples[i].second, scale, refPix, refVal);
-      sprintf(buf, "%.2lf", v);
+      sprintf(buf, "%.3lf", v);
       ret.push_back(string(buf));
     }
   }
@@ -76,16 +83,11 @@ int main(int argc, char const *argv[])
   int n = 0;
   // read number of binary images from stdin
   scanf("%d\n", &n);
-  // read the least count granularity
+  // read the least count granularity. keep it atleast 10 or we will get infinite loop...
   int lc = 10;
   scanf("%d\n", &lc);
   if (lc == 0)
     lc = 10;
-  // make the samples array
-  vector<int> xsamples;
-  for (int x = bl.x; x <= br.x; x += lc/10.) {
-    xsamples.push_back(x);
-  }
   // read xml
   pugi::xml_document doc;
   printf("loading xml %s\n", argv[1]);
@@ -107,6 +109,27 @@ int main(int argc, char const *argv[])
   xrefVal = stof(xs.attribute("xrefValue").value());
   yrefPix = stof(ys.attribute("yrefCoord").value());
   yrefVal = stof(ys.attribute("yrefValue").value());
+  // make the samples array
+  double xOffset = 0;
+  // push the xsamples by an offset, since we want them to align
+  // with the axis text.
+  double closestDiff = 1e15;
+  // make xsamples only with lest count
+  vector<int> xsamples;
+  assert (lc > 0);
+  for (int x = bl.x; x <= br.x; x += lc) {
+    xsamples.push_back(x);
+  }
+  // find xOffset using this xsamples
+  for (int i = 0; i < xsamples.size(); i++) {
+    double offset = xrefVal - xsamples[i];
+    if (fabs(offset) < fabs(closestDiff))
+      offset = closestDiff;
+  }
+  xsamples.clear();
+  assert(lc/10. > 0);
+  for (int x = bl.x+closestDiff; x <= br.x; x += lc/10.)
+    xsamples.push_back(x);
   vector<pair<bool, int> > xsamples_p;
   for (int i = 0 ; i < xsamples.size(); i++) {
     xsamples_p.push_back(make_pair(true, xsamples[i]));
