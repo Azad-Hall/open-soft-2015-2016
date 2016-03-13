@@ -80,7 +80,7 @@ function pdfFn {
   mkdir "$folder"
   convert -density 300 $1 "$folder/scan.png"
   cd "$folder"
-  $cnt=0
+  cnt=0
   for file in $(ls | grep .png)
   do
     # correct orientation
@@ -89,8 +89,8 @@ function pdfFn {
     pageFn $file
     ((cnt=cnt+1))
   done
-  $pth=`pwd`"$basename"
-  $outname="$basename-out"
+  pth=`pwd`"/scan"
+  outname="out"
   echo "$cnt\n" | ../make-pdf $pth $outname
   exit
 }
