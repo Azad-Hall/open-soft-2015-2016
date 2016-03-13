@@ -28,6 +28,10 @@ target_link_libraries( legend-box ${OpenCV_LIBS} )
 add_executable(preprocessing  preprocessing.cpp pugixml.cpp)
 target_link_libraries( preprocessing ${OpenCV_LIBS} )
 
+
+add_executable(orientation  orientation.cpp)
+target_link_libraries( orientation ${OpenCV_LIBS} )
+
 add_executable(xaxis-granularity  xaxis-granularity.cpp)
 target_link_libraries( xaxis-granularity ${OpenCV_LIBS} )
 
