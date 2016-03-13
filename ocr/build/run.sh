@@ -20,7 +20,7 @@ function graphFn {
   # run granularity detction
   ../../xaxis-granularity "$1" < bb.txt >> gen.txt
   # fingers crossed
-  tablexml="$basename-table.xml"
+  tablexml="$2"
   ../../gen-table scale.xml bin $tablexml < gen.txt
 }
 
@@ -47,12 +47,13 @@ function pageFn {
   ../../graph-candidates $img $img_notext $graph_basename > /dev/null
 
   # xml file name is passed as 2nd parameter
+  # all graphs of this page will be stored in 1 table only
+  tablexml="../$basename-table.xml"
+  touch $tablexml
   for file in $(ls | grep $graph_basename)
   do
     echo "calling graphfn on image $file"
-    graphFn $file
-    basename=`basename $file .png`
-    tablexml="$basename-table.xml"
+    graphFn $file $tablexml
     # mv "$tablexml" "../$2"
   done
   cd ..

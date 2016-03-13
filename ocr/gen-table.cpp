@@ -122,14 +122,19 @@ int main(int argc, char const *argv[])
   }
   // find xOffset using this xsamples
   for (int i = 0; i < xsamples.size(); i++) {
-    double offset = xrefVal - xsamples[i];
-    if (fabs(offset) < fabs(closestDiff))
-      offset = closestDiff;
+    double offset = xrefPix - xsamples[i];
+    if (fabs(offset) < fabs(closestDiff)) {
+      closestDiff = offset;
+      printf("diff = %d, xsample new value = %d\n", (int)offset, (int)xsamples[i]+(int)offset);
+    }
   }
   xsamples.clear();
-  assert(lc/10. > 0);
-  for (int x = bl.x+closestDiff; x <= br.x; x += lc/10.)
+  printf("offset = %lf, xstart = %d, xend = %d, incr = %d\n", closestDiff, bl.x + (int)closestDiff, 
+    br.x, (int)(lc/10.));
+  assert(lc/10. >= 1);
+  for (int x = bl.x+closestDiff; x <= br.x; x += lc/10.) {
     xsamples.push_back(x);
+  }
   vector<pair<bool, int> > xsamples_p;
   for (int i = 0 ; i < xsamples.size(); i++) {
     xsamples_p.push_back(make_pair(true, xsamples[i]));
@@ -144,15 +149,15 @@ int main(int argc, char const *argv[])
     // need leegend text here
     table.push_back(getColumn(buf, ysamples, yscale, yrefPix, yrefVal));
   }
-  for (int i = 0; i < table.size(); ++i)
-  {
-    printf("col %d: \n", i);
-    for (int j = 0; j < table[i].size(); ++j)
-    {
-      printf("%s ", table[i][j].c_str());
-    }
-    printf("\n");
-  }
+  // for (int i = 0; i < table.size(); ++i)
+  // {
+  //   printf("col %d: \n", i);
+  //   for (int j = 0; j < table[i].size(); ++j)
+  //   {
+  //     printf("%s ", table[i][j].c_str());
+  //   }
+  //   printf("\n");
+  // }
   // transose the table
   assert(table.size()>0);
   for (int i =1 ; i < table.size(); i++) 
@@ -169,7 +174,9 @@ int main(int argc, char const *argv[])
   // write it out in xml format so it can be read later
   using namespace pugi;
   pugi::xml_document odoc;
-  xml_node tablenode = odoc.append_child("html").append_child("body").append_child("table");
+  pugi::xml_parse_result result2 = odoc.load_file(argv[3]);
+  xml_node tablenode = odoc.append_child("table");
+  tablenode.append_attribute("title") = title.c_str();
   for (int i = 0; i < table.size(); i++) {
     xml_node tr = tablenode.append_child();
     tr.set_name("tr");

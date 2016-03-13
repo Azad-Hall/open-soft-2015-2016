@@ -1,5 +1,4 @@
 #!/bin/bash
-
 if [ "$EUID" -ne 0 ]; then
     echo "You must have root privileges to install the libraries."
     echo "Please run the installer as sudo -E ./graph_extract_install.sh."
