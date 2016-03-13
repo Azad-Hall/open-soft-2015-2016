@@ -61,9 +61,9 @@ function pdfFn {
   basename=`basename $1 .pdf`
   folder="$basename-dir"
   # commenting these out for now
-  # rm -rf "$folder"
-  # mkdir "$folder"
-  # convert -density 300 $1 "$folder/scan.png"
+  rm -rf "$folder"
+  mkdir "$folder"
+  convert -density 300 $1 "$folder/scan.png"
   cd "$folder"
   i=0
   for file in $(ls | grep .png)
