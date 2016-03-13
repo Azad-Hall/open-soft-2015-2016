@@ -60,7 +60,11 @@ int main(int argc, char const *argv[])
   std::vector<std::vector<cv::Point> >  rectContoursTemp = getBoxes(input_notext, 0), rectContours;
   // get more precise rectangles by using getRectangularContour
   for (int i = 0; i < rectContoursTemp.size(); i++) {
-    rectContours.push_back(getRectangularContour(rectContoursTemp[i]));
+    // discard if area is less than 0.5% of image area.
+    float ctArea = contourArea(rectContoursTemp[i]);
+    if (ctArea < 0.5/100*input.cols*input.rows)
+      continue;
+    rectContours.push_back(getRectangularContour2(rectContoursTemp[i]));
   }
   cv::Mat drawing = cv::Mat::zeros(input_notext.size(), CV_8UC3);
   printf("num rect contours = %d\n", (int)rectContours.size());

@@ -232,6 +232,9 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
   for (int i = 0; i < contours.size(); i++)
   {
     float ctArea = cv::contourArea(contours[i]);
+    // discard if less than 4 pionts in contour
+    if (contours[i].size() < 4)
+      continue;
     cv::Rect boundingBox = cv::boundingRect(contours[i]);
     // contours that have 80% of area of bounding box are rectangles for consideration
     float percentRect = ctArea / (float)(boundingBox.height * boundingBox.width);

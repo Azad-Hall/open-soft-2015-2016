@@ -8,13 +8,19 @@ function graphFn {
   img_cropped="$basename-cropped.png"
   ../graph-box $1 $img_cropped > bb.txt
   # this should also have written the coordinates of the bounding rect to bb.txt (its actually a contour, not rect)
-  # color processing will be done on the cropped image
-  ../color-segmentation $img_cropped "bin" > num_colors.txt
   # ocr / label processing will be done on input image
   ../text_seg "$1" < bb.txt
   # now run scale detection
   ../scale
-  # fingers crosseds
+  # color processing will be done on the cropped image
+  # make a new file for input to gen-table
+  cp bb.txt gen.txt
+  ../color-segmentation $img_cropped "bin" >> gen.txt
+  # run granularity detction
+  ../xaxis-granularity "$1" < bb.txt >> gen.txt
+  # fingers crossed
+  tablexml="$basename-table.xml"
+  ../gen-table scale.xml bin $tablexml < gen.txt
   exit
 }
 
@@ -33,15 +39,16 @@ function pageFn {
   echo "img = $img"
 
   # make the notext image
-  img_notext="$basename-notext.png"
+  img_notext="notext-$basename.png"
   ../remove-text $img $img_notext > /dev/null
 
   # run graph-candidates to detect boxes
   graph_basename="$basename-graphs"
   ../graph-candidates $img $img_notext $graph_basename > /dev/null
 
-  for file in $graph_basename*.png
+  for file in $(ls | grep $graph_basename)
   do
+    echo "calling graphfn on image $file"
     graphFn $file
   done
 }
