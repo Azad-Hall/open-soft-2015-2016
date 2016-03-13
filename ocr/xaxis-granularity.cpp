@@ -22,7 +22,9 @@ vector<int> getXGranularity(Mat graph, Mat img, Point left, Point right, int dir
 	assert(left.x < right.x);
 	float slope = ((float)(left.y - right.y))/((float)(left.x - right.x));
 	//cout << right.x << " " << left.x << endl;
-	int hist[right.x - left.x + 1] = {0};
+
+	int hist[right.x - left.x + 1] ;
+	memset(hist,0,sizeof(hist));
 	int minval, maxval;
 	vector<int> Points, granularPoints;
 	//cout << "here" << endl;
