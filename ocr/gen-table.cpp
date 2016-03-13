@@ -146,10 +146,9 @@ int main(int argc, char const *argv[])
   // write it out in xml format so it can be read later
   using namespace pugi;
   pugi::xml_document odoc;
-  xml_node html = odoc.append_child("html");
-  xml_node body = html.append_child("body");
+  xml_node tablenode = odoc.append_child("html").append_child("body").append_child("table");
   for (int i = 0; i < table.size(); i++) {
-    xml_node tr = body.append_child();
+    xml_node tr = tablenode.append_child();
     tr.set_name("tr");
     for (int j = 0; j < table[i].size(); j++) {
       xml_node td = tr.append_child();

@@ -52,7 +52,7 @@ function pageFn {
     graphFn $file
     basename=`basename $file .png`
     tablexml="$basename-table.xml"
-    mv "$tablexml" "../$2"
+    # mv "$tablexml" "../$2"
   done
   cd ..
 }
@@ -60,9 +60,10 @@ function pageFn {
 function pdfFn {
   basename=`basename $1 .pdf`
   folder="$basename-dir"
-  rm -rf "$folder"
-  mkdir "$folder"
-  convert -density 300 $1 "$folder/scan.png"
+  # commenting these out for now
+  # rm -rf "$folder"
+  # mkdir "$folder"
+  # convert -density 300 $1 "$folder/scan.png"
   cd "$folder"
   i=0
   for file in $(ls | grep .png)
