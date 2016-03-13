@@ -35,7 +35,7 @@ vector<int> getXGranularity(Mat graph, Point left, Point right, int direct) {
 	}
 	
 	for(int i = left.x + 2 ; i <= right.x - 2; i++){
-		if(hist[i - left.x] > 5){
+		if(hist[i - left.x] > 10){
 			//cout <<  "here" << endl;
 			Points.push_back(i);
 		}
@@ -96,7 +96,14 @@ int main(int argc, char const *argv[])
   	ugranularPoints = getXGranularity(binimg, Point(contour[2].ss, contour[2].ff), Point(contour[3].ss, contour[3].ff), -1);
   else
   	ugranularPoints = getXGranularity(binimg, Point(contour[3].ss, contour[3].ff), Point(contour[2].ss, contour[2].ff), -1);
+  // if(contour[0].ss < contour[1].ss)
+  // 	ugranularPoints = getXGranularity(binimg, Point(contour[0].ss, contour[0].ff), Point(contour[1].ss, contour[1].ff), -1);
+  // else
+  // 	ugranularPoints = getXGranularity(binimg, Point(contour[1].ss, contour[1].ff), Point(contour[0].ss, contour[0].ff), -1);
+  
   int val = 0;
+  if(ugranularPoints.size() < 2)
+  	return 0;
   for(int i = 1 ; i < ugranularPoints.size() ; i++)
   	diff.push_back(ugranularPoints[i] - ugranularPoints[i - 1]);
   sort(diff.begin(), diff.end());
