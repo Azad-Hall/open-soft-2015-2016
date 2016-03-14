@@ -29,7 +29,7 @@ vector<Point> get_outer_box(Mat& input, Mat& cropped)
   for (int i =0; i < contours.size(); i++) {
     drawContours(contourImg, contours, i, Scalar(255,0,0), 1, 8);
   }
-  imwrite("/tmp/contours.png", contourImg);
+  imwrite("tmp/contours.png", contourImg);
   // get max area contour
   vector<Point> largest = contours[0];
   int maxArea = contourArea(largest);
@@ -118,7 +118,7 @@ int main(int argc, char const *argv[])
   Mat drawing = input.clone();
   vector<vector<Point> > dummy(1, finalContour);
   drawContours(drawing, dummy, 0, Scalar(255,0,255), 2, 8);
-  imwrite("/tmp/boxes.png", drawing);
+  imwrite("tmp/boxes.png", drawing);
     
   imwrite(argv[2], cropped);
 

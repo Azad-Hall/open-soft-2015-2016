@@ -29,41 +29,63 @@ function graphFn {
   ../../gen-table scale.xml bin $tablexml < gen.txt
 }
 
-function pageFn {
-  # this function should be thread safe.
-  # assuming this is called from the build directory only.
-  # make a temp directory for the page
+function incrementDone {
   if [ "$#" -ne 1 ]; then
     echo "Illegal number of parameters"
     exit
   fi
+  # hopefully don't need mutex....
+  value=`cat /tmp/donePercent.txt`
+  ((value+=$1))
+  echo "$value" > "/tmp/donePercent.txt"
+}
+function printDone {
+  if [ "$#" -ne 1 ]; then
+    echo "Illegal number of parameters"
+    exit
+  fi
+  value=`cat /tmp/donePercent.txt`
+  echo $value $1
+}
+function pageFn {
+  # this function should be thread safe.
+  # assuming this is called from the build directory only.
+  # make a temp directory for the page
+  if [ "$#" -ne 2 ]; then
+    echo "Illegal number of parameters"
+    exit
+  fi
+  myshare=$2
   basename=`basename $1 .png`
   dirname=$basename"-dir"
   rm -rf $dirname
   mkdir $dirname
   cd $dirname
-  pwd
+  # lots of shit happens in tmp
+  mkdir tmp
   # fix filename
   img="../$1"
-  echo "img = $img"
-
   # make the notext image
   img_notext="notext-$basename.png"
-  ../../remove-text $img $img_notext > /dev/null
-
+  printDone " "
+  ../../remove-text $img $img_notext   &> /dev/null
+  incrementDone $(($myshare/10))
   # run graph-candidates to detect boxes
   graph_basename="$basename-graphs"
-  ../../graph-candidates $img $img_notext $graph_basename > /dev/null
-
+  printDone " "
+  ../../graph-candidates $img $img_notext $graph_basename  &> /dev/null
+  incrementDone $(($myshare/10))
   # xml file name is passed as 2nd parameter
   # all graphs of this page will be stored in 1 table only
   tablexml="../$basename-table.xml"
   touch $tablexml
+  numgraphs=$(ls | grep $graph_basename | wc -l)
   for file in $(ls | grep $graph_basename)
   do
-    echo "calling graphfn on image $file"
-    graphFn $file $tablexml
-    # mv "$tablexml" "../$2"
+    # echo "calling graphfn on image $file"
+    printDone " "
+    graphFn $file $tablexml  &> /dev/null
+    incrementDone $(($myshare*8/$numgraphs/10))
   done
   cd ..
 }
@@ -78,20 +100,25 @@ function pdfFn {
   # commenting these out for now
   rm -rf "$folder"
   mkdir "$folder"
+  echo '0' > "/tmp/donePercent.txt"
+  printDone "Converting pdf to images"
   convert -density 300 $1 "$folder/scan.png"
+  incrementDone "10"
   cd "$folder"
-  cnt=0
+  cnt=$(ls | grep .png | wc -l)
   for file in $(ls | grep .png)
   do
     # correct orientation
-    ../orientation "$file" "$file"
-    echo "calling pageFn on image $file"
-    pageFn $file
-    ((cnt=cnt+1))
+    # TODO: should write on a new file, sicne original is needed by make-pdf
+    ../orientation "$file" "$file" &> /dev/null
+    # echo "calling pageFn on image $file"
+    pageFn $file $((90/cnt)) &
   done
+  wait
+  printDone " "
   pth=`pwd`"/scan"
   outname="out"
-  echo "$cnt\n" | ../make-pdf $pth $outname
+  echo "$cnt\n" | ../make-pdf $pth $outname &> /dev/null
   exit
 }
 

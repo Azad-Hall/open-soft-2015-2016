@@ -33,11 +33,11 @@ int main(int argc, char const *argv[])
   // do ocr here
   {
     char buf[1000];
-    sprintf(buf, "tesseract %s /tmp/out -l eng hocr", argv[1]);
+    sprintf(buf, "tesseract %s tmp/out -l eng hocr", argv[1]);
     system(buf);
   }
   pugi::xml_document doc;
-  pugi::xml_parse_result result = doc.load_file("/tmp/out.hocr");
+  pugi::xml_parse_result result = doc.load_file("tmp/out.hocr");
   pugi::xpath_node_set tools= doc.select_nodes("//span[@class='ocrx_word']");
   printf("num of words = %d\n", tools.size());
   Mat textMask = Mat::zeros(img.size(), CV_8U);
@@ -57,7 +57,7 @@ int main(int argc, char const *argv[])
   }
   Mat white = Mat(img.size(), CV_8U, 255);
   Mat res = white&~textMask + copy&textMask;
-  imwrite("/tmp/only-text.png", res);
+  imwrite("tmp/only-text.png", res);
   imwrite(argv[2], img);
   return 0;
 }

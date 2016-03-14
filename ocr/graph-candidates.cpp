@@ -42,16 +42,16 @@ int main(int argc, char const *argv[])
   // do the OCR here itself.
   {
     char buf[1000];
-    sprintf(buf, "tesseract %s /tmp/out -l eng hocr", argv[1]);
+    sprintf(buf, "tesseract %s tmp/out -l eng hocr", argv[1]);
     system(buf);
   }
   // rotate image by 90 and do OCR again. sometimes vertical text is only found in rotated image.
   {
     Mat rot;
     rotate_90n(input, rot, 90);
-    imwrite("/tmp/tmp-rot.png", rot);
+    imwrite("tmp/tmp-rot.png", rot);
     char buf[1000];
-    sprintf(buf, "tesseract /tmp/tmp-rot.png /tmp/out-rot -l eng hocr");
+    sprintf(buf, "tesseract tmp/tmp-rot.png tmp/out-rot -l eng hocr" );
     // imshow("rotated", rot);
     // waitKey();
     system(buf);
@@ -70,7 +70,7 @@ int main(int argc, char const *argv[])
   printf("num rect contours = %d\n", (int)rectContours.size());
   // xml stuff to find vertical text
   pugi::xml_document doc;
-  pugi::xml_parse_result result = doc.load_file("/tmp/out.hocr");
+  pugi::xml_parse_result result = doc.load_file("tmp/out.hocr");
   // finds all paragraph nodes that have a child ocr_line node that has textangle 90 attribute
   pugi::xpath_node_set nodes_vert= doc.select_nodes("//span[contains(@title, 'textangle 90')]/parent::*");
   vector<cv::Rect> vertical_pars;
@@ -85,7 +85,7 @@ int main(int argc, char const *argv[])
   // select vertical texts from the rotated image.
   {
     pugi::xml_document doc;
-    pugi::xml_parse_result result = doc.load_file("/tmp/out-rot.hocr");
+    pugi::xml_parse_result result = doc.load_file("tmp/out-rot.hocr");
     // finds all paragraph nodes that have a child ocr_line node that has textangle 90 attribute
     pugi::xpath_node_set nodes_vert= doc.select_nodes("//span[not(contains(@title, 'textangle 270')) and (@class='ocr_line')]/parent::*");
     // maybe check if para is empty or not?
@@ -103,6 +103,12 @@ int main(int argc, char const *argv[])
     printf("vertical pars found after rotation by -90: %d\n", cnt);
   }
   printf("total num vertial pars = %d\n", (int)vertical_pars.size());
+  // draw pars in an iamge
+  cv::Mat parDrawing = input.clone();
+  for (int i = 0; i < vertical_pars.size(); i++) {
+    rectangle(parDrawing, vertical_pars[i], Scalar(255,0,255), 2, 8);
+  }
+  imwrite("tmp/vert_pars.png", parDrawing);
   // now match the contours with the vertical paragraphs to figure out graphs.
   vector<cv::Rect> imgCandidates;
   vector<bool> vertParUsed(vertical_pars.size(), false);
@@ -140,7 +146,7 @@ int main(int argc, char const *argv[])
       }
     }
   }
-  imwrite("/tmp/contours.png", drawing);
+  imwrite("tmp/contours.png", drawing);
   // imgCandidates rect has the boundary boxes for the graph (excluding axis labels/numbers)
   // print it out if needed. currently only output is in the graph images generated
   return 0;
