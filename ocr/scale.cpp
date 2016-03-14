@@ -20,7 +20,7 @@ using namespace cv;
 using namespace pugi;
 
 typedef struct a  {
-  Point a,b;
+  Point2f a,b;
   double x;
   string text;
 } labels;
@@ -30,14 +30,14 @@ typedef struct b  {
   int z;
 } scale; 
 
-// stack<pair<Point, Point> > aa;
+// stack<pair<Point2f, Point2f> > aa;
 
 double startx=0,starty=0,startCoordinatex=0,startCoordinatey=0,to_add=0;
 // queue<string> Q_str;
 
-// queue<pair<string, pair<Point, Point> > > Q_str_point;
-// queue<pair<string, pair<Point, Point> > > Q_str_point_ver;
-// queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
+// queue<pair<string, pair<Point2f, Point2f> > > Q_str_Point2f;
+// queue<pair<string, pair<Point2f, Point2f> > > Q_str_Point2f_ver;
+// queue<pair<string, pair<Point2f, Point2f> > > Q_str_Point2f_hor;
 double yValue(double yCoordinate,double scale){
 	double temp;
 	temp=startCoordinatey-yCoordinate;
@@ -67,7 +67,7 @@ double xValue(double xCoordinate,double scale){
 //           //cout<<"\n"<<node.attribute("title").value();
 //           string bbox;
 //           iss>>bbox;
-//           Point a, b;
+//           Point2f a, b;
 //           iss>>a.x;
 //           iss>>a.y;
 //           iss>>b.x;
@@ -77,7 +77,7 @@ double xValue(double xCoordinate,double scale){
 //         }
 //         if(node_types[node.type()] == "pcdata") {
 //           Q_str.push(node.value());
-//           Q_str_point.push({node.value(), aa.top()});
+//           Q_str_Point2f.push({node.value(), aa.top()});
 //           while(!aa.empty())
 //             aa.pop();
 //         }
@@ -343,9 +343,9 @@ pugi::xml_node title_text1 = indoc.child("title_text");
 vector<labels> labelh,labelv1,labelv;
 labels temp2;
 double v,h;
-        //   while(!Q_str_point.empty()) {
-        //   pair<string, pair<Point, Point> > ss = Q_str_point.front();
-        //   Q_str_point.pop();
+        //   while(!Q_str_Point2f.empty()) {
+        //   pair<string, pair<Point2f, Point2f> > ss = Q_str_Point2f.front();
+        //   Q_str_Point2f.pop();
         //   temp2.text=ss.first;
         //   temp2.a=ss.second.first;
         //   temp2.b=ss.second.second;
@@ -359,11 +359,11 @@ ifstream f("tot_out_y.txt");
     istringstream iss;
     iss.str(string(txt));
     iss>>temp2.x;
-    int a;
+    float a;
     iss>>a;
     temp2.text = to_string(a);
-    temp2.a = Point(0,0);
-    temp2.b = Point(0,0);
+    temp2.a = Point2f(0,0);
+    temp2.b = Point2f(0,0);
     labelv1.push_back(temp2);
   }
   f.close();
@@ -380,12 +380,12 @@ ifstream f("tot_out_y.txt");
 // pugi::xml_document doc1;
 // pugi::xml_parse_result result1 = doc1.load_file("tes_out1.hocr");
 // simple_walker walker1;
-// while(!Q_str_point.empty())
-//   Q_str_point.pop();
+// while(!Q_str_Point2f.empty())
+//   Q_str_Point2f.pop();
 // doc1.traverse(walker1);
-//         while(!Q_str_point.empty()) {
-//           pair<string, pair<Point, Point> > ss = Q_str_point.front();
-//           Q_str_point.pop();
+//         while(!Q_str_Point2f.empty()) {
+//           pair<string, pair<Point2f, Point2f> > ss = Q_str_Point2f.front();
+//           Q_str_Point2f.pop();
           
 //           temp2.text=ss.first;
 //           temp2.a=ss.second.first;
@@ -400,11 +400,11 @@ f.open("tot_out.txt");
     istringstream iss;
     iss.str(string(txt));
     iss>>temp2.x;
-    int a;
+    float a;
     iss>>a;
     temp2.text = to_string(a);
-    temp2.a = Point(0,0);
-    temp2.b = Point(0,0);
+    temp2.a = Point2f(0,0);
+    temp2.b = Point2f(0,0);
     labelh.push_back(temp2);
   }
   f.close();
