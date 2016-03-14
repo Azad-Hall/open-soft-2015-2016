@@ -56,3 +56,6 @@ target_link_libraries( scale  )
 #target_link_libraries( gen-table ${OpenCV_LIBS} -lgsl -lgslcblas -lm )
 #add_executable(skew-detection  skew-detection.cpp)
 #target_link_libraries( skew-detection ${OpenCV_LIBS} -lgsl -lgslcblas -lm  )
+
+add_executable(make-pdf  make-pdf.cpp pugixml.cpp pdfbuilder.cpp)
+target_link_libraries( make-pdf  -lm )
