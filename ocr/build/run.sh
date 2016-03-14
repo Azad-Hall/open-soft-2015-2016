@@ -1,6 +1,6 @@
 #!/bin/bash
 # usage: ./run.sh <page img>
-
+# set working dir to where the file is located!
 function graphFn {
   if [ "$#" -ne 2 ]; then
     echo "Illegal number of parameters"
@@ -13,6 +13,11 @@ function graphFn {
   # not actually cropped, just everything outside the graph region is white.
   img_cropped="$basename-cropped.png"
   ../../graph-box $1 $img_cropped > bb.txt
+  # check if bb.txt is empty. if so, return...
+  if [! -s bb.txt ]
+    then
+    return
+  fi
   # this should also have written the coordinates of the bounding rect to bb.txt (its actually a contour, not rect)
   # ocr / label processing will be done on input image
   ../../text_seg "$1" < bb.txt
@@ -39,16 +44,16 @@ function incrementDone {
     exit
   fi
   # hopefully don't need mutex....
-  value=`cat /tmp/donePercent.txt`
+  value=`cat $doneFileLoc`
   ((value+=$1))
-  echo "$value" > "/tmp/donePercent.txt"
+  echo "$value" > "$doneFileLoc"
 }
 function printDone {
   if [ "$#" -ne 1 ]; then
     echo "Illegal number of parameters"
     exit
   fi
-  value=`cat /tmp/donePercent.txt`
+  value=`cat $doneFileLoc`
   echo $value $1
 }
 function pageFn {
@@ -99,17 +104,21 @@ function pageFn {
 
 function pdfFn {
   # print the output file name first
-  echo `pwd`"/out.pdf"
+  # print 0 in the begninng because of qt problem
+  echo "0"
+  doneFileLoc=" "
   if [ "$#" -ne 1 ]; then
     echo "Illegal number of parameters"
     exit
   fi
   basename=`basename $1 .pdf`
   folder="$basename-dir"
+  echo `pwd`"/$folder/out.pdf"
   # commenting these out for now
   rm -rf "$folder"
   mkdir "$folder"
-  echo '0' > "/tmp/donePercent.txt"
+  doneFileLoc=`pwd`"/doneFile.txt"
+  echo '0' > "$doneFileLoc"
   printDone "Converting pdf to images"
   convert -density 300 $1 "$folder/scan.png" &> /dev/null
   incrementDone "10"
@@ -130,7 +139,8 @@ function pdfFn {
   exit
 }
 
-
-pdfFn $1
+cp "$1" "${0%/*}"
+cd "${0%/*}"
+pdfFn `basename $1 .pdf`".pdf"
 # cd scan0004-dir/scan-3-dir
 # graphFn $1 "temp_nis.xml"

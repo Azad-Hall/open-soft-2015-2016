@@ -26,10 +26,10 @@ int main(int argc, char const *argv[])
   // normalize image using imagemagick!
   {
     char buf[1000];
-    sprintf(buf, "convert %s -auto-level /tmp/normalized.png", argv[1]);
+    sprintf(buf, "convert %s -auto-level tmp/normalized.png", argv[1]);
     system(buf);
   }
-  input = imread("/tmp/normalized.png");
+  input = imread("tmp/normalized.png");
   Mat contourImg = input.clone();
   vector<vector<Point> > contours = getBoxes(input, 5, 30, 20, 10e-2);
   if (contours.size() > 0) {
@@ -54,7 +54,7 @@ int main(int argc, char const *argv[])
       // for some reason we need final contour in an array for drawing..
       vector<vector<Point> > dummy(1, largest);
       drawContours(contourImg, dummy, 0, Scalar(255,0,255), 2, 8);
-      imwrite("/tmp/contours.png", contourImg);
+      imwrite("tmp/contours.png", contourImg);
       return 0;
     }
   }
