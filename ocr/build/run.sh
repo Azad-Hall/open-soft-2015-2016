@@ -15,7 +15,9 @@ function graphFn {
   ../../graph-box $1 $img_cropped > bb.txt
   # check if bb.txt is empty. if so, return...
   if [! -s bb.txt ]
+    then
     return
+  fi
   # this should also have written the coordinates of the bounding rect to bb.txt (its actually a contour, not rect)
   # ocr / label processing will be done on input image
   ../../text_seg "$1" < bb.txt
