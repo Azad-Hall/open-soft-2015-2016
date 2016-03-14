@@ -13,6 +13,7 @@
 #include <map>
 #include <string>
 
+
 using namespace cv;
 using namespace std;
 typedef unsigned char uchar;
@@ -32,7 +33,7 @@ void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew
         continue;
       visited.at<uchar>(ii,jj) = 1;
       // add special conditions for brown and blue to counter anti aliasing
-      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-30) < 20 || fabs(hsv[0]-200) < 20)&& whiteMask.at<uchar>(ii,jj) ) {
+      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-30) < 20 || fabs(hsv[0]-200) < 20 || fabs(hsv[0]-216) < 8) && whiteMask.at<uchar>(ii,jj) ) {
         visited.at<uchar>(ii,jj) = 1;
         bmaskNew.at<uchar>(ii,jj) = 0;
         traverse(bmask, visited, imgHSV, ii, jj, bmaskNew, whiteMask, lowSatThresh);
@@ -352,7 +353,7 @@ int main(int argc, char const *argv[])
     //hist[stof(as)]=10000;
   }
   // print the number of maxima
-  printf("%d\n", (int)maxima.size()/2);
+  /*printf("%d\n", (int)maxima.size()/2);*/
   // first half of maxima array is max, second half is min
   maxima.push_back(256);
   
@@ -428,20 +429,54 @@ int main(int argc, char const *argv[])
   // imwrite(un,unColor);
 
   Mat plots=yellow.clone();//Mat::zeros(yellow.rows,yellow.cols,CV_8UC1);
+  //merging folding of red
+  int k=maxNo,t=0;
   plots=Scalar(0);
-  for(int k=maxNo;k<2*maxNo;k++){
+  if(maxima[maxNo+1]<=20){
+    printf("%d\n", (int)maxima.size()/2-1);
+    k++;
+    t=1;
+    plots=Scalar(0);
+    for(int i=0;i<imgHSV.rows;i++){
+
+      for(int j=0;j<imgHSV.cols;j++){
+
+        if (mask.at<uchar>(i,j) && imgHSV.at<Vec3b>(i,j)[0]>=maxima[maxNo] && imgHSV.at<Vec3b>(i,j)[0]<maxima[maxNo+1]){
+          plots.at<Vec3b>(i,j) = 255;
+        }
+      }
+    }
+    for(int i=0;i<imgHSV.rows;i++){
+
+      for(int j=0;j<imgHSV.cols;j++){
+
+        if (mask.at<uchar>(i,j) && imgHSV.at<Vec3b>(i,j)[0]>=maxima[2*maxNo-1] && imgHSV.at<Vec3b>(i,j)[0]<maxima[2*maxNo]){
+          plots.at<Vec3b>(i,j) = 255;
+        }
+      }
+    }
+    char name[1000];
+    sprintf(name, "%s-0.png", argv[2]);
+    imwrite(name,plots);
+  }
+  else
+    printf("%d\n", (int)maxima.size()/2);
+  // printf("HERE ddsfkh\n");
+  
+  for(;k<2*maxNo-t;k++){
     plots=Scalar(0);
     for(int i=0;i<imgHSV.rows;i++){
 
       for(int j=0;j<imgHSV.cols;j++){
 
         if (mask.at<uchar>(i,j) && imgHSV.at<Vec3b>(i,j)[0]>=maxima[k] && imgHSV.at<Vec3b>(i,j)[0]<maxima[k+1]){
-          plots.at<Vec3b>(i,j) = 255;
+          plots.at<Vec3b>(i,j) = yellow.at<Vec3b>(i,j);
         }
       }
     }
     char name[1000];
     sprintf(name, "%s-%d.png", argv[2], (k-maxNo));
+    //imshow("jdjd",plots);
     imwrite(name,plots);
     // imshow(name,plots);
     // waitKey(0);

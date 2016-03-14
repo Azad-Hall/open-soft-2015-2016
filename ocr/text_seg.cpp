@@ -175,9 +175,9 @@ imshow("sidnvinsv",img);
 
 /////////////////////////Horizontal Text
 
-Vector<int> contain_hor(img.rows,0);
-for(int i=img.rows-1; i>corners[3].y; i--) {
 
+      vector<int> contain_hor(img.rows,0);
+      for(int i=img.rows-1; i>corners[3].y; i--) {
  for (int j=0;j<img.cols;j++) {
      if(img.at<uchar>(i, j) < 200) {                                     ///////////////////Threshold used
        contain_hor[i] += 1;
@@ -307,6 +307,6 @@ for(int i=img.rows-1; i>corners[3].y; i--) {
    indoc.print(xml_out);
    xml_out.close();
 
-    // waitKey(0);
+    //waitKey(0);
    return 0;
  }
