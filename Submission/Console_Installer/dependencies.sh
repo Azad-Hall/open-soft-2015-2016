@@ -7,6 +7,7 @@ function install_dependency {
 
 install_dependency build-essential
 install_dependency libopencv-dev
+install_dependency libgsl0-dev
 install_dependency tesseract-ocr
 install_dependency tesseract-ocr-eng
 install_dependency tesseract-ocr-equ
