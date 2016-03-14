@@ -177,7 +177,7 @@ pugi::xml_parse_result result = doc.load_file("tes_out0.hocr");
 
 /////////////////////////Horizontal Text
 
-      Vector<int> contain_hor(img.rows/2,0);
+      vector<int> contain_hor(img.rows/2,0);
       for(int i=img.rows-1; i>corners[3].y; i--) {
 
        for (int j=0;j<img.cols;j++) {
