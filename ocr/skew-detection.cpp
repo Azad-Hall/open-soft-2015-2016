@@ -66,7 +66,7 @@ int main(int argc, char const *argv[])
     line( linesImg, Point(lines[i][0], lines[i][1]),
         Point(lines[i][2], lines[i][3]), Scalar(255), 1, 8 );
   }
-  imwrite("/tmp/lines-skew.png", linesImg);
+  imwrite("tmp/lines-skew.png", linesImg);
   for (int i = 0; i < vangles.size(); ++i)
   {
     if (vangles[i] < 0)

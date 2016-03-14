@@ -102,7 +102,7 @@ int main(int argc, char const *argv[])
   namedWindow("Output", cv::WINDOW_AUTOSIZE);
   imshow("Output", binimg);
   // waitKey(0);
-  imwrite("/tmp/tmp.png", binimg);
+  imwrite("tmp/tmp.png", binimg);
   vector<int> ugranularPoints, diff;
   if(contour[2].ss < contour[3].ss)
   	ugranularPoints = getXGranularity(binimg, img, Point(contour[2].ss, contour[2].ff), Point(contour[3].ss, contour[3].ff), -1);
