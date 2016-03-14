@@ -69,6 +69,9 @@ function pageFn {
   mkdir tmp
   # fix filename
   img="../$1"
+  # TODO: should write on a new file, sicne original is needed by make-pdf
+  ../../orientation "$img" "$basename.png" &> /dev/null
+  img="$basename.png"
   # make the notext image
   img_notext="notext-$basename.png"
   printDone "Processing"
@@ -95,6 +98,8 @@ function pageFn {
 }
 
 function pdfFn {
+  # print the output file name first
+  echo `pwd`"/out.pdf"
   if [ "$#" -ne 1 ]; then
     echo "Illegal number of parameters"
     exit
@@ -113,10 +118,8 @@ function pdfFn {
   for file in $(ls | grep .png)
   do
     # correct orientation
-    # TODO: should write on a new file, sicne original is needed by make-pdf
-    ../orientation "$file" "$file" &> /dev/null
     # echo "calling pageFn on image $file"
-    pageFn $file $((90/cnt)) &
+    pageFn "$file" $((90/cnt)) &
   done
   wait
   printDone "Processing"
