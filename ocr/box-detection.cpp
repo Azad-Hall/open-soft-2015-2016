@@ -199,7 +199,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
   imwrite("/tmp/thresholded.png", mask);
   vector<Vec4i> lines;
   vector<Vec4i> hlines, vlines; // horizontal and vertical lines
-  HoughLinesP( mask, lines, 1, CV_PI/180, houghLineThresh, minLineLength, houghMergeThresh );
+  HoughLinesP( mask, lines, 1, CV_PI/180*2., houghLineThresh, minLineLength, houghMergeThresh );
   cv::Mat linesImg = cv::Mat::zeros(mask.size(), CV_8UC1), fullLinesImg = linesImg.clone();
   // fullLinesImg has full lines, linesImg only has line segments.
   for( size_t i = 0; i < lines.size(); i++ )

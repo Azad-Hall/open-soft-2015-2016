@@ -363,22 +363,37 @@ double v,h;
     v=yScale(labelv,(labelv[0].x-labelv[labelv.size()-1].x));
   cout<<"\n\nVertical Scale Final:      "<<v;
   
-pugi::xml_document doc1;
-pugi::xml_parse_result result1 = doc1.load_file("tes_out1.hocr");
-simple_walker walker1;
-while(!Q_str_point.empty())
-  Q_str_point.pop();
-doc1.traverse(walker1);
-        while(!Q_str_point.empty()) {
-          pair<string, pair<Point, Point> > ss = Q_str_point.front();
-          Q_str_point.pop();
+// pugi::xml_document doc1;
+// pugi::xml_parse_result result1 = doc1.load_file("tes_out1.hocr");
+// simple_walker walker1;
+// while(!Q_str_point.empty())
+//   Q_str_point.pop();
+// doc1.traverse(walker1);
+//         while(!Q_str_point.empty()) {
+//           pair<string, pair<Point, Point> > ss = Q_str_point.front();
+//           Q_str_point.pop();
           
-          temp2.text=ss.first;
-          temp2.a=ss.second.first;
-          temp2.b=ss.second.second;
-          temp2.x=(temp2.a.x+temp2.b.x)/2;
-          labelh.push_back(temp2);
-          }
+//           temp2.text=ss.first;
+//           temp2.a=ss.second.first;
+//           temp2.b=ss.second.second;
+//           temp2.x=(temp2.a.x+temp2.b.x)/2;
+//           labelh.push_back(temp2);
+//           }
+ifstream f("tot_out.txt");
+  while(f) {
+    char txt[1000];
+    f.getline(txt, 1000, '\n');
+    istringstream iss;
+    iss.str(string(txt));
+    iss>>temp2.x;
+    int a;
+    iss>>a;
+    temp2.text = to_string(a);
+    temp2.a = Point(0,0);
+    temp2.b = Point(0,0);
+    labelh.push_back(temp2);
+  }
+
 for(int i=0;i<labelh.size();i++) {
     cout<<"\n"<<labelh[i].text;
   }
