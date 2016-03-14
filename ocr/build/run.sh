@@ -122,7 +122,7 @@ function pdfFn {
     pageFn "$file" $((90/cnt)) &
   done
   wait
-  printDone "Processing"
+  printDone "Rendering PDF"
   pth=`pwd`"/scan"
   outname="out"
   echo "$cnt\n" | ../make-pdf $pth $outname &> /dev/null
