@@ -44,12 +44,15 @@ target_link_libraries( color-segmentation ${OpenCV_LIBS} )
 add_executable(helper  helper.cpp box-detection.cpp pugixml.cpp)
 target_link_libraries( helper ${OpenCV_LIBS} )
 
+add_executable(x_label_batman  x_label_batman.cpp pugixml.cpp)
+target_link_libraries( x_label_batman ${OpenCV_LIBS} )
+
+
 add_executable(scale  scale.cpp pugixml.cpp)
 target_link_libraries( scale  )
 
 
-add_executable(gen-table  gen-table.cpp pugixml.cpp)
-
-target_link_libraries( gen-table ${OpenCV_LIBS} -lgsl -lgslcblas -lm )
+#add_executable(gen-table  gen-table.cpp pugixml.cpp)
+#target_link_libraries( gen-table ${OpenCV_LIBS} -lgsl -lgslcblas -lm )
 #add_executable(skew-detection  skew-detection.cpp)
 #target_link_libraries( skew-detection ${OpenCV_LIBS} -lgsl -lgslcblas -lm  )

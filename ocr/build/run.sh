@@ -12,17 +12,19 @@ function graphFn {
   # this should also have written the coordinates of the bounding rect to bb.txt (its actually a contour, not rect)
   # ocr / label processing will be done on input image
   ../../text_seg "$1" < bb.txt
+  # now batman comes to work
+  ../../x_label_batman "x_label.jpg"
   # now run scale detection
   ../../scale
-  # color processing will be done on the cropped image
-  # make a new file for input to gen-table
-  cp bb.txt gen.txt
-  ../../color-segmentation $img_cropped "bin" >> gen.txt
-  # run granularity detction
-  ../../xaxis-granularity "$1" < bb.txt >> gen.txt
-  # fingers crossed
-  tablexml="$basename-table.xml"
-  ../../gen-table scale.xml bin $tablexml < gen.txt
+  # # color processing will be done on the cropped image
+  # # make a new file for input to gen-table
+  # cp bb.txt gen.txt
+  # ../../color-segmentation $img_cropped "bin" >> gen.txt
+  # # run granularity detction
+  # ../../xaxis-granularity "$1" < bb.txt >> gen.txt
+  # # fingers crossed
+  # tablexml="$basename-table.xml"
+  # ../../gen-table scale.xml bin $tablexml < gen.txt
 }
 
 function pageFn {
