@@ -104,7 +104,8 @@ function pageFn {
 
 function pdfFn {
   # print the output file name first
-
+  # print 0 in the begninng because of qt problem
+  echo "0"
   doneFileLoc=" "
   if [ "$#" -ne 1 ]; then
     echo "Illegal number of parameters"
