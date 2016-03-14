@@ -86,7 +86,8 @@ int main(int argc, char const *argv[])
   Mat vert_text;
   Mat y_label;
   Point to_add;
-  while(1)
+  int numItr = 0;
+  while(++numItr < 1e3)
   {
     int first_start = 0;
     int first_end = 0;
@@ -159,7 +160,9 @@ int main(int argc, char const *argv[])
   if(second_start)
     break;
 }
-
+// something went wrong..
+if (numItr >= 1e3)
+  return -1;
 
 Mat res;
 cv::transpose(vert_text, res);

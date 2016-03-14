@@ -1,4 +1,5 @@
 build/*
+build_console/*
 
 # Compiled Object files
 *.slo
