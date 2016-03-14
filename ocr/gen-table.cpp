@@ -23,6 +23,7 @@ using namespace std;
 #include <fstream>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
+#include <gsl/gsl_interp.h>
 
 using namespace std;
 using namespace cv;
@@ -74,29 +75,62 @@ vector<string> getColumn(string title, vector<pair<bool, int> > samples, double 
 
 vector<pair<bool, int> > interpolate(vector<int> xsamples, vector<pair<bool, int> > ysamples){
   int degree = 3, np = 0;
-  for(int i = 0 ; i < ysamples.size() ; i++){
+  cout << xsamples.size() << endl;
+  for(int i = 1  ; i < ysamples.size() -1  ; i++){
+  	//cout << xsamples[i]  << " ''" << ysamples[i].second << " " << ysamples[i].first << endl;
     if ( ysamples[i].first == true )
       np++;
   }
   double x[np], y[np];
   int ind = 0;
-  for(int i = 0 ; i < ysamples.size() ; i++ ){
+
+  int start,start1,end,end1;
+  for(int i = 1  ; i < ysamples.size() -1 ; i++ ){
     if ( ysamples[i].first == true){
       x[ind] = xsamples[i];
       y[ind] = ysamples[i].second;
       ind++;
     }
   }
-  
-  gsl_interp_accel *acc = gsl_interp_accel_alloc ();
-  gsl_spline *spline  = gsl_spline_alloc (gsl_interp_cspline, np);
 
+  gsl_interp_accel *acc = gsl_interp_accel_alloc ();
+  gsl_spline *spline  = gsl_spline_alloc (gsl_interp_cspline, np); 
+
+  //cout<<"np = "<<np << " " << xsamples.size() <<endl;
   gsl_spline_init (spline, x, y, np);
-  for(int i = 0 ; i < ysamples.size() ; i++ ){
+
+  for(int i = 1 ; i < ysamples.size() - 1; i++ ){
     if ( ysamples[i].first == false){
-      ysamples[i].second = gsl_spline_eval(spline, xsamples[i], acc);
+        ysamples[i].second = gsl_spline_eval(spline, xsamples[i], acc);
+		ysamples[i].first = true;
     }
   }
+   gsl_spline_free (spline);
+   gsl_interp_accel_free (acc);
+
+   //computing for end points using linear extrapolation
+  start = ysamples.size()-1;end = 1;
+  for(int i = 1 ; i < ysamples.size() - 1; i++ ){
+    if( ysamples[i].first == true && start==ysamples.size()-1)
+      {start = i;/*cout<<"starta "<<start<<"\n";*/}
+    if( ysamples[ysamples.size() - i].first == true && end==1)
+      {end = ysamples.size() - i;/*cout<<"enda "<<end<<"\n";*/}
+  }
+  start1 = start;end1 = end;
+  while(ysamples[++start1].first==false)
+  {
+    ++start1;
+  }
+  //cout<<"start1 "<<start1<<"\n";
+  while(ysamples[--end1].first==false)
+  {
+    --end1;
+  }
+  //cout<<"end1 "<<end1<<"\n";
+    ysamples[0].second = ( ysamples[start1].second - ysamples[start].second ) * xsamples[0] / ( xsamples[start1] - xsamples[start] ) ;
+   
+    ysamples[ysamples.size()-1].second = ( ysamples[end].second - ysamples[end1].second ) * xsamples[ysamples.size()-1] / ( xsamples[end] - xsamples[end1] ) ;
+    
   return ysamples;
 }
 
@@ -178,6 +212,8 @@ int main(int argc, char const *argv[])
     sprintf(buf, "%s-%d.png", argv[2], i);
     Mat bin = imread(buf, 0);
     vector<pair<bool, int> > ysamples = getData(bin, xsamples);
+    
+    ysamples = interpolate(xsamples,ysamples);
     // need leegend text here
     table.push_back(getColumn(buf, ysamples, yscale, yrefPix, yrefVal));
   }

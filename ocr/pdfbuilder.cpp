@@ -5,6 +5,7 @@ PDFbuilder::PDFbuilder() {
 	latex_string += "\\usepackage[utf8]{inputenc}\n";
 	latex_string += "\\usepackage{graphicx}\n";
 	latex_string += "\\usepackage{geometry}\n";
+	latex_string += "\\usepackage{longtable}\n";
 	latex_string += "\\title{}\n";
 	latex_string += "\\author{Team 7}\n";
 }
@@ -27,14 +28,17 @@ void PDFbuilder::addTable(const vector< vector<string> >& table, const string& t
 		return;
 	int cols = table[0].size();
 
-	latex_string += "\\begin{table}\n";
-	latex_string += "\\centering\n";
-	latex_string += "\\begin{tabular}{ |";
+	latex_string += "\\begin{center}\n";
+	if(!title.empty() and title != "NA") latex_string += "\\caption{" + title +"}\n";	
+	latex_string += "\\begin{longtable}{ |";
 	for (int i = 0; i < cols; ++i)
 	{
 		latex_string += "c|";
 	}
 	latex_string += " }\n";
+	latex_string += "\\multicolumn{" + to_string(cols) + "}{|r|}{{Continued on next page}} \\\\ \\hline\n";
+	latex_string += "\\endfoot\n";
+	latex_string += "\\endlastfoot\n";
 	latex_string += "\\hline\n";
 
 	for (int i = 0; i < rows; ++i)
@@ -49,12 +53,8 @@ void PDFbuilder::addTable(const vector< vector<string> >& table, const string& t
 		latex_string += "\\\\\n";
 		latex_string += "\\hline\n";
 	}
-
-	latex_string += "\\end{tabular}\n";
-
-	if(!title.empty())
-		latex_string += "\\caption{" + title +"}\n";
-	latex_string += "\\end{table}\n";
+	latex_string += "\\end{longtable}\n";	
+	latex_string += "\\end{center}\n";
 }
 
 void PDFbuilder::endDocument() {
