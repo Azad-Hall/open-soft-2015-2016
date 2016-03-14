@@ -76,14 +76,19 @@ int main(int argc, char const *argv[])
   vector<Point> extendedContour;
   extendedContour=shrinkContour(finalContour,-0.01*boundingRect(finalContour).height);
 
-  
+  cv::Mat gray;
+  // will threshold this gray image
+  cv::cvtColor(input, gray, CV_BGR2GRAY);
+  cv::Mat mask;
+  // threshold white/non-white
+  cv::threshold(gray, mask,240, 255, THRESH_BINARY );
   // check if there's another box inside it which is the acutal graph
   int ctr=0;
   
   for (int i =0; i < input.rows; i++) {
     for (int j = 0; j < input.cols; j++) {
       if (pointPolygonTest(extendedContour, Point(j,i), false) < 0) {
-        if(input.at<uchar>(i,j)<150)
+        if(!mask.at<uchar>(i,j))
           ++ctr;
       }
     }
