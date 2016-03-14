@@ -18,6 +18,8 @@ function graphFn {
   ../../text_seg "$1" < bb.txt
   # now batman comes to work for x_label detection
   ../../x_label_batman "x_label.jpg"
+  # now batman comes to work for y_label detection
+  ../../y_label_batman "y_label.jpg"
   # now run scale detection
   ../../scale
   # color processing will be done on the cropped image
@@ -100,4 +102,4 @@ function pdfFn {
 
 pdfFn $1
 # cd scan0004-dir/scan-3-dir
-# graphFn $1
+# graphFn $1 "temp_nis.xml"

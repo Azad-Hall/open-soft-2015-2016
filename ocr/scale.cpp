@@ -30,14 +30,14 @@ typedef struct b  {
   int z;
 } scale; 
 
-stack<pair<Point, Point> > aa;
+// stack<pair<Point, Point> > aa;
 
 double startx=0,starty=0,startCoordinatex=0,startCoordinatey=0,to_add=0;
-queue<string> Q_str;
+// queue<string> Q_str;
 
-queue<pair<string, pair<Point, Point> > > Q_str_point;
-queue<pair<string, pair<Point, Point> > > Q_str_point_ver;
-queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
+// queue<pair<string, pair<Point, Point> > > Q_str_point;
+// queue<pair<string, pair<Point, Point> > > Q_str_point_ver;
+// queue<pair<string, pair<Point, Point> > > Q_str_point_hor;
 double yValue(double yCoordinate,double scale){
 	double temp;
 	temp=startCoordinatey-yCoordinate;
@@ -48,42 +48,42 @@ double xValue(double xCoordinate,double scale){
 	temp=xCoordinate-startCoordinatex;
 	return (startx+temp*scale);
 }
-const char* node_types[] =
-{
-  "null", "document", "element", "pcdata", "cdata", "comment", "pi", "declaration"
-};
+// const char* node_types[] =
+// {
+//   "null", "document", "element", "pcdata", "cdata", "comment", "pi", "declaration"
+// };
 
-//[code_traverse_walker_impl
-struct simple_walker: pugi::xml_tree_walker
-{
-  virtual bool for_each(pugi::xml_node& node)
-  {
-        for (int i = 0; i < depth(); ++i) std::cout << "  "; // indentation
+// //[code_traverse_walker_impl
+// struct simple_walker: pugi::xml_tree_walker
+// {
+//   virtual bool for_each(pugi::xml_node& node)
+//   {
+//         for (int i = 0; i < depth(); ++i) std::cout << "  "; // indentation
 
-          std::cout << node_types[node.type()] << ": name='" << node.name() << "', value='" << node.value() << "'\n";
-        if(string(node.name()) == "span") {
-          std::istringstream iss;
-          iss.str(node.attribute("title").value());
-          //cout<<"\n"<<node.attribute("title").value();
-          string bbox;
-          iss>>bbox;
-          Point a, b;
-          iss>>a.x;
-          iss>>a.y;
-          iss>>b.x;
-          iss>>b.y;
-          aa.push({a, b});
-          //cout<<"\n pushed";
-        }
-        if(node_types[node.type()] == "pcdata") {
-          Q_str.push(node.value());
-          Q_str_point.push({node.value(), aa.top()});
-          while(!aa.empty())
-            aa.pop();
-        }
-        return true; // continue traversal
-      }
-    };
+//           std::cout << node_types[node.type()] << ": name='" << node.name() << "', value='" << node.value() << "'\n";
+//         if(string(node.name()) == "span") {
+//           std::istringstream iss;
+//           iss.str(node.attribute("title").value());
+//           //cout<<"\n"<<node.attribute("title").value();
+//           string bbox;
+//           iss>>bbox;
+//           Point a, b;
+//           iss>>a.x;
+//           iss>>a.y;
+//           iss>>b.x;
+//           iss>>b.y;
+//           aa.push({a, b});
+//           //cout<<"\n pushed";
+//         }
+//         if(node_types[node.type()] == "pcdata") {
+//           Q_str.push(node.value());
+//           Q_str_point.push({node.value(), aa.top()});
+//           while(!aa.empty())
+//             aa.pop();
+//         }
+//         return true; // continue traversal
+//       }
+//     };
 
 double yScale(vector<labels> labelv,double yAxisLength){
   vector<scale> y_scale;
@@ -333,26 +333,40 @@ pugi::xml_node title_text1 = indoc.child("title_text");
 		pugi::xml_attribute attr3 = title_text1.first_attribute();
 		title_text=attr3.value();
 
-pugi::xml_document doc;
-pugi::xml_parse_result result = doc.load_file("tes_out0.hocr");
-simple_walker walker;
-doc.traverse(walker);
-xml_node main_wrapper = doc.child("html").child("body").child("div");
+// pugi::xml_document doc;
+// pugi::xml_parse_result result = doc.load_file("tes_out0.hocr");
+// simple_walker walker;
+// doc.traverse(walker);
+// xml_node main_wrapper = doc.child("html").child("body").child("div");
 
 
 vector<labels> labelh,labelv1,labelv;
 labels temp2;
 double v,h;
-          while(!Q_str_point.empty()) {
-          pair<string, pair<Point, Point> > ss = Q_str_point.front();
-          Q_str_point.pop();
-          temp2.text=ss.first;
-          temp2.a=ss.second.first;
-          temp2.b=ss.second.second;
-          temp2.x=(temp2.a.y+temp2.b.y)/2;
-          labelv1.push_back(temp2);
-        }
-
+        //   while(!Q_str_point.empty()) {
+        //   pair<string, pair<Point, Point> > ss = Q_str_point.front();
+        //   Q_str_point.pop();
+        //   temp2.text=ss.first;
+        //   temp2.a=ss.second.first;
+        //   temp2.b=ss.second.second;
+        //   temp2.x=(temp2.a.y+temp2.b.y)/2;
+        //   labelv1.push_back(temp2);
+        // }
+ifstream f("tot_out_y.txt");
+  while(f) {
+    char txt[1000];
+    f.getline(txt, 1000, '\n');
+    istringstream iss;
+    iss.str(string(txt));
+    iss>>temp2.x;
+    int a;
+    iss>>a;
+    temp2.text = to_string(a);
+    temp2.a = Point(0,0);
+    temp2.b = Point(0,0);
+    labelv1.push_back(temp2);
+  }
+  f.close();
   labelv=labelv1;
   for(int i=0;i<labelv1.size();i++) {
     labelv[labelv1.size()-1-i]=labelv1[i];
@@ -379,7 +393,7 @@ double v,h;
 //           temp2.x=(temp2.a.x+temp2.b.x)/2;
 //           labelh.push_back(temp2);
 //           }
-ifstream f("tot_out.txt");
+f.open("tot_out.txt");
   while(f) {
     char txt[1000];
     f.getline(txt, 1000, '\n');
@@ -393,6 +407,7 @@ ifstream f("tot_out.txt");
     temp2.b = Point(0,0);
     labelh.push_back(temp2);
   }
+  f.close();
 
 for(int i=0;i<labelh.size();i++) {
     cout<<"\n"<<labelh[i].text;
