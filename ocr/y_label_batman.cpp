@@ -44,38 +44,74 @@ int main(int argc, char const *argv[])
       }
     }
   }
-
+  bool isStartBlack = false;
+  for (int i = 0; i < contain.size(); i++) {
+    if (contain[i] < img.cols/5)
+      contain[i] = 0;
+    else
+      contain[i] = 1;
+  }
+  if (contain[0] == 1)
+    isStartBlack = true;
+  bool isStart = false;
+  int b = 0;
+  a = 0;
+  if (isStartBlack) {
+    isStart = true;
+    a = 0;
+  }
   int seg = 0;
-  for(int i=0;i<img.rows-1;i++)
-  {
-    int a,b;
-    bool isStart = 0;
-    while(contain[i] < img.cols/5 && i<img.rows-1)
-      i++;
-    if(contain[i] >= img.cols/5 && i<img.rows-1)
-    { 
-      a = i;
-      isStart = true;
-    }
-    if(isStart)
-    {
-      while(contain[i]>img.cols/5 && i<img.rows-2) {
-        i++;
-      }
-      b = i;
-    }
-    if(isStart) {
-    cout<<"\n-->"<<a<<" "<<b;
-    Mat new_img = Mat(img, Rect(Point2f(0, a), Point2f(img.cols-1, b)));
+  for (int i = 1; i < contain.size(); i++) {
+    if (contain[i] != contain[i-1]) {
+      // edge
+      if (!isStart) {
+        isStart = true;
+        a = i;
+      } else {
+        isStart =  false;
+        b = i;
+        cout<<"\n-->"<<a<<" "<<b;
+        Mat new_img = Mat(img, Rect(Point2f(0, a), Point2f(img.cols-1, b)));
 
-    string aa = "y_label_batman" + to_string(seg) + ".jpg";
-    Q_points.push({a, b});
-    imshow(aa.c_str(),new_img);
-    
-    imwrite(aa.c_str(),new_img);
-    seg++;
+        string aa = "y_label_batman" + to_string(seg) + ".jpg";
+        Q_points.push({a, b});
+        imshow(aa.c_str(),new_img);
+        
+        imwrite(aa.c_str(),new_img);
+        seg++;
+      }
     }
   }
+  // for(int i=0;i<img.rows-1;i++)
+  // {
+  //   int a,b;
+  //   bool isStart = 0;
+  //   while(contain[i] < img.cols/5 && i<img.rows-1)
+  //     i++;
+  //   if(contain[i] >= img.cols/5 && i<img.rows-1)
+  //   { 
+  //     a = i;
+  //     isStart = true;
+  //   }
+  //   if(isStart)
+  //   {
+  //     while(contain[i]>img.cols/5 && i<img.rows-2) {
+  //       i++;
+  //     }
+  //     b = i;
+  //   }
+  //   if(isStart) {
+  //   cout<<"\n-->"<<a<<" "<<b;
+  //   Mat new_img = Mat(img, Rect(Point2f(0, a), Point2f(img.cols-1, b)));
+
+  //   string aa = "y_label_batman" + to_string(seg) + ".jpg";
+  //   Q_points.push({a, b});
+  //   imshow(aa.c_str(),new_img);
+    
+  //   imwrite(aa.c_str(),new_img);
+  //   seg++;
+  //   }
+  // }
   system("rm tot_out_y.txt");
   for(int i=0;i<seg;i++)
   {

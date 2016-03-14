@@ -408,7 +408,7 @@ f.open("tot_out.txt");
     labelh.push_back(temp2);
   }
   f.close();
-
+printf("labelh size = %d\n", (int)labelh.size());
 for(int i=0;i<labelh.size();i++) {
     cout<<"\n"<<labelh[i].text;
   }

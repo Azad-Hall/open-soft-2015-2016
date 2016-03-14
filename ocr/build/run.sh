@@ -71,12 +71,12 @@ function pageFn {
   img="../$1"
   # make the notext image
   img_notext="notext-$basename.png"
-  printDone " "
+  printDone "Processing"
   ../../remove-text $img $img_notext   &> /dev/null
   incrementDone $(($myshare/10))
   # run graph-candidates to detect boxes
   graph_basename="$basename-graphs"
-  printDone " "
+  printDone "Processing"
   ../../graph-candidates $img $img_notext $graph_basename  &> /dev/null
   incrementDone $(($myshare/10))
   # xml file name is passed as 2nd parameter
@@ -87,7 +87,7 @@ function pageFn {
   for file in $(ls | grep $graph_basename)
   do
     # echo "calling graphfn on image $file"
-    printDone " "
+    printDone "Processing"
     graphFn $file $tablexml  &> /dev/null
     incrementDone $(($myshare*8/$numgraphs/10))
   done
@@ -119,10 +119,11 @@ function pdfFn {
     pageFn $file $((90/cnt)) &
   done
   wait
-  printDone " "
+  printDone "Processing"
   pth=`pwd`"/scan"
   outname="out"
   echo "$cnt\n" | ../make-pdf $pth $outname &> /dev/null
+  echo "100 Done."
   exit
 }
 

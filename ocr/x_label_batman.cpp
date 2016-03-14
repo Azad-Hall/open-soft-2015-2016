@@ -29,6 +29,8 @@ int main(int argc, char const *argv[])
   	a=a+1;
   erode(binary, binary, getStructuringElement(MORPH_RECT, Size(a,a)));
   imshow("sdv",binary);
+ //waitKey(0);
+
   vector<int> contain(binary.cols-1,0);
   for(int j=0;j<binary.cols-1;j++)
   {
@@ -39,38 +41,77 @@ int main(int argc, char const *argv[])
   			contain[j]++;
   		}
   	}
+    
   }
-
+  // threshold array contain to 0/1 when white/black
+  bool isStartBlack = false;
+  for (int j = 0; j < contain.size(); j++) {
+    if (contain[j] < img.rows/4)
+      contain[j] = 0;
+    else
+      contain[j] = 1;
+  }
+  if (contain[0] == 1)
+    isStartBlack = true;
+  bool isStart = false;
+  int b = 0;
+  a = 0;
+  if (isStartBlack) {
+    isStart = true;
+    a = 0;
+  }
   int seg = 0;
-  for(int j=0;j<img.cols-1;j++)
-  {
-  	int a,b;
-  	bool isStart = 0;
-  	while(contain[j] < img.rows/3 && j<img.cols-1)
-  		j++;
-  	if(contain[j] >= img.rows/3 && j<img.cols-1 )
-  	{	
-  		a = j;
-  		isStart = true;
-  	}
-  	if(isStart)
-  	{
-  		while(contain[j]>img.rows/3 && j<img.cols-1) {
-  			j++;
-  		}
-  		b = j;
-  	}
-  	if(isStart) {
-  	cout<<"\n"<<a<<" "<<b;
-  	Mat new_img = Mat(img, Rect(Point2f(a, 0), Point2f(b, img.rows-1)));
+  for (int j = 1; j < contain.size(); j++) {
+    if (contain[j] != contain[j-1]) {
+      // edge
+      if (!isStart) {
+        isStart = true;
+        a = j;
+      } else {
+        isStart = false;
+        b = j;
+        cout<<"\n"<<a<<" "<<b;
+        Mat new_img = Mat(img, Rect(Point2f(a, 0), Point2f(b, img.rows-1)));
 
-  	string aa = "x_label_batman" + to_string(seg) + ".jpg";
-  	Q_points.push({a, b});
-  	imshow(aa.c_str(),new_img);
-  	imwrite(aa.c_str(),new_img);
-  	seg++;
-  	}
+        string aa = "x_label_batman" + to_string(seg) + ".jpg";
+        Q_points.push({a, b});
+        imshow(aa.c_str(),new_img);
+        // waitKey(0);
+        imwrite(aa.c_str(),new_img);
+        seg++;
+      }
+    }
   }
+  // for(int j=0;j<img.cols-1;j++)
+  // {
+  // 	int a,b;
+  // 	bool isStart = 0;
+  // 	while(contain[j] < img.rows/4 && j<img.cols-1)
+  // 		j++;
+  // 	if(contain[j] >= img.rows/4 && j<img.cols-1 )
+  // 	{	
+  // 		a = j;
+  // 		isStart = true;
+  // 	}
+  // 	if(isStart)
+  // 	{
+  // 		while(contain[j]>=img.rows/4 && j<img.cols-1) {
+  // 			j++;
+  // 		}
+  // 		b = j;
+  // 	}
+  // 	if(isStart) {
+  // 	cout<<"\n"<<a<<" "<<b;
+  // 	Mat new_img = Mat(img, Rect(Point2f(a, 0), Point2f(b, img.rows-1)));
+
+  // 	string aa = "x_label_batman" + to_string(seg) + ".jpg";
+  // 	Q_points.push({a, b});
+  // 	imshow(aa.c_str(),new_img);
+  //   // waitKey(0);
+  // 	imwrite(aa.c_str(),new_img);
+  // 	seg++;
+  // 	}
+  // }
   system("rm tot_out.txt");
   for(int i=0;i<seg;i++)
   {
@@ -94,6 +135,6 @@ int main(int argc, char const *argv[])
 
   
 
- // waitKey(0);
+  // waitKey(0);
 
 }
