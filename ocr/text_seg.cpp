@@ -122,7 +122,7 @@ int main(int argc, char const *argv[])
     if(second_start == 0)
     {
 
-      if(round(thres)==1) {
+      if(round(thres)==0.2) {
       not_special =false; // TODO: Handle this case
       cout<<"\n Error: Very close vertical text and label";
       exit(-1);
@@ -135,6 +135,14 @@ int main(int argc, char const *argv[])
       thres = 1.5;
     else if(thres > 1.0)
       thres = 1.0;
+    else if(thres > 0.8)
+      thres = 0.8;
+    else if(thres > 0.6)
+      thres = 0.6;
+    else if(thres > 0.4)
+      thres = 0.4;
+    else if(thres > 0.2)
+      thres = 0.2;
     if(not_special)
       continue;
   }
