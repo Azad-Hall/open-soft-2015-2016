@@ -6,6 +6,7 @@
 #include <vector>
 #include <iostream>
 #include "pugixml.hpp"
+#include "pugixml.cpp"
 #include <sstream>
 #include <fstream>
 #include <string>
@@ -512,18 +513,28 @@ cout<<"\nStartcoordinatey:     "<<startCoordinatey;
   ttxt.set_name("Title_text");
   ttxt.append_attribute("ttxt") = title_text.c_str();
 
-  pugi::xml_node y_label_inline = outdoc.append_child();
-  y_label_inline.set_name("inline_y");
+   pugi::xml_node y_label = outdoc.append_child();
+  y_label.set_name("y_label");
   for(int i=0;i<labelv.size();i++){
-    string s=labelv[i].text;
-    if(inline_y[i]) y_label_inline.append_attribute((to_string(labelv[i].x+to_add)).c_str())=s.c_str();
+    if(inline_y[i]) {
+      pugi::xml_node inliney = y_label.append_child();
+      inliney.set_name("inliney");
+      string s=labelv[i].text;
+      inliney.append_attribute("pix")=(int)labelv[i].x;
+      inliney.append_attribute("val")=s.c_str();
+    }
   }
 
-  pugi::xml_node x_label_inline = outdoc.append_child();
-  x_label_inline.set_name("inline_x");
+  pugi::xml_node x_label = outdoc.append_child();
+  x_label.set_name("x_label");
   for(int i=0;i<labelh.size();i++){
-    string s=labelh[i].text;
-    if(inline_x[i]) x_label_inline.append_attribute((to_string(labelh[i].x)).c_str())=s.c_str();
+    if(inline_x[i]) {
+      pugi::xml_node inlinex = x_label.append_child();
+      inlinex.set_name("inlinex");
+      string s=labelh[i].text;
+      inlinex.append_attribute("pix")=(int)labelh[i].x;
+      inlinex.append_attribute("val")=s.c_str();
+    }
   }
 
   // pugi::xml_node 
