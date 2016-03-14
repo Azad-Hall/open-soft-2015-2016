@@ -1,6 +1,6 @@
 #!/bin/bash
 # usage: ./run.sh <page img>
-
+# set working dir to where the file is located!
 function graphFn {
   if [ "$#" -ne 2 ]; then
     echo "Illegal number of parameters"
@@ -44,16 +44,16 @@ function incrementDone {
     exit
   fi
   # hopefully don't need mutex....
-  value=`cat /tmp/donePercent.txt`
+  value=`cat $doneFileLoc`
   ((value+=$1))
-  echo "$value" > "/tmp/donePercent.txt"
+  echo "$value" > "$doneFileLoc"
 }
 function printDone {
   if [ "$#" -ne 1 ]; then
     echo "Illegal number of parameters"
     exit
   fi
-  value=`cat /tmp/donePercent.txt`
+  value=`cat $doneFileLoc`
   echo $value $1
 }
 function pageFn {
@@ -104,17 +104,20 @@ function pageFn {
 
 function pdfFn {
   # print the output file name first
-  echo `pwd`"/out.pdf"
+
+  doneFileLoc=" "
   if [ "$#" -ne 1 ]; then
     echo "Illegal number of parameters"
     exit
   fi
   basename=`basename $1 .pdf`
   folder="$basename-dir"
+  echo `pwd`"/$folder/out.pdf"
   # commenting these out for now
   rm -rf "$folder"
   mkdir "$folder"
-  echo '0' > "/tmp/donePercent.txt"
+  doneFileLoc=`pwd`"/doneFile.txt"
+  echo '0' > "$doneFileLoc"
   printDone "Converting pdf to images"
   convert -density 300 $1 "$folder/scan.png" &> /dev/null
   incrementDone "10"
@@ -135,7 +138,8 @@ function pdfFn {
   exit
 }
 
-
-pdfFn $1
+cp "$1" "${0%/*}"
+cd "${0%/*}"
+pdfFn `basename $1 .pdf`".pdf"
 # cd scan0004-dir/scan-3-dir
 # graphFn $1 "temp_nis.xml"

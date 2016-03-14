@@ -196,6 +196,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
   cv::Mat mask;
   // threshold white/non-white
   cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
+  // try dilating a litte... maybe more lines will be detected??
   imwrite("tmp/thresholded.png", mask);
   vector<Vec4i> lines;
   vector<Vec4i> hlines, vlines; // horizontal and vertical lines
