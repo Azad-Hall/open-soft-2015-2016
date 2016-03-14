@@ -41,8 +41,8 @@ target_link_libraries( text_seg ${OpenCV_LIBS} )
 add_executable(color-segmentation peakdetect.cpp color-segmentation.cpp )
 target_link_libraries( color-segmentation ${OpenCV_LIBS} )
 
-add_executable(helper  helper.cpp box-detection.cpp pugixml.cpp)
-target_link_libraries( helper ${OpenCV_LIBS} )
+add_executable(y_label_batman  y_label_batman.cpp pugixml.cpp)
+target_link_libraries( y_label_batman ${OpenCV_LIBS} )
 
 add_executable(x_label_batman  x_label_batman.cpp pugixml.cpp)
 target_link_libraries( x_label_batman ${OpenCV_LIBS} )

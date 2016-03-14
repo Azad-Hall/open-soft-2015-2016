@@ -50,16 +50,16 @@ int main(int argc, char const *argv[])
   {
   	int a,b;
   	bool isStart = 0;
-  	while(contain[j] < img.rows/3)
+  	while(contain[j] < img.rows/3 && j<img.cols-1)
   		j++;
-  	if(contain[j] >= img.rows/3)
+  	if(contain[j] >= img.rows/3 && j<img.cols-1 )
   	{	
   		a = j;
   		isStart = true;
   	}
   	if(isStart)
   	{
-  		while(contain[j]>img.rows/3) {
+  		while(contain[j]>img.rows/3 && j<img.cols-1) {
   			j++;
   		}
   		b = j;
@@ -98,6 +98,6 @@ int main(int argc, char const *argv[])
 
   
 
-  //waitKey(0);
+  waitKey(0);
 
 }
