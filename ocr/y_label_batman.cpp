@@ -99,6 +99,6 @@ int main(int argc, char const *argv[])
 
   
 
-  waitKey(0);
+ // waitKey(0);
 
 }

@@ -22,13 +22,9 @@ int main(int argc, char const *argv[])
   Mat img = imread(argv[1],0);
   Mat binary = img > 220;
   imshow("sdva",binary);
-  int a = 0.005 * img.cols;
-  if(a==0)
-  	a = 3;
-  if(!a%2)
-  	a+=1;
-  dilate(binary, binary, getStructuringElement(MORPH_RECT, Size(a,a)));
-  a = 0.03 * img.cols;
+
+  dilate(binary, binary, getStructuringElement(MORPH_RECT, Size(3,3)));
+  int a = 0.03 * img.cols;
   if(!a%2)
   	a=a+1;
   erode(binary, binary, getStructuringElement(MORPH_RECT, Size(a,a)));
@@ -98,6 +94,6 @@ int main(int argc, char const *argv[])
 
   
 
-  waitKey(0);
+ // waitKey(0);
 
 }
