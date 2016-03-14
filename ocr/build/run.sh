@@ -111,7 +111,7 @@ function pdfFn {
   mkdir "$folder"
   echo '0' > "/tmp/donePercent.txt"
   printDone "Converting pdf to images"
-  convert -density 300 $1 "$folder/scan.png"
+  convert -density 300 $1 "$folder/scan.png" &> /dev/null
   incrementDone "10"
   cd "$folder"
   cnt=$(ls | grep .png | wc -l)
