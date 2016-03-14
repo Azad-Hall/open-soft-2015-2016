@@ -353,7 +353,7 @@ int main(int argc, char const *argv[])
     //hist[stof(as)]=10000;
   }
   // print the number of maxima
-  printf("%d\n", (int)maxima.size()/2);
+  /*printf("%d\n", (int)maxima.size()/2);*/
   // first half of maxima array is max, second half is min
   maxima.push_back(256);
   
@@ -433,6 +433,7 @@ int main(int argc, char const *argv[])
   int k=maxNo,t=0;
   plots=Scalar(0);
   if(maxima[maxNo+1]<=20){
+    printf("%d\n", (int)maxima.size()/2-1);
     k++;
     t=1;
     plots=Scalar(0);
@@ -455,9 +456,11 @@ int main(int argc, char const *argv[])
       }
     }
     char name[1000];
-    sprintf(name, "%s-%d.png", argv[2], (2*maxNo-1-maxNo));
+    sprintf(name, "%s-0.png", argv[2]);
     imwrite(name,plots);
   }
+  else
+    printf("%d\n", (int)maxima.size()/2);
   // printf("HERE ddsfkh\n");
   
   for(;k<2*maxNo-t;k++){
