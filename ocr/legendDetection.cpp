@@ -92,7 +92,7 @@ int main(int argc, char const *argv[]){
 	for(int i=0;i<img0.cols;i++){
 		for(int j=0;j<img0.rows;j++){
 			Vec3b color = img1.at<Vec3b>(j,i);
-			r=color[0];g=color[1];b=color[2];
+			r=color[0];g=color[1];b=1.3*color[2];
 			
 			mean = (r + g + b) / 3;
 	        diffr = abs(mean - r);
@@ -104,8 +104,39 @@ int main(int argc, char const *argv[]){
 	        	img0.at<uchar>(j,i)=255;
 		}
 	}
-	erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-
+	Mat imgBW=img0.clone();
+	/*for(int i=0;i<imgBW.rows;i++){
+		for(int j=5;j<imgBW.cols-5;j++){
+			if(img0.at<uchar>(i,j)==255)
+				continue;
+			bool black=false;
+			
+			for(int n=j-1;n<=j+1;n++){
+				if(n==j)
+					continue;
+				if(img0.at<uchar>(i,n)==0){
+					black=true;
+				}
+			}
+			if(black==false){
+				// cout<<"sdhas";
+				imgBW.at<uchar>(i,j)=255;
+			}
+			
+		}
+	}*/
+	int erosion_size=5;
+	dilate(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(3 , 3)) );
+	erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(3 , 3)));	
+	// erode(imgBW,imgBW,getStructuringElement(MORPH_RECT,Size(2*erosion_size+1,3),Point(erosion_size,1)));
+	// imshow("BW",imgBW);
+	// img0=imgBW;
+	/*erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
+	erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );	
+	dilate(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
+	// erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
+	dilate(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
+*/
 	// erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
 	imshow("yo",img0);
 	Mat unCol=img0.clone();
@@ -122,10 +153,50 @@ int main(int argc, char const *argv[]){
 	}
 
 
-	int maxH = 0;
+	int maxH = 0,sum=0,avg;
 	for(int i=0;i<rowHist.size();i++){
-		cout<<rowHist[i]<<endl;
+		//cout<<rowHist[i]<<endl;
 		maxH=max(maxH,rowHist[i]);
+		sum+=rowHist[i];
+	}
+	maxH=0;//shift histogram by the avg
+	avg=sum/rowHist.size();
+	cout<<"ave "<<avg<<endl;
+	for(int i=0;i<rowHist.size();i++){
+		//cout<<rowHist[i]<<endl;
+		rowHist[i]-=0.5*avg;
+		maxH=max(maxH,rowHist[i]);
+
+		//sum+=rowHist[i];
+	}
+	vector<int> zeroMaxima;
+	bool high=false,low=true;
+	for(int i=0;i<rowHist.size();i++){
+		if(high==true && rowHist[i]==0){
+			zeroMaxima.push_back(i);
+			high=false;
+			low=true;
+		}
+		if(low==true && rowHist[i]!=0){
+			high=true;
+			low=false;
+		}
+		/*if(rowHist[i]<=0)
+			zeroMaxima.push_back(i);*/
+	}
+	/*for(int i=0;i<zeroMaxima.size()-1;i++){
+		bool zeros=true;
+		for(int j=zeroMaxima[i];j<zeroMaxima[i+1];j++){
+			if(rowHist[j]!=0){
+				zeros=false;
+			}
+		}
+		if(zeros==true){
+			zeroMaxima.erase(zeroMaxima.begin()+i+1);
+		}
+	}*/
+	for(int i=0;i<zeroMaxima.size();i++){
+		cout<<"zeroMax "<<zeroMaxima[i]<<endl;
 	}
 	cout<<"maxH :"<<maxH<<endl;
 	// std::vector<int> minima;
@@ -143,26 +214,27 @@ int main(int argc, char const *argv[]){
 	  {
 	    rowHist[i] = (rowHist[i] *hist_h)/maxH;
 	  }
-	 for(int k = 0 ; k < 0	; k++){
+	 /*for(int k = 0 ; k < 0	; k++){//moving average filter
 
-	    int nhist[260] = {0};
-	    for(int i = 5 ; i < 250 ;i++){
+	    int nhist[rowHist.size()] ;//= {0};
+	    memset(nhist,0,sizeof(nhist));
+	    for(int i = 5 ; i < rowHist.size() ;i++){
 	      nhist[i] = 0;
 	      for(int j = -1 ; j <= 1 ; j++){//-4 4
 	        nhist[i] += (1/(abs(j)/3.0 + 1.0))*rowHist[i + j];
 	      }
 	    }
-	    for(int i = 5 ; i < 250 ; i++){
+	    for(int i = 5 ; i < rowHist.size() ; i++){
 	      rowHist[i] = nhist[i];
 	    }
-	  }
+	  }*/
 	FILE* fp = fopen("res1.csv","w");
-	  for(int i=0;i<256;i++){
+	  for(int i=0;i<rowHist.size();i++){
 	    fprintf(fp,"%d,%d\n",i,rowHist[i]);
 	  }
 	 fclose(fp);
 
-    string cmd = "dummy -i res1.csv -d 1e1 -o out1.csv";
+    string cmd = "dummy -i res1.csv -d 5e1 -o out1.csv";
     std::vector<char *> args;
     std::istringstream iss(cmd);
 
@@ -213,11 +285,18 @@ int main(int argc, char const *argv[]){
   for(int i=maxNo;i<maxima.size();i++){
 
   }
+  /*for(int i=0;i<zeroMaxima.size();i++){
+  	cout<<zeroMaxima[i]<<endl;
+  	for(int j=0;j<un.cols;j++){
+  		un.at<Vec3b>(zeroMaxima[i],j)=Vec3b(255,0,0);
+  	}
+  }*/
+  //for(int i=0;i<)
   
   for(int i=0;i<maxNo;i++){
   	cout<<maxima[i]<<endl;
   	for(int j=0;j<un.cols;j++){
-  		un.at<Vec3b>(maxima[i]+4,j)=Vec3b(0,255,0);
+  		un.at<Vec3b>(maxima[i],j)=Vec3b(0,255,0);
   	}
   }
   for(int i=maxNo;i<maxima.size();i++){
