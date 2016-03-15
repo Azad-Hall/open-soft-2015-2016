@@ -142,9 +142,10 @@ int main(int argc, char const *argv[]){
 	erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5 , 1)));	
 	
 	imshow("yo",img0);
+	waitKey(0);
 	Mat unCol=img0.clone();
 
-	waitKey(0);
+	
 	vector<int> rowHist(unCol.rows,0);
 	for(int i=0.01*unCol.rows;i<unCol.rows*0.99;i++){
 		for(int j=0.01*unCol.cols;j<unCol.cols*0.99;j++){

@@ -353,24 +353,11 @@ int main(int argc, char const *argv[])
   Mat yellow;
   cvtColor(imgHSV,yellow,CV_HSV2BGR);
   Mat unColor=yellow.clone();
-  //Mat yellow = img.clone();
-  for (int i = 0; i < yellow.rows; ++i)
-  {
-    for (int j = 0; j < yellow.cols; ++j)
-    {
-      if (!mask.at<uchar>(i,j)){
-        yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
-      }
-      if(mask.at<uchar>(i,j)){
-        unColor.at<Vec3b>(i,j)=Vec3b(255,255,255);
-      }
-      
-    }
-  }
+  
 
   
 
-  Mat plots=yellow.clone();//Mat::zeros(yellow.rows,yellow.cols,CV_8UC1);
+  Mat plots=yellow.clone();
   //merging folding of red
   int k=maxNo,t=0;
   plots=Scalar(0);
@@ -426,7 +413,8 @@ int main(int argc, char const *argv[])
     imwrite(name,plots);
    
   }
-  printf("%d\n",plothues.size());
+  //printf("%d\n",plothues.size());
+
 
   Mat imgBW = Mat(imgHSV.rows,imgHSV.cols,CV_8UC1);
   for(int i=0;i<imgHSV.rows;i++){
@@ -439,6 +427,7 @@ int main(int argc, char const *argv[])
   {
     ifstream fin("legend_boxes.txt");
     int sz;fin>>sz;
+    printf("%d\n",sz);
     X.resize(sz);Y.resize(sz);legendText.resize(sz);
     for(int i=0;i<sz;++i){
       fin>>X[i].first>>X[i].second>>Y[i].first>>Y[i].second;
@@ -455,15 +444,67 @@ int main(int argc, char const *argv[])
   int xthr=0.18*imgHSV.cols;
 
   map<int,int> mp;
+  // for(int i=0;i<Y.size();++i)
+  // {
+  //   vector<int> legendHist(256);
+  //   for(int j=max(0,xmax-xthr);j<=xmax;++j)
+  //   {
+  //     for(int k=Y[i].first;k<=Y[i].second;++k)
+  //     {
+  //       if(!mask.at<uchar>(k,j))continue;
+  //       ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+  //       yellow.at<Vec3b>(k,j)=Vec3b(255,255,0);
+  //     }
+  //   }
+  //   for(int j=xmin;j<=min(xmin+xthr,imgHSV.cols-1);++j)
+  //   {
+  //     for(int k=Y[i].first;k<=Y[i].second;++k)
+  //     {
+  //       if(!mask.at<uchar>(k,j))continue;
+  //       ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+  //       yellow.at<Vec3b>(k,j)=Vec3b(0,255,0);
+  //     }
+  //   }
+  //   int maxpos=max_element(legendHist.begin(),legendHist.end())-legendHist.begin();
+  //   for(int j=0;j<plothues.size();++j)
+  //     if(maxpos>=plothues[j].first and maxpos<=plothues[j].second)
+  //       {mp[i]=j;break;}
+  //   histogram(legendHist);
+  // }
+  //------------------------------------------------------------
+  vector<int> hue2HC(256,0);
+  int r=0;
+  for(int i=0;i<256;i++){
+    for(int r=0;r<plothues.size();r++){
+      if(i>=plothues[r].first && i<=plothues[r].second){
+        hue2HC[i]=r;
+        break;
+      }
+    }
+  }
+  
+
+  int** legendHist = new int*[Y.size()];
+    for(int q = 0; q < Y.size(); ++q)
+         legendHist[q] = new int[plothues.size()];
+
+  // memset(legendHist,0,sizeof(legendHist[0][0])*Y.size()*plothues.size());
+      for(int i=0;i<Y.size();i++){
+        for(int j=0;j<plothues.size();j++)
+          legendHist[i][j]=0;
+      }
+
+// cout<<"dshk";
+// return(0);
   for(int i=0;i<Y.size();++i)
   {
-    vector<int> legendHist(256);
+      
     for(int j=max(0,xmax-xthr);j<=xmax;++j)
     {
       for(int k=Y[i].first;k<=Y[i].second;++k)
       {
         if(!mask.at<uchar>(k,j))continue;
-        ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+        ++legendHist[i][hue2HC[imgHSV.at<Vec3b>(k,j)[0]]];
         yellow.at<Vec3b>(k,j)=Vec3b(255,255,0);
       }
     }
@@ -472,29 +513,49 @@ int main(int argc, char const *argv[])
       for(int k=Y[i].first;k<=Y[i].second;++k)
       {
         if(!mask.at<uchar>(k,j))continue;
-        ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+        ++legendHist[i][hue2HC[imgHSV.at<Vec3b>(k,j)[0]]];
         yellow.at<Vec3b>(k,j)=Vec3b(0,255,0);
       }
     }
-    int maxpos=max_element(legendHist.begin(),legendHist.end())-legendHist.begin();
+    
+    /*
     for(int j=0;j<plothues.size();++j)
       if(maxpos>=plothues[j].first and maxpos<=plothues[j].second)
         {mp[i]=j;break;}
-    histogram(legendHist);
+    histogram(legendHist);*/
   }
+  for(int m=0;m<Y.size();m++){
+    int maxPos=0;
+      for(int n=0;n<plothues.size();n++){
+        if(legendHist[m][n]>legendHist[m][maxPos])
+          maxPos=n;
+        // cout<<legendHist[m][n]<<" ";
+      }
+      mp[m]=maxPos;
+      // cout<<"\n";
+    }
+    // for(int n=0;n<plothues.size();n++){//col-hueID
+    //   int maxPos=0;
+    //   for(int m=0;m<Y.size();m++){//row-legendID
+    //     if(legendHist[m][n]>legendHist[maxPos][n])
+    //       maxPos=m;
+    //   }
+    //   mp[maxPos]=n;
+    // }
 
 
   // legend id SPACE hue id SPACE hue.first SPACE hue.second \n
   char a[200];
-  int h=0;
+  int h=-1;
   for(auto it:mp){
+    ++h;
     strcpy(a,legendText[h].c_str());
     printf("%d %d %d %d %s\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second,a);
 
   }
         
   // imshow("weird", yellow);
-  // imwrite("weird2.png", yellow);
+  imwrite("weird2.png", yellow);
  
   // waitKey(0);
   return 0;
