@@ -86,6 +86,6 @@ int main(int argc, char const *argv[])
 		break;
 		if (waitKey(30) == 27) break;
 	}
-	cv::waitKey(0);
+//	cv::waitKey(0);
 	return 0;
 }
