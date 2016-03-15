@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include "peakdetect.h"
 void print_help(void)
 {
     fprintf(stdout,
