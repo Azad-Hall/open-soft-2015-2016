@@ -19,57 +19,7 @@
 using namespace cv;
 using namespace std;
 
-/*int getHues(int hue,vector<pair<int,int>> hues){
-	int i;
-	for(i=0;i<hues.size();i++){
-		if(hue>hues[i].first && hue<hues[i].second)
-			return i;
-	}
-	return i;
-}
 
-int legendNos(Mat imgHSV,vector<pair<int,int>> hues,vector<pair<int,int>> boxesX,vector<pair<int,int>> boxesY){
-	//no of plots > no of boxes means increase params
-	//else if  no of plots < no of boxes means decrease params
-	//else finding the pair of corresponding text box and hue range
-	vector<int> boxHueLeft,boxHueRight;
-	//for left
-	for(int i=0;i<boxesX.size();i++){
-		vector<int> carts(hues.size()+1,0);
-		for(int i=boxesX[i].first;i>0&&i>boxesX[i].first-20;i--){
-			for(int j=boxesY[i].first;j<imgHSV.cols && j<boxesY[i].second;j++){
-				int hue=imgHSV.at<Vec3b>(i,j)[0];
-				++carts[getHues(hue,hues)];
-
-			}
-		}
-		int maxPos=0;
-		for(int i=0;i<carts.size()-1;i++){
-			if(carts[i]>carts[maxPos])
-				maxPos=i;
-		}
-		boxHueLeft.push_back(maxPos);
-	}
-	//check for uniqueness
-	//duplicate values means no of plots is 
-
-	for(int i=0;i<boxesX.size();i++){
-		vector<int> carts(hues.size()+1,0);
-		for(int i=boxesX[i].first;i<imgHSV.cols &&i<boxesX[i].first+20;i++){
-			for(int j=boxesY[i].first;j<imgHSV.cols && j<boxesY[i].second;j++){
-				int hue=imgHSV.at<Vec3b>(i,j)[0];
-				++carts[getHues(hue,hues)];
-
-			}
-		}
-		int maxPos=0;
-		for(int i=0;i<carts.size()-1;i++){
-			if(carts[i]>carts[maxPos])
-				maxPos=i;
-		}
-		boxHueRight.push_back(maxPos);
-	}
-}*/
 
 pair<int,int> histogram(vector<int> &rowHist,Mat& img){
 
@@ -90,20 +40,12 @@ pair<int,int> histogram(vector<int> &rowHist,Mat& img){
 	 int bin_w = cvRound( (double) hist_w/rowHist.size() );
 	  Mat histImg(hist_h, hist_w, CV_8U, Scalar(0));
 	  for (int i = 1; i < rowHist.size(); i++) {
-	    // histImg.at<uchar>(i,rowHist[i])=255;
-	    /*if(rowHist[i - 1] - rowHist[i] < 50)
-	    	continue;*/
 	    line( histImg, Point( bin_w*(i-1), hist_h - cvRound(rowHist[i-1]) ) ,
 	                       Point( bin_w*(i), hist_h - cvRound(rowHist[i]) ),
 	                       Scalar( 255), 2, 8, 0  );
 	  }
 	  imshow("column Histogram",histImg);
-	  /*vector<int> above;
-	  for(int i=0;i<rowHist.size;i++){
-	  	if(rowHist[i]>0.5*avg){
-	  		above.push_back(i);
-	  	}
-	  }*/
+	 
 
 	  vector<pair<int,int> > seg;
 	{
@@ -134,17 +76,7 @@ pair<int,int> histogram(vector<int> &rowHist,Mat& img){
   	if(finalseg[i].second-finalseg[i].first>maxLen.second-maxLen.first)
   		maxLen=finalseg[i];
   }
-  /*for(auto it:finalseg){
-  	for(int i=it.first;i<=it.second;++i){
-  		for(int j=0;j<img.rows;++j)
-  			img.at<Vec3b>(j,i)=Vec3b(0,255,0);
-  	}
-  }*/
-  // for(int i=maxLen.first;i<=maxLen.second;++i){
-  // 		for(int j=0;j<img.rows;++j)
-  // 			img.at<Vec3b>(j,i)=Vec3b(0,255,0);
-  // 	}
-  //imshow("yolo",img);
+  
   return maxLen;
 
 
@@ -184,18 +116,8 @@ int main(int argc, char const *argv[]){
 	Mat imgBW=img0.clone();
 
 	int erosion_size=5;
-	// dilate(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(3 , 3)) );
 	erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5 , 1)));	
-	// erode(imgBW,imgBW,getStructuringElement(MORPH_RECT,Size(2*erosion_size+1,3),Point(erosion_size,1)));
-	// imshow("BW",imgBW);
-	// img0=imgBW;
-	/*erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-	erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );	
-	dilate(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-	// erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-	dilate(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
-*/
-	// erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(7, 7)) );
+	
 	imshow("yo",img0);
 	Mat unCol=img0.clone();
 
@@ -230,62 +152,17 @@ int main(int argc, char const *argv[]){
 	vector<int> zeroMaxima;
 	bool high=false,low=true;
 	for(int i=0;i<rowHist.size();i++){
-		/*if(high==true && rowHist[i]==0){
-			zeroMaxima.push_back(i);
-			high=false;
-			low=true;
-		}
-		if(low==true && rowHist[i]!=0){
-			high=true;
-			low=false;
-		}*/
+		
 		if(rowHist[i]<=0)
 			zeroMaxima.push_back(i);
 	}
-	/*for(int i=0;i<zeroMaxima.size()-1;i++){
-		bool zeros=true;
-		for(int j=zeroMaxima[i];j<zeroMaxima[i+1];j++){
-			if(rowHist[j]!=0){
-				zeros=false;
-			}
-		}
-		if(zeros==true){
-			zeroMaxima.erase(zeroMaxima.begin()+i+1);
-		}
-	}*/
-	/*for(int i=0;i<zeroMaxima.size();i++){
-		cout<<"zeroMax "<<zeroMaxima[i]<<endl;
-	}
-	cout<<"maxH :"<<maxH<<endl;*/
-	// std::vector<int> minima;
-	// for(int i=0;i<rowHist.size()-1;i++){
-	//   	if(rowHist[i]-rowHist[i+1] > 1*maxH/5){
-	//   		minima.push_back(i);
-	//   		//cout<<"gsah"<<rowHist[i]<<endl;
-	//   	}
-	//   }
-	// cout << maxH << endl;
-// imshow("sidnv",unCol);
-	////////////////////////
+	
 	int hist_w = rowHist.size(); int hist_h = 400;
 	  for (int i = 0; i < rowHist.size(); ++i)
 	  {
 	    rowHist[i] = (rowHist[i] *hist_h)/maxH;
 	  }
-	 /*for(int k = 0 ; k < 0	; k++){//moving average filter
-
-	    int nhist[rowHist.size()] ;//= {0};
-	    memset(nhist,0,sizeof(nhist));
-	    for(int i = 5 ; i < rowHist.size() ;i++){
-	      nhist[i] = 0;
-	      for(int j = -1 ; j <= 1 ; j++){//-4 4
-	        nhist[i] += (1/(abs(j)/3.0 + 1.0))*rowHist[i + j];
-	      }
-	    }
-	    for(int i = 5 ; i < rowHist.size() ; i++){
-	      rowHist[i] = nhist[i];
-	    }
-	  }*/
+	
 //segments 
 	vector<pair<int,int> > seg;
 	{
@@ -354,12 +231,7 @@ int main(int argc, char const *argv[]){
                        Scalar( 255), 2, 8, 0  );
   }
 
-  /*for(int i=0;i<zeroMaxima.size();i++){
-  	cout<<zeroMaxima[i]<<endl;
-  	for(int j=0;j<un.cols;j++){
-  		un.at<Vec3b>(zeroMaxima[i],j)=Vec3b(255,0,0);
-  	}
-  }*/
+ 
   	
   vector<pair<int,int> > finalseg;
 
@@ -375,20 +247,10 @@ int main(int argc, char const *argv[]){
 
   erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5,11)) );
   vector<pair<int,int>> whites;
-  // cout<<finalseg.size()<<" : \n"; 
-  // return 0;
   for(int i=1;i<finalseg.size();i++){
   	whites.push_back(make_pair(finalseg[i-1].second+1,finalseg[i].first-1));
-  	// cout<<finalseg[i-1].second+1<<" "<<finalseg[i].first-1<<endl;
   }
-  //cout<<whites.size()<<" hxv\n";
-  // for(int i=0;i<whites.size();i++){
-
- 	// for(int j=whites[i].first;j<whites[i].second;j++){
- 	// 	for(int k=0;k<un.cols;k++)
-  // 		un.at<Vec3b>(j,k)=Vec3b(255,0,0);	
-  // 	}
-  // }
+ 
   
   for(int i=0;i<whites.size();i++){
   	vector<int> colHist(un.cols,0);
@@ -406,22 +268,11 @@ int main(int argc, char const *argv[]){
   		}
   	}
 
-  	//waitKey(0);
   }
+  printf("%d\n",whites.size());
   
   
-  /*for(int i=0;i<maxNo;i++){
-  	// cout<<maxima[i]<<endl;
-  	for(int j=0;j<un.cols;j++){
-  		un.at<Vec3b>(maxima[i],j)=Vec3b(0,255,0);
-  	}
-  }
-  for(int i=maxNo;i<maxima.size();i++){
-  	// cout<<maxima[i]<<endl;
-  	for(int j=0;j<un.cols;j++){
-  		un.at<Vec3b>(maxima[i]+4,j)=Vec3b(0,0,255);
-  	}
-  }*/
+ 
   imshow("green",un);
    imshow("histogram", histImg);
 waitKey(0);

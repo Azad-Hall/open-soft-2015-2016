@@ -119,17 +119,10 @@ void histRGB(Mat src){
 int main(int argc, char const *argv[])
 {
   if (argc != 3) {
-    printf("usage: ./color-segmentation <graph-img-cropped> <out-basename>\n");
+    printf("usage: ./unColoring <graph-img-cropped> <out-basename>\n");
     return 0;
   }
-  cout<<"sdhfukdshf\n";
-  /*string path=argv[1];
-  char Path[]="../ocr/build/graph-box ";
-  strcat(Path,path.c_str()); 
-  strcat(Path," ../ocr/clippedImages/img.png");
-  cout<<Path<<endl;
-  system(Path);
-  system("../ocr/build/graph-box  ../ocr/clippedImages/img.png ../ocr/clippedImages/img.png");*/
+ 
   
   Mat img = imread(argv[1], CV_LOAD_IMAGE_COLOR);
   Mat imgHSV;
@@ -171,9 +164,10 @@ int main(int argc, char const *argv[])
       }      
     }
   }
-  
+ 
   mask = mask & bmask;
-  
+ 
+
   // we will now classify with H value only.
   // make histogram on H
   vector<int> hist(256, 0);
@@ -187,7 +181,7 @@ int main(int argc, char const *argv[])
     }
   }
 
-  
+  //histogram peak detect
 
   int maxH = 0;
   for (int i = 0; i < 256; ++i)
@@ -195,101 +189,68 @@ int main(int argc, char const *argv[])
     maxH = max(maxH, hist[i]);
   }
   
-  
-  ////--------------------------------------------------------------------------------------------------------------------------------------
-  // make string for running peakdetect
-  int noLegends=6;//read from file of legendDetection
-  int noPlots=0;
-  int deltaParam=3;
-  vector<float> maxima;
-  int tick=5;
+  for(int k = 0 ; k < 1; k++){
 
-  while(noPlots!=noLegends){
-
-    if(noPlots<noLegends){
-      // deltaParam--;
-      tick--;
-    }
-    else if(noPlots>noLegends){
-      // deltaParam++;
-      tick++;
-    }
-        
-
-    cout<<"PLOT DATA: "<<noLegends<<" "<<noPlots<<" "<<deltaParam<<" "<<tick<<"\n";
-     getchar();
-
-    for(int k = 0 ; k < 1; k++){
-
-      int nhist[260] = {0};
-      for(int i = 5 ; i < 250 ;i++){
-        nhist[i] = 0;
-        for(int j = -tick ; j <= tick ; j++){//-4 4
-          nhist[i] += (1/(abs(j)/3.0 + 1.0))*hist[i + j];
-        }
-      }
-      for(int i = 5 ; i < 250 ; i++){
-        hist[i] = nhist[i];
+    int nhist[260] = {0};
+    for(int i = 5 ; i < 250 ;i++){
+      nhist[i] = 0;
+      for(int j = -4 ; j <= 4 ; j++){//-4 4
+        nhist[i] += (1/(abs(j)/3.0 + 1.0))*hist[i + j];
       }
     }
-    // cout<<"maxH : "<<maxH<<endl;
-     maxH = 0;
-    ////////////////////////////file peak detect
-    FILE* fp = fopen("res.csv","w");
-    for(int i=0;i<256;i++){
-      fprintf(fp,"%d,%d\n",i,hist[i]);
+    for(int i = 5 ; i < 250 ; i++){
+      hist[i] = nhist[i];
     }
-    fclose(fp);
-
-    {
-      
-      maxima.clear();
-      
-      string cmd = "dummy -i res.csv -d 1e";
-      cmd+=to_string(deltaParam)+" -o out.csv";
-      std::vector<char *> args;
-      std::istringstream iss(cmd);
-
-
-      std::string token;
-      while(iss >> token) {
-        char *arg = new char[token.size() + 1];
-        copy(token.begin(), token.end(), arg);
-        arg[token.size()] = '\0';
-        args.push_back(arg);
-      }
-
-      // now exec with &args[0], and then:
-      run(args.size(), &args[0]);
-
-
-      for(size_t i = 0; i < args.size(); i++)
-        delete[] args[i];
-    }
-    // system("./peakdetect -i res.csv -d 1e2 -o out.csv");//1e2
-    ifstream FP("out.csv");
-    int i,j;
-    string as;
-    
-    while(getline(FP,as)){
-      // cout<<stof(as)<<"\n";
-      maxima.push_back(stof(as));
-      //hist[stof(as)]=10000;
-    }
-    noPlots=maxima.size()/2;
-    if(maxima[noPlots+1]<=20)
-      --noPlots;
-
-
   }
-  cout<<"OUT\n";
-  
-  ///-------------------------------------------------------------------------------------------------------------------------------------
+  // cout<<"maxH : "<<maxH<<endl;
+   maxH = 0;
+  ////////////////////////////file peak detect
+  FILE* fp = fopen("res.csv","w");
+  for(int i=0;i<256;i++){
+    fprintf(fp,"%d,%d\n",i,hist[i]);
+  }
+  fclose(fp);
+  // make string for running peakdetect
+  {
+    string cmd = "dummy -i res.csv -d 1e2 -o out.csv";
+    std::vector<char *> args;
+    std::istringstream iss(cmd);
+
+    std::string token;
+    while(iss >> token) {
+      char *arg = new char[token.size() + 1];
+      copy(token.begin(), token.end(), arg);
+      arg[token.size()] = '\0';
+      args.push_back(arg);
+    }
+
+    // now exec with &args[0], and then:
+    run(args.size(), &args[0]);
+
+
+    for(size_t i = 0; i < args.size(); i++)
+      delete[] args[i];
+  }
+  // system("./peakdetect -i res.csv -d 1e2 -o out.csv");//1e2
+  ifstream FP("out.csv");
+  int i,j;
+  string as;
+  vector<float> maxima;
+  while(getline(FP,as)){
+    // cout<<stof(as)<<"\n";
+    maxima.push_back(stof(as));
+    //hist[stof(as)]=10000;
+  }
+  // print the number of maxima
+  /*printf("%d\n", (int)maxima.size()/2);*/
   // first half of maxima array is max, second half is min
   maxima.push_back(256);
   
 
-  
+  //fclose(fp);
+
+
+  ////////////////////////////////////file peak detect
   for (int i = 0; i < 256; ++i)
   {
     maxH = max(maxH, hist[i]);
@@ -300,7 +261,8 @@ int main(int argc, char const *argv[])
       if(hist[i]>0.5*maxH)
         Hpeaks.push_back(i);
     }
-  
+  //Mat area=Mat()
+  //////////////////////////
 
   // normalize histogram
   int hist_w = 512; int hist_h = 400;
@@ -334,78 +296,22 @@ int main(int argc, char const *argv[])
   {
     for (int j = 0; j < yellow.cols; ++j)
     {
-      if (!mask.at<uchar>(i,j)){
-        yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
-      }
+      
       if(mask.at<uchar>(i,j)){
         unColor.at<Vec3b>(i,j)=Vec3b(255,255,255);
       }
-      
     }
   }
+  char path[100];
+  strcpy(path,"unColored/");
+  strcat(path,argv[2]);
+  strcat(path,".png");
+  cout<<path;
+  // path=strcat(path,)
+  imshow(path,unColor);
+  imwrite(path,unColor);
+  waitKey(0);
 
-  
-
-  Mat plots=yellow.clone();//Mat::zeros(yellow.rows,yellow.cols,CV_8UC1);
-  //merging folding of red
-  int k=maxNo,t=0;
-  plots=Scalar(0);
-  if(maxima[maxNo+1]<=20){
-    printf("%d\n", (int)maxima.size()/2-1);
-    k++;
-    t=1;
-    plots=Scalar(0);
-    for(int i=0;i<imgHSV.rows;i++){
-
-      for(int j=0;j<imgHSV.cols;j++){
-
-        if (mask.at<uchar>(i,j) && imgHSV.at<Vec3b>(i,j)[0]>=maxima[maxNo] && imgHSV.at<Vec3b>(i,j)[0]<maxima[maxNo+1]){
-          plots.at<Vec3b>(i,j) = 255;
-        }
-      }
-    }
-    for(int i=0;i<imgHSV.rows;i++){
-
-      for(int j=0;j<imgHSV.cols;j++){
-
-        if (mask.at<uchar>(i,j) && imgHSV.at<Vec3b>(i,j)[0]>=maxima[2*maxNo-1] && imgHSV.at<Vec3b>(i,j)[0]<maxima[2*maxNo]){
-          plots.at<Vec3b>(i,j) = 255;
-        }
-      }
-    }
-    char name[1000];
-    sprintf(name, "%s-0.png", argv[2]);
-    imwrite(name,plots);
-  }
-  else
-    printf("%d\n", (int)maxima.size()/2);
-  
-  for(;k<2*maxNo-t;k++){
-    plots=Scalar(0);
-    for(int i=0;i<imgHSV.rows;i++){
-
-      for(int j=0;j<imgHSV.cols;j++){
-
-        if (mask.at<uchar>(i,j) && imgHSV.at<Vec3b>(i,j)[0]>=maxima[k] && imgHSV.at<Vec3b>(i,j)[0]<maxima[k+1]){
-          plots.at<Vec3b>(i,j) = yellow.at<Vec3b>(i,j);
-        }
-      }
-    }
-    char name[1000];
-    sprintf(name, "%s-%d.png", argv[2], (k-maxNo));
-    imwrite(name,plots);
-   
-  }
-
-  Mat imgBW = Mat(imgHSV.rows,imgHSV.cols,CV_8UC1);
-  for(int i=0;i<imgHSV.rows;i++){
-    for(int j=0;j<imgHSV.cols;j++){
-      imgBW.at<uchar>(i,j)=imgHSV.at<Vec3b>(i,j)[1]*2;
-    }
-  }
-  imshow("weird", yellow);
-  imwrite("weird2.png", yellow);
- 
   
   return 0;
 }
