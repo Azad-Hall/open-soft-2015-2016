@@ -1,4 +1,7 @@
 3
 800 1039 7 22
+Without decay -—+—-
 753 949 28 48
+with rep. prob = 1'
 741 956 53 74
+With deéay function
