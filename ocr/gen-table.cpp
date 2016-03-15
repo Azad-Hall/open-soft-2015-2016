@@ -75,32 +75,66 @@ vector<string> getColumn(string title, vector<pair<bool, int> > samples, double 
 
 vector<pair<bool, int> > interpolate(vector<int> xsamples, vector<pair<bool, int> > ysamples){
   int degree = 3, np = 0;
-  cout << xsamples.size() << endl;
-  for(int i = 1  ; i < ysamples.size() -1  ; i++){
-  	//cout << xsamples[i]  << " ''" << ysamples[i].second << " " << ysamples[i].first << endl;
-    if ( ysamples[i].first == true )
-      np++;
-  }
-  double x[np], y[np];
+  // cout << xsamples.size() << endl;
+  vector<double> x, y;
   int ind = 0;
 
   int start,start1,end,end1;
-  for(int i = 1  ; i < ysamples.size() -1 ; i++ ){
+  for(int i = 0  ; i < ysamples.size() ; i++ ){
     if ( ysamples[i].first == true){
-      x[ind] = xsamples[i];
-      y[ind] = ysamples[i].second;
+      x.push_back(xsamples[i]);
+      y.push_back(ysamples[i].second);
       ind++;
     }
   }
-
+  // make sure atleast 2 poitns are there in truee samples..
+  assert(x.size() >= 2);
+  // check if start point is needed
+  if (ysamples[0].first == false) {
+    double x1 = x[0], x2 = x[1];
+    double y1 = y[0], y2 = y[1];
+    double m = (y2-y1)/(x2-x1);
+    double c = y1 - m*x1;
+    // get the y value
+    double x0 = xsamples[0];
+    double y0 = x0*m+c;
+    x.insert(x.begin(), x0);
+    y.insert(y.begin(), y0);
+  }
+  // check if end point is needed
+  if (ysamples[ysamples.size()-1].first == false) {
+    int sz = y.size();
+    double x1 = x[sz-1], x2 = x[sz-2];
+    double y1 = y[sz-1], y2 = y[sz-2];
+    double m = (y2-y1)/(x2-x1);
+    double c = y1 - m*x1;
+    // get the y value
+    double x0 = xsamples[xsamples.size()-1];
+    double y0 = x0*m+c;
+    x.insert(x.end(), x0);
+    y.insert(y.end(), y0);
+  }
+  np = y.size();
+  // for (int i = 0; i < np; ++i)
+  // {
+  //   printf("%lf ", x[i]);
+  // }
+  // printf("\n");
+  // for (int i = 0; i < np; i++) {
+  //   printf("%lf", y[i]);
+  // }
+  // printf("\n");
   gsl_interp_accel *acc = gsl_interp_accel_alloc ();
   gsl_spline *spline  = gsl_spline_alloc (gsl_interp_cspline, np); 
 
   //cout<<"np = "<<np << " " << xsamples.size() <<endl;
-  gsl_spline_init (spline, x, y, np);
+  gsl_spline_init (spline, &x[0], &y[0], np);
 
-  for(int i = 1 ; i < ysamples.size() - 1; i++ ){
+  for(int i = 0 ; i < ysamples.size(); i++ ){
     if ( ysamples[i].first == false){
+        if (!(xsamples[i] >= x[0])) {
+          assert(0);
+        }
         ysamples[i].second = gsl_spline_eval(spline, xsamples[i], acc);
 		ysamples[i].first = true;
     }
@@ -108,28 +142,28 @@ vector<pair<bool, int> > interpolate(vector<int> xsamples, vector<pair<bool, int
    gsl_spline_free (spline);
    gsl_interp_accel_free (acc);
 
-   //computing for end points using linear extrapolation
-  start = ysamples.size()-1;end = 1;
-  for(int i = 1 ; i < ysamples.size() - 1; i++ ){
-    if( ysamples[i].first == true && start==ysamples.size()-1)
-      {start = i;/*cout<<"starta "<<start<<"\n";*/}
-    if( ysamples[ysamples.size() - i].first == true && end==1)
-      {end = ysamples.size() - i;/*cout<<"enda "<<end<<"\n";*/}
-  }
-  start1 = start;end1 = end;
-  while(ysamples[++start1].first==false)
-  {
-    ++start1;
-  }
-  //cout<<"start1 "<<start1<<"\n";
-  while(ysamples[--end1].first==false)
-  {
-    --end1;
-  }
-  //cout<<"end1 "<<end1<<"\n";
-    ysamples[0].second = ( ysamples[start1].second - ysamples[start].second ) * xsamples[0] / ( xsamples[start1] - xsamples[start] ) ;
+  //  //computing for end points using linear extrapolation
+  // start = ysamples.size()-1;end = 1;
+  // for(int i = 1 ; i < ysamples.size() - 1; i++ ){
+  //   if( ysamples[i].first == true && start==ysamples.size()-1)
+  //     {start = i;/*cout<<"starta "<<start<<"\n";*/}
+  //   if( ysamples[ysamples.size() - i].first == true && end==1)
+  //     {end = ysamples.size() - i;/*cout<<"enda "<<end<<"\n";*/}
+  // }
+  // start1 = start;end1 = end;
+  // while(ysamples[++start1].first==false)
+  // {
+  //   ++start1;
+  // }
+  // //cout<<"start1 "<<start1<<"\n";
+  // while(ysamples[--end1].first==false)
+  // {
+  //   --end1;
+  // }
+  // //cout<<"end1 "<<end1<<"\n";
+  //   ysamples[0].second = ( ysamples[start1].second - ysamples[start].second ) * xsamples[0] / ( xsamples[start1] - xsamples[start] ) ;
    
-    ysamples[ysamples.size()-1].second = ( ysamples[end].second - ysamples[end1].second ) * xsamples[ysamples.size()-1] / ( xsamples[end] - xsamples[end1] ) ;
+  //   ysamples[ysamples.size()-1].second = ( ysamples[end].second - ysamples[end1].second ) * xsamples[ysamples.size()-1] / ( xsamples[end] - xsamples[end1] ) ;
     
   return ysamples;
 }
