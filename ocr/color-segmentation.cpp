@@ -564,7 +564,7 @@ int main(int argc, char const *argv[])
   for(auto it:mp){
     strcpy(a,legendText[h].c_str());
     printf("%d %d %d %d %s\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second,a);
-
+    h++;
   }
         
   // imshow("weird", yellow);

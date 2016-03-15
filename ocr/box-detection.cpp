@@ -471,8 +471,11 @@ int getBoxesNew(Mat input, int minLineLength = 30, int houghLineThresh = 200, in
       imshow("v",contourImg);
       //waitKey(0);
       return 0;
-    }
+    } 
   }
+  // should write the new file anyway, even when no legend box found.
+  imwrite(output_name.c_str(), input);
+  
 
 
 }

@@ -36,8 +36,8 @@ function graphFn {
   ../../legendDetection "$img_cropped"
   # color segmentation
   ../../color-segmentation $img_cropped "bin" "nolegend-$img_cropped" >> gen.txt
-  # run granularity detction
-  ../../xaxis-granularity "$1" < bb.txt >> gen.txt
+  # run granularity detction. actually fick this
+  # ../../xaxis-granularity "$1" < bb.txt >> gen.txt
   # fingers crossed
   tablexml="$2"
   ../../gen-table scale.xml bin $tablexml < gen.txt

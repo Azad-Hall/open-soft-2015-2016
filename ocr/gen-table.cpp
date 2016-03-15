@@ -227,10 +227,21 @@ int main(int argc, char const *argv[])
   // read number of binary images from stdin
   scanf("%d\n", &n);
   // read the least count granularity. keep it atleast 10 or we will get infinite loop...
-  int lc = 10;
-  scanf("%d\n", &lc);
-  if (lc == 0)
-    lc = 10;
+  // actually don't read the granularity.
+  // read the color and legend data generate by color-segmentation
+  vector<string> legendTexts(n, "");
+  vector<int> hvals(n, -1);
+  for (int i = 0; i < n; i++) {
+    int id;
+    int hlow, hhi;
+    char buf[1000];
+    scanf("%*d %d %d %d %[^\n]s\n", &id, &hlow, &hhi, buf);
+    if (id < 0 || id >= n)
+      continue;
+    if (legendTexts[id].empty())
+      legendTexts[id] = buf;
+    hvals[id] = (hlow+hhi)/2;
+  }
   // read xml
   pugi::xml_document doc;
   printf("loading xml %s\n", argv[1]);
@@ -327,6 +338,7 @@ int main(int argc, char const *argv[])
   pugi::xml_parse_result result2 = odoc.load_file(argv[3]);
   xml_node tablenode = odoc.append_child("table");
   tablenode.append_attribute("title") = title.c_str();
+  tablenode.append_attribute("ytitle") = vtext.c_str();
   for (int i = 0; i < table.size(); i++) {
     xml_node tr = tablenode.append_child();
     tr.set_name("tr");
