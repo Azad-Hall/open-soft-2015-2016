@@ -12,14 +12,13 @@
 #include <vector>
 #include <map>
 #include <string>
-#include </home/aytas32/OpenSoft/inter_hall_16/ocr/peakdetect.cpp>
 
 using namespace cv;
 using namespace std;
 typedef unsigned char uchar;
 int run(int argc, char **argv); // for peakdetect
 // expands black mask using a looser threshold for saturation to be considered black (eg. 20%)
-void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew, Mat &whiteMask, int lowSatThresh) {
+void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew, Mat &whiteMask, int lowSatThresh, Point srcCoord) {
   int iArr[] = {-2, -1, 0, 1, 2};
   for (int k = 0; k < 5; k++) {
     for (int l = 0; l < 5; l++) {
@@ -33,17 +32,22 @@ void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew
         continue;
       visited.at<uchar>(ii,jj) = 1;
       // add special conditions for brown and blue to counter anti aliasing
-      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-30) < 20 || fabs(hsv[0]-200) < 20 || fabs(hsv[0]-216) < 8) && whiteMask.at<uchar>(ii,jj) ) {
+      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-10) < 20 || fabs(hsv[0]-100) < 20) && whiteMask.at<uchar>(ii,jj) ) {
         visited.at<uchar>(ii,jj) = 1;
         bmaskNew.at<uchar>(ii,jj) = 0;
-        traverse(bmask, visited, imgHSV, ii, jj, bmaskNew, whiteMask, lowSatThresh);
+        // only traverse if distance to srcCoord is less than thresh
+        if (norm(srcCoord-Point(jj,ii)) < 20)
+          traverse(bmask, visited, imgHSV, ii, jj, bmaskNew, whiteMask, lowSatThresh, srcCoord);
       }
     }
   }
 }
+
 Mat expandBMask(Mat bmask, Mat imgHSV, Mat whiteMask, int lowSatThresh) {
+  // shouldn't use search for expanding mask, it can completely take away the color!
   Mat visited = Mat::zeros(bmask.size(), CV_8U);
   Mat bmaskNew = Mat::ones(bmask.size(), CV_8U);
+  Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(7,7));
   for (int i = 0; i < bmask.rows; ++i)
   {
     for (int j = 0; j < bmask.cols; ++j)
@@ -51,8 +55,21 @@ Mat expandBMask(Mat bmask, Mat imgHSV, Mat whiteMask, int lowSatThresh) {
       if (bmask.at<uchar>(i,j) == 0)
         bmaskNew.at<uchar>(i,j) = 0;
       if (bmask.at<uchar>(i,j) == 0 && visited.at<uchar>(i,j) == 0) {
+        // don't use search. instead, just use a kernel and mask away shitty pixels.
+        // use search, but only to a fixed radius.
         visited.at<uchar>(i,j) = 1;
-        traverse(bmask, visited, imgHSV, i, j, bmaskNew, whiteMask, lowSatThresh);
+        // for (int ii = 0; ii < kernel.rows; ii++) {
+        //   for (int jj = 0; jj < kernel.cols; jj++) {
+        //     int k = i+ii-kernel.rows/2, l = j+jj-kernel.cols/2;
+        //     Vec3b hsv = imgHSV.at<Vec3b>(k,l);
+        //     // add special conditions for brown and blue to counter anti aliasing
+        //     if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-10) < 20 || fabs(hsv[0]-100) < 20) && whiteMask.at<uchar>(ii,jj) ) {
+        //       visited.at<uchar>(ii,jj) = 1;
+        //       bmaskNew.at<uchar>(ii,jj) = 0;
+        //     }
+        //   }
+        // }
+        traverse(bmask, visited, imgHSV, i, j, bmaskNew, whiteMask, lowSatThresh, Point(j,i));
       }
     }
   }
@@ -122,7 +139,7 @@ int main(int argc, char const *argv[])
     printf("usage: ./color-segmentation <graph-img-cropped> <out-basename>\n");
     return 0;
   }
-  cout<<"sdhfukdshf\n";
+  // cout<<"sdhfukdshf\n";
   /*string path=argv[1];
   char Path[]="../ocr/build/graph-box ";
   strcat(Path,path.c_str()); 
@@ -157,7 +174,7 @@ int main(int argc, char const *argv[])
   //anti aliasing correction
   // using search method
   //again adding all black pixels to bmask for higher threshold of saturation
-  bmask = expandBMask(bmask, imgHSV, mask, 0.11*255);//0.11
+  bmask = expandBMask(bmask, imgHSV, mask, 0.15*255);//0.11
   bool got=false;
   for (int i = 0; i < mask.rows; ++i)
   {
