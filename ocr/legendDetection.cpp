@@ -302,7 +302,7 @@ int main(int argc, char const *argv[]){
   	}
   	pair<int,int> X=histogram(colHist,un);
   	pair<int,int> Y=whites[i];
-  	// fout<<X.first<<" "<<X.second<<" "<<Y.first<<" "<<Y.second<<"\n";
+  	fout<<X.first<<" "<<X.second<<" "<<Y.first<<" "<<Y.second<<"\n";
   	for(int m=Y.first;m<Y.second;m++){
   		for(int n=X.first;n<X.second;n++){
   			un.at<Vec3b>(m,n)=Vec3b(255,0,0);

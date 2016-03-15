@@ -240,9 +240,9 @@ int main(int argc, char const *argv[])
   // make string for running peakdetect
   int noLegends=6;//read from file of legendDetection
   int noPlots=0;
-  int deltaParam=3;
+  int deltaParam=2;
   vector<float> maxima;
-  int tick=5;
+  int tick=4;
 
   
 
@@ -493,6 +493,7 @@ int main(int argc, char const *argv[])
     // for(int id=0;id<legendHist.size();id++)
     //   cout<<legendHist[id]<<" ";
     // cout<<"\n";
+    cout<<"PLotHues :"<<plothues.size()<<"\n";
     int maxpos=max_element(legendHist.begin(),legendHist.end())-legendHist.begin();
     for(int j=0;i<plothues.size();++j)
       if(maxpos>=plothues[j].first and maxpos<=plothues[j].second)
