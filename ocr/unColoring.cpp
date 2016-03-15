@@ -337,7 +337,7 @@ int main(int argc, char const *argv[])
   // path=strcat(path,)
   imshow(path,unColor);
   imwrite(path,unColor);
-  waitKey(0);
+  //waitKey(0);
 
   
   return 0;

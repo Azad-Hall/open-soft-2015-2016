@@ -13,6 +13,9 @@
 #include <map>
 #include <algorithm>
 #include <string>
+#include "peakdetect.h"
+//#include </home/aytas32/OpenSoft/inter_hall_16/ocr/peakdetect.cpp>
+//Need to run g++ peakdetect.cpp color-segmentation.cpp 
 
 using namespace cv;
 using namespace std;
