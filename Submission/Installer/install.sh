@@ -17,6 +17,8 @@ qmake `pwd`/../GUI/GUI.pro
 make
 
 touch Graph_Extractor_run.sh
+echo "DIR=\"\$( cd \"\$( dirname \"\${BASH_SOURCE[0]}\" )\" && pwd )\"" >> Graph_Extractor_run.sh
+echo "cd \$DIR" >> Graph_Extractor_run.sh
 echo "#!/bin/sh" >> Graph_Extractor_run.sh
 echo "export LD_LIBRARY_PATH=`pwd`/qpdflib"  >> Graph_Extractor_run.sh
 echo "exec `pwd`/graphextractor/graphextractor" >> Graph_Extractor_run.sh

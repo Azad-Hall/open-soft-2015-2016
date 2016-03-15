@@ -43,7 +43,7 @@ int main(int argc, char const *argv[])
         }
       }
       printf("adding table with title %s\n", title.c_str());
-      builder.addTable(table, title);
+      builder.addTable(table, title,"x-title","y-title");
     }
   }
   builder.endDocument();

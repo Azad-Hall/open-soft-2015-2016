@@ -6,7 +6,13 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 if [ -z "$http_proxy" ]; then
-    echo "Need http proxy to run the installer. Use -E to export the environment variables."
+    echo "Need http proxy to run the installer. Set the http proxy and restart the terminal."
+    echo "Please run the installer as: sudo -E ./graph_extract_install.sh."
+    exit 1
+fi
+
+if [ -z "$https_proxy" ]; then
+    echo "Need https proxy to run the installer. Set the https proxy and restart the terminal."
     echo "Please run the installer as: sudo -E ./graph_extract_install.sh."
     exit 1
 fi
