@@ -6,7 +6,6 @@ PDFbuilder::PDFbuilder() {
 	latex_string += "\\usepackage{graphicx}\n";
 	latex_string += "\\usepackage{geometry}\n";
 	latex_string += "\\usepackage{longtable}\n";
-	latex_string += "\\usepackage{multirow}\n";
 	latex_string += "\\title{}\n";
 	latex_string += "\\author{Team 7}\n";
 }
@@ -44,7 +43,7 @@ void PDFbuilder::addTable(const vector< vector<string> >& table, const string& t
 	latex_string += "\\endfoot\n";
 	latex_string += "\\endlastfoot\n";
 	latex_string += "\\hline\n";
-	latex_string += "\\multirow{2}{*}{ " + preprocess(table[0][0]) + " } & \\multicolumn{" + to_string(cols-1) + "}{|c|}{{" + preprocess(y_title) + "}}\\\\\n";
+	latex_string += "\\multicolumn{1}{|c|}{{ " + preprocess(table[0][0]) + " }} & \\multicolumn{" + to_string(cols-1) + "}{|c|}{{" + preprocess(y_title) + "}}\\\\\n";
 	latex_string += "\\cline{2-" + to_string(cols) + "}\n";
 	
 	for (int j = 1; j < cols; ++j)
