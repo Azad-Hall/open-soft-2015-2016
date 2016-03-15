@@ -3,6 +3,8 @@
 
 #include <QObject>
 #include <QString>
+#include <QProcess>
+#include <QTextStream>
 
 class PDFProcessor : public QObject
 {
@@ -21,8 +23,14 @@ signals:
 public slots:
     void run();
 
+private slots:
+    void readOutput();
+
 private:
     QString filePath;
+    QString outputFilePath;
+    QProcess* process;
+    bool outputFilePathSet;
 };
 
 #endif // PDFPROCESSOR_H

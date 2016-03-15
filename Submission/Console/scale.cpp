@@ -26,8 +26,8 @@ typedef struct a  {
 } labels;
 
 typedef struct b  {
-  double x,a,b,c,d;
-  int z,i,j;
+  double x,a,b;
+  int z;
 } scale; 
 
 // stack<pair<Point2f, Point2f> > aa;
@@ -85,7 +85,7 @@ double xValue(double xCoordinate,double scale){
 //       }
 //     };
 
-double yScale(vector<labels> labelv,double yAxisLength,vector<bool>& inline_y){
+double yScale(vector<labels> labelv,double yAxisLength){
   vector<scale> y_scale;
   scale temp1;
   vector<double> y_scale2;
@@ -106,11 +106,7 @@ double yScale(vector<labels> labelv,double yAxisLength,vector<bool>& inline_y){
         temp1.x=(a2-a1)/(labelv[i].x-labelv[j].x);
         temp1.z=0;
         temp1.a=a1;
-        temp1.c=a2;
         temp1.b=labelv[i].x;
-        temp1.d=labelv[j].x;
-        temp1.i=i;
-        temp1.j=j;
         y_scale.push_back(temp1);
         cout<<"\nVertical Scale:     "<<temp1.x;
       }
@@ -166,12 +162,6 @@ double yScale(vector<labels> labelv,double yAxisLength,vector<bool>& inline_y){
 }
 }
 //cout<<"\n"<<w<<"   ";
-for(int i=0;i<y_scale.size();i++){
-  if(y_scale[i].z>=y_scale.size()*w/100) {//thresholding handled by while loop
-    inline_y[y_scale[i].i]=true;
-    inline_y[y_scale[i].j]=true;
-    }
-  } 
 v=0;
 for(int i=0;i<y_scale2.size();i++) v=v+y_scale2[i];//Taking average of inline scales
 v=v/y_scale2.size();                    //Vertical Scale Approximated
@@ -179,7 +169,7 @@ return v;
 }
 
 
-double xScale(vector<labels> labelh,double xAxisLength,vector<bool>& inline_x){ 
+double xScale(vector<labels> labelh,double xAxisLength){ 
   vector<scale> x_scale;
   scale temp1;
   vector<double> x_scale2;
@@ -199,11 +189,7 @@ double xScale(vector<labels> labelh,double xAxisLength,vector<bool>& inline_x){
         temp1.x=(a2-a1)/(labelh[j].x-labelh[i].x);
         temp1.z=0;
         temp1.a=a1;
-        temp1.c=a2;
         temp1.b=labelh[i].x;
-        temp1.d=labelh[j].x;
-        temp1.i=i;
-        temp1.j=j;
         x_scale.push_back(temp1);
         cout<<"\nHorizontal Scale:     "<<temp1.x;
 
@@ -261,12 +247,6 @@ double xScale(vector<labels> labelh,double xAxisLength,vector<bool>& inline_x){
 }
 } 
 //cout<<"\n"<<w<<"   ";
-for(int i=0;i<x_scale.size();i++){
-  if(x_scale[i].z>=x_scale.size()*w/100) {//thresholding handled by while loop
-    inline_x[x_scale[i].i]=true;
-    inline_x[x_scale[i].j]=true;
-    }
-  }
 h=0;
 for(int i=0;i<x_scale2.size();i++) h=h+x_scale2[i];//taking average of inline scales
 h=h/x_scale2.size();                //Horizontal Scale Approximation  
@@ -394,8 +374,7 @@ ifstream f("tot_out_y.txt");
   for(int i=0;i<labelv.size();i++) {
     cout<<"\n"<<labelv[i].text;
   }
-  vector<bool> inline_y(labelv.size(),false);
-    v=yScale(labelv,(labelv[0].x-labelv[labelv.size()-1].x),inline_y);
+    v=yScale(labelv,(labelv[0].x-labelv[labelv.size()-1].x));
   cout<<"\n\nVertical Scale Final:      "<<v;
   
 // pugi::xml_document doc1;
@@ -433,8 +412,7 @@ printf("labelh size = %d\n", (int)labelh.size());
 for(int i=0;i<labelh.size();i++) {
     cout<<"\n"<<labelh[i].text;
   }
-  vector<bool> inline_x(labelh.size(),false);
-    h=xScale(labelh,(labelh[labelh.size()-1].x-labelh[0].x),inline_x);
+    h=xScale(labelh,(labelh[labelh.size()-1].x-labelh[0].x));
   cout<<"\n\nHorizontal Scale Final:      "<<h;
 
 cout<<"\nStartx:               "<<startx;
@@ -493,7 +471,6 @@ cout<<"\nStartcoordinatey:     "<<startCoordinatey;
   xnode.append_attribute("valPerPix") = h;
   xnode.append_attribute("xrefCoord") = startCoordinatex;
   xnode.append_attribute("xrefValue") = startx;
-  
   pugi::xml_node ynode = outdoc.append_child();
   ynode.set_name("yscale");
   ynode.append_attribute("valPerPix") = v;
@@ -511,30 +488,6 @@ cout<<"\nStartcoordinatey:     "<<startCoordinatey;
    pugi::xml_node ttxt = outdoc.append_child();
   ttxt.set_name("Title_text");
   ttxt.append_attribute("ttxt") = title_text.c_str();
-
-   pugi::xml_node y_label = outdoc.append_child();
-  y_label.set_name("y_label");
-  for(int i=0;i<labelv.size();i++){
-    if(inline_y[i]) {
-      pugi::xml_node inliney = y_label.append_child();
-      inliney.set_name("inliney");
-      string s=labelv[i].text;
-      inliney.append_attribute("pix")=(int)labelv[i].x;
-      inliney.append_attribute("val")=s.c_str();
-    }
-  }
-
-  pugi::xml_node x_label = outdoc.append_child();
-  x_label.set_name("x_label");
-  for(int i=0;i<labelh.size();i++){
-    if(inline_x[i]) {
-      pugi::xml_node inlinex = x_label.append_child();
-      inlinex.set_name("inlinex");
-      string s=labelh[i].text;
-      inlinex.append_attribute("pix")=(int)labelh[i].x;
-      inlinex.append_attribute("val")=s.c_str();
-    }
-  }
 
   // pugi::xml_node 
   ofstream xml_out;

@@ -187,10 +187,6 @@ vector<Point> shrinkContour(vector<Point> contour, double pix)  {
   }
   return shrinked;
 }
-inline void shiftRect(Vec4i &r, Point p1) {
-  r[0] += p1.x; r[2] += p1.x;
-  r[1] += p1.y; r[3] += p1.y;
-}
 // minLineLength = min length in pixels for a line to be detectes
 std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30, int houghLineThresh = 200, int houghMergeThresh = 60
   , double slopeThresh = 1e-2) {
@@ -204,39 +200,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
   imwrite("tmp/thresholded.png", mask);
   vector<Vec4i> lines;
   vector<Vec4i> hlines, vlines; // horizontal and vertical lines
-  // printf("houghLineThresh = %d, minLineLenght = %d, houghMergeThresh = %d\n", houghLineThresh, minLineLength, houghMergeThresh);
-  HoughLinesP( mask, lines, 1, CV_PI/180*2, houghLineThresh, minLineLength, houghMergeThresh );
-  // cut image into parts, run hough on each.... if the image is too big
-  if (mask.rows >= 3e3 && mask.cols >= 2e3)
-  {
-    int yinc = mask.rows/4, ynum = 4;
-    int xinc = mask.cols/2, xnum = 2;
-    // 2x2 division
-    vector<pair<Point,Point> > rois = {{{0,0},{mask.cols/2,mask.rows/2}}, 
-                                       {{mask.cols/2,0},{mask.cols-1,mask.rows/2}},
-                                       {{0,mask.rows/2},{mask.cols/2,mask.rows-1}},
-                                       {{mask.cols/2,mask.rows/2},{mask.cols-1,mask.rows-1}}};
-    // 2x4 division
-    for (int i = 0; i < ynum; i++) {
-      for (int j = 0; j < xnum; j++) {
-        Point p1(xinc*j, yinc*i);
-        Point p2(p1.x + xinc, p1.y + yinc);
-        rois.push_back({p1,p2});
-      }
-    }
-    for (int i = 0; i < rois.size(); i++) {
-      Mat crp = mask(Rect(rois[i].first, rois[i].second));
-      vector<Vec4i> crpLines;
-      HoughLinesP( crp, crpLines, 1, CV_PI/180*2, houghLineThresh, minLineLength, houghMergeThresh );
-      Point p = rois[i].first;
-      for (int j = 0; j < crpLines.size(); j++) {
-        crpLines[j][0] += p.x; crpLines[j][1] += p.y;
-        crpLines[j][2] += p.x; crpLines[j][3] += p.y;
-      }
-      lines.insert(lines.end(), crpLines.begin(), crpLines.end());
-    }
-    
-  }
+  HoughLinesP( mask, lines, 1, CV_PI/180*2., houghLineThresh, minLineLength, houghMergeThresh );
   cv::Mat linesImg = cv::Mat::zeros(mask.size(), CV_8UC1), fullLinesImg = linesImg.clone();
   // fullLinesImg has full lines, linesImg only has line segments.
   for( size_t i = 0; i < lines.size(); i++ )

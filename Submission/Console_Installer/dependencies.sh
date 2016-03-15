@@ -16,7 +16,3 @@ install_dependency unpaper
 install_dependency imagemagick
 install_dependency ghostscript
 install_dependency latexmk
-install_dependency qt5-default
-install_dependency qt5-qmake
-install_dependency qtbase5-dev-tools
-install_dependency libqt5webengine5-dev

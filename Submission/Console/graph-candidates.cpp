@@ -57,7 +57,7 @@ int main(int argc, char const *argv[])
     system(buf);
   }
   Mat input_notext = imread(argv[2]);
-  std::vector<std::vector<cv::Point> >  rectContoursTemp = getBoxes(input_notext, 30, 200), rectContours;
+  std::vector<std::vector<cv::Point> >  rectContoursTemp = getBoxes(input_notext, 30), rectContours;
   printf("initial rect contours = %d\n", rectContoursTemp.size());
   // get more precise rectangles by using getRectangularContour
   for (int i = 0; i < rectContoursTemp.size(); i++) {
@@ -130,9 +130,7 @@ int main(int argc, char const *argv[])
           int xpad = imgRect.width*0.025;
           int ypad = imgRect.height*0.025;
           Point tl(txtRect.tl().x-xpad, imgRect.tl().y-ypad);
-          // pad a little more in below, to keep the title
-          int titlepad = imgRect.height*0.075;
-          Point br(imgRect.br().x+xpad, imgRect.br().y + txtRect.width + dist+ypad+titlepad);
+          Point br(imgRect.br().x+xpad, imgRect.br().y + txtRect.width + dist+ypad);
           // make sure ROI is within image.
           tl.x = max(0,tl.x); tl.y = max(0,tl.y);
           br.x = min(input.cols-1, br.x); br.y = min(input.rows-1, br.y);

@@ -38,6 +38,8 @@ void MainWindow::loadFile(const QString &path)
     if (pdfWidget->loadFile(path)) {
         // Set the output file path for save as
         outFilePath = path;
+        //Enable SaveAs
+        saveAsAct->setEnabled(true);
         // Update window title with the file name
         QFileInfo fi(path);
         setWindowTitle(fi.fileName());
@@ -175,9 +177,8 @@ void MainWindow::updateStatusBar(QString msg, int value) {
 }
 
 void MainWindow::wrapUpOpenFileWithSuccess() {
-    // Enable Open and SaveAs
+    // Enable Open
     openAct->setEnabled(true);
-    saveAsAct->setEnabled(true);
 }
 
 void MainWindow::wrapUpOpenFileWithFailure() {
