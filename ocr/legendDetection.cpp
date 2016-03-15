@@ -26,12 +26,10 @@ pair<int,int> histogram(vector<int> &rowHist,Mat& img){
 	int maxH=0;
 	int sum=0,avg;
 	for(int i=0;i<rowHist.size();i++){
-		//cout<<rowHist[i]<<endl;
 		sum+=rowHist[i];
 		maxH=max(maxH,rowHist[i]);
 	}
 	avg=sum/rowHist.size();
-	//cout<<"MAx "<<maxH<<" "<<avg<<" "<<sum<<endl;
 	int hist_w = rowHist.size(); int hist_h = 400;
 	  for (int i = 0; i < rowHist.size(); ++i)
 	  {
@@ -111,26 +109,14 @@ void tessy(int ind,map<int,string>& mp,Mat& imgx, pair<int,int> X,pair<int,int> 
   in.getline(txt, 1000, '\n');
   in.close();
   mp[ind]=txt;
-  // ofstream of;
-  // of.open("tot_out_y.txt",ofstream::app);
-  // of<<txt<<"\n";
-  // of.close();
-  // cout<<"\n txt :    "<<txt;
- 	// imshow("label",imgTemp);
-  	// waitKey(0);
 }
 
 int main(int argc, char const *argv[]){
-	// Mat un= imread(argv[1]);//"./unColored/b.png"
-	// Mat unCol;
-	// cvtColor(un,unCol,CV_BGR2HSV);
-	// imshow("dgsfag",un);
 	Mat un= imread(argv[1]);
 	double mean,maxdev=50,r,b,g;
 	double diffr,diffg,diffb;
 	Mat img1=imread(argv[1],1); 
 	Mat img0=imread(argv[1],0),eimg0;
-	// imshow("middle",img0);
 
 
 
@@ -158,7 +144,6 @@ int main(int argc, char const *argv[]){
 	imshow("yo",img0);
 	Mat unCol=img0.clone();
 
-	//imshow("sidnv",unCol);
 	waitKey(0);
 	vector<int> rowHist(unCol.rows,0);
 	for(int i=0.01*unCol.rows;i<unCol.rows*0.99;i++){
@@ -172,7 +157,6 @@ int main(int argc, char const *argv[]){
 
 	int maxH = 0,sum=0,avg;
 	for(int i=0;i<rowHist.size();i++){
-		//cout<<rowHist[i]<<endl;
 		maxH=max(maxH,rowHist[i]);
 		sum+=rowHist[i];
 	}
@@ -239,7 +223,6 @@ int main(int argc, char const *argv[]){
 	for(size_t i = 0; i < args.size(); i++)
       delete[] args[i];
   
-  // system("./peakdetect -i res.csv -d 1e2 -o out.csv");//1e2
   ifstream FP("out1.csv");
   int i,j;
   string as;
@@ -251,18 +234,11 @@ int main(int argc, char const *argv[]){
   }
   // print the number of maxima
   int maxNo=maxima.size()/2;
-  printf("%d\n", (int)maxima.size()/2);
-  // first half of maxima array is max, second half is min
-  //maxima.push_back(256);
 
 
-	// cout<<"HERE \n";
   int bin_w = cvRound( (double) hist_w/rowHist.size() );
   Mat histImg(hist_h, hist_w, CV_8U, Scalar(0));
   for (int i = 1; i < rowHist.size(); i++) {
-    // histImg.at<uchar>(i,rowHist[i])=255;
-    /*if(rowHist[i - 1] - rowHist[i] < 50)
-    	continue;*/
     line( histImg, Point( bin_w*(i-1), hist_h - cvRound(rowHist[i-1]) ) ,
                        Point( bin_w*(i), hist_h - cvRound(rowHist[i]) ),
                        Scalar( 255), 2, 8, 0  );
@@ -275,8 +251,7 @@ int main(int argc, char const *argv[]){
   for(int it=0;it<seg.size();++it){
   	finalseg.push_back(seg[it]);
   	if(it)
-  	if(-seg[it-1].second+seg[it].first<=un.rows*0.02){
-  				//cout<<it<<" ";
+  	if(-seg[it-1].second+seg[it].first<=un.rows*0.022){
   		finalseg.pop_back();
   		finalseg.rbegin()->second=seg[it].second;
   	}	
@@ -302,27 +277,24 @@ int main(int argc, char const *argv[]){
   	}
   	pair<int,int> X=histogram(colHist,un);
   	pair<int,int> Y=whites[i];
-  	fout<<X.first<<" "<<X.second<<" "<<Y.first<<" "<<Y.second<<"\n";
+  	tessy(i,mp,imgx,X,Y);
+  	fout<<X.first<<" "<<X.second<<" "<<Y.first<<" "<<Y.second<<"\n"<<mp[i]<<"\n";
   	for(int m=Y.first;m<Y.second;m++){
   		for(int n=X.first;n<X.second;n++){
   			un.at<Vec3b>(m,n)=Vec3b(255,0,0);
   		}
   	}
 
-  	tessy(i,mp,imgx,X,Y);
+  	
 
   }
   fout.close();
-  // printf("%d\n",whites.size());
-  printf("%d\n",mp.size());
-  for(auto it:mp)
-  	printf("%d %s\n",it.first,it.second.c_str());
 
   
  
-  imshow("green",un);
-   imshow("histogram", histImg);
-waitKey(0);
+ //  imshow("green",un);
+ //   imshow("histogram", histImg);
+	// waitKey(0);
  
  return 0;
 }
