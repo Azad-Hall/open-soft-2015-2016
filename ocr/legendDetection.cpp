@@ -13,12 +13,12 @@
 #include <map>
 #include <string>
 // #include </home/evil999man/inter_hall_16/ocr/peakdetect.cpp>
-#include </home/aytas32/OpenSoft/inter_hall_16/ocr/peakdetect.cpp>
 
 
 using namespace cv;
 using namespace std;
 
+int run(int argc, char **argv); // for peakdetect
 
 
 pair<int,int> histogram(vector<int> &rowHist,Mat& img){
@@ -145,7 +145,7 @@ int main(int argc, char const *argv[]){
 	waitKey(0);
 	Mat unCol=img0.clone();
 
-	
+
 	vector<int> rowHist(unCol.rows,0);
 	for(int i=0.01*unCol.rows;i<unCol.rows*0.99;i++){
 		for(int j=0.01*unCol.cols;j<unCol.cols*0.99;j++){

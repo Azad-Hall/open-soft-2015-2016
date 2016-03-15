@@ -13,7 +13,7 @@ target_link_libraries( remove-text ${OpenCV_LIBS} )
 add_executable(ComputerVision ComputerVision.cpp pugixml.cpp)
 target_link_libraries( ComputerVision ${OpenCV_LIBS} )
 
-add_executable(graph-candidates  graph-candidates.cpp box-detection.cpp pugixml.cpp)
+add_executable(graph-candidates  graph-candidates.cpp box-detection.cpp pugixml.cpp detect-color.cpp)
 target_link_libraries( graph-candidates ${OpenCV_LIBS} )
 
 add_executable(graph-box  graph-box.cpp box-detection.cpp pugixml.cpp)
@@ -61,5 +61,14 @@ add_executable(make-pdf  make-pdf.cpp pugixml.cpp pdfbuilder.cpp)
 target_link_libraries( make-pdf  -lm )
 
 
-add_executable(detect-color detect-color.cpp)
-target_link_libraries( detect-color ${OpenCV_LIBS} )
+# add_executable(detect-color detect-color.cpp)
+# target_link_libraries( detect-color ${OpenCV_LIBS} )
+
+
+
+add_executable(unColoring unColoring.cpp peakdetect.cpp)
+target_link_libraries( unColoring ${OpenCV_LIBS} )
+
+
+add_executable(legendDetection legendDetection.cpp peakdetect.cpp)
+target_link_libraries( legendDetection ${OpenCV_LIBS} )

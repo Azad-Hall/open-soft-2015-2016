@@ -202,6 +202,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
   cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
   // try dilating a litte... maybe more lines will be detected??
   imwrite("tmp/thresholded.png", mask);
+  imshow("mask", mask);
   vector<Vec4i> lines;
   vector<Vec4i> hlines, vlines; // horizontal and vertical lines
   // printf("houghLineThresh = %d, minLineLenght = %d, houghMergeThresh = %d\n", houghLineThresh, minLineLength, houghMergeThresh);
@@ -291,8 +292,204 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
     }
   }
   imwrite("tmp/box-contours.png", drawing);
+  imshow("drawing", drawing);
+//  waitKey(0);
   return rectContours;
 }
+
+
+
+
+int getBoxesNew(Mat input, int minLineLength = 30, int houghLineThresh = 200, int houghMergeThresh = 60
+  , double slopeThresh = 1e-2, string output_name = "out_leg.png") {
+  cv::Mat gray;
+  // will threshold this gray image
+  cv::cvtColor(input, gray, CV_BGR2GRAY);
+  cv::Mat mask;
+  // threshold white/non-white
+  //cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
+
+
+
+
+
+  double mean,maxdev=50,r,b,g;
+  double diffr,diffg,diffb;
+ 
+
+  Mat img1=input.clone();
+  Mat img0=gray,eimg0;
+  imshow("middle",img0);
+
+
+
+
+  for(int i=0;i<img0.cols;i++){
+    for(int j=0;j<img0.rows;j++){
+      Vec3b color = img1.at<Vec3b>(j,i);
+      r=color[0];g=color[1];b=1.3*color[2];
+      
+      mean = (r + g + b) / 3;
+          diffr = abs(mean - r);
+          diffg = abs(mean - g);
+          diffb = abs(mean - b);
+          if ((diffr + diffg + diffb) < maxdev && img0.at<uchar>(j,i)<240)
+              img0.at<uchar>(j,i)=255;
+          else
+            img0.at<uchar>(j,i)=0;
+    }
+  }
+
+  mask = img0;
+
+
+
+
+  // try dilating a litte... maybe more lines will be detected??
+  imwrite("tmp/thresholded.png", mask);
+
+  imshow("mask", mask);
+  vector<Vec4i> lines;
+  vector<Vec4i> hlines, vlines; // horizontal and vertical lines
+  // printf("houghLineThresh = %d, minLineLenght = %d, houghMergeThresh = %d\n", houghLineThresh, minLineLength, houghMergeThresh);
+  HoughLinesP( mask, lines, 1, CV_PI/180*2, houghLineThresh, minLineLength, houghMergeThresh );
+  // cut image into parts, run hough on each.... if the image is too big
+  if (mask.rows >= 3e3 && mask.cols >= 2e3)
+  {
+    int yinc = mask.rows/4, ynum = 4;
+    int xinc = mask.cols/2, xnum = 2;
+    // 2x2 division
+    vector<pair<Point,Point> > rois = {{{0,0},{mask.cols/2,mask.rows/2}}, 
+                                       {{mask.cols/2,0},{mask.cols-1,mask.rows/2}},
+                                       {{0,mask.rows/2},{mask.cols/2,mask.rows-1}},
+                                       {{mask.cols/2,mask.rows/2},{mask.cols-1,mask.rows-1}}};
+    // 2x4 division
+    for (int i = 0; i < ynum; i++) {
+      for (int j = 0; j < xnum; j++) {
+        Point p1(xinc*j, yinc*i);
+        Point p2(p1.x + xinc, p1.y + yinc);
+        rois.push_back({p1,p2});
+      }
+    }
+    for (int i = 0; i < rois.size(); i++) {
+      Mat crp = mask(Rect(rois[i].first, rois[i].second));
+      vector<Vec4i> crpLines;
+      HoughLinesP( crp, crpLines, 1, CV_PI/180*2, houghLineThresh, minLineLength, houghMergeThresh );
+      Point p = rois[i].first;
+      for (int j = 0; j < crpLines.size(); j++) {
+        crpLines[j][0] += p.x; crpLines[j][1] += p.y;
+        crpLines[j][2] += p.x; crpLines[j][3] += p.y;
+      }
+      lines.insert(lines.end(), crpLines.begin(), crpLines.end());
+    }
+    
+  }
+  cv::Mat linesImg = cv::Mat::zeros(mask.size(), CV_8UC1), fullLinesImg = linesImg.clone();
+  // fullLinesImg has full lines, linesImg only has line segments.
+  for( size_t i = 0; i < lines.size(); i++ )
+  {
+    // check if horizontal or vertical. if not, don't draw it.
+    double angle = atan2(lines[i][1]-lines[i][3], lines[i][0] - lines[i][2]);
+    double eps = (slopeThresh)*M_PI; // 0.1% error
+    if (fabs(angle-M_PI/2)>eps && fabs(angle) >eps && fabs(angle-M_PI) > eps && fabs(angle+M_PI/2)>eps && fabs(angle+M_PI) > eps)
+      continue;
+    if (fabs(lines[i][1]-lines[i][3]) > fabs(lines[i][0] - lines[i][2]))
+      vlines.push_back(lines[i]);
+    else
+      hlines.push_back(lines[i]);
+    // extend line by 1% each side.
+    // actually don't extend. just dilate image afterwards.
+    double r = 0.00 * dist (lines[i][0], lines[i][1], lines[i][2], lines[i][3]);
+    line( linesImg, Point(lines[i][0]+r*cos(angle), lines[i][1]+r*sin(angle)),
+        Point(lines[i][2]-r*cos(angle), lines[i][3]-r*sin(angle)), Scalar(255), 3, 8 );
+  }
+  // dilate to close the rectangles
+  dilate(linesImg, linesImg, Mat());
+  dilate(linesImg, linesImg, Mat());
+  imwrite("tmp/lines.png", linesImg);
+  // find contours. keep rectangle contours.
+  std::vector<std::vector<cv::Point> > contours, rectContours;
+  std::vector<cv::Vec4i> hierarchy;
+  cv::findContours(linesImg, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+  cv::Mat drawing = cv::Mat::zeros(mask.size(), CV_8UC3);
+
+  for (int i = 0; i < contours.size(); i++)
+  {
+    float ctArea = cv::contourArea(contours[i]);
+    // discard if less than 4 pionts in contour
+    if (contours[i].size() < 4)
+      continue;
+    cv::Rect boundingBox = cv::boundingRect(contours[i]);
+    // contours that have 80% of area of bounding box are rectangles for consideration
+    float percentRect = ctArea / (float)(boundingBox.height * boundingBox.width);
+    assert (percentRect >= 0 && percentRect <= 1.0);
+    // srhink the contour a little, by moving every point toward the centre.
+    // this is needed since dilation in actually increased the size of the contoouur
+    // shrink contour by 2%. actually, we need to shrink by exactly 4 pix... 
+    
+    contours[i] = shrinkContour(contours[i], 4);
+    if (percentRect > 70/100.) {
+      vector<Point> approxContour;
+      // approx to rectangle maybe?
+      approxPolyDP(contours[i], approxContour, 5, true);
+      rectContours.push_back(approxContour);
+      cv::Scalar color = cv::Scalar(0, 255, 0);
+      drawContours(drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point());
+    }
+  }
+  imwrite("tmp/box-contours.png", drawing);
+  imshow("drawing", drawing);
+//  waitKey(0);
+  
+  vector<vector<Point> > contours_new = rectContours;
+  
+  if (contours_new.size() > 0) {
+    // find largest contour by area
+    vector<Point> largest = contours_new[0];
+    int maxArea = contourArea(largest);
+    for (int i = 1; i < contours_new.size(); i++) {
+      int area = contourArea(contours_new[i]);
+      if (area > maxArea) {
+        maxArea = area;
+        largest = contours_new[i];
+      }
+    }
+    // check if area is large enough to be considered as a legend box.
+    // it would help if we knew how many colors were there, since hegiht of legend box 
+    // depends on tha.
+    cv::Rect bb = boundingRect(largest);
+    // 10% dimension = 1% area?
+    // using 4% area
+    if (bb.width * bb.height > 0.2*0.2*input.cols*input.rows) {
+      // lets expand it by 10 pix to make sure that all of legend gets deletd
+      largest = shrinkContour(largest, -10);
+      // for some reason we need final contour in an array for drawing..
+      vector<vector<Point> > dummy(1, largest);
+      Mat contourImg = input.clone();
+      drawContours(contourImg, dummy, 0, Scalar(255,255,255), CV_FILLED, 8);
+      imwrite(output_name.c_str(), contourImg);
+      imshow("v",contourImg);
+      //waitKey(0);
+      return 0;
+    } 
+  }
+  // should write the new file anyway, even when no legend box found.
+  imwrite(output_name.c_str(), input);
+  
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
 
 bool sortFnRev(const pair<double, Vec4i> &s1, const pair<double, Vec4i> &s2)  {
   return s1.first > s2.first;

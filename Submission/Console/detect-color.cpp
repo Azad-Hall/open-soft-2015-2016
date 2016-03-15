@@ -103,16 +103,16 @@ bool detect_color(Mat img)
  	
 }
 
-// int main(int argc, char const *argv[])
-// {
+int main(int argc, char const *argv[])
+{
   
-//   Mat img = imread(argv[1], CV_LOAD_IMAGE_COLOR);
-//   //cout << img.size() << endl;
-//   cout<<detect_color(img)<<endl;
-//  //cout << isGraph << endl;
+  Mat img = imread(argv[1], CV_LOAD_IMAGE_COLOR);
+  //cout << img.size() << endl;
+  cout<<detect_color(img)<<endl;
+ //cout << isGraph << endl;
 
-// //namedWindow("my window", CV_WINDOW_NORMAL);
-// 	//imshow("my window", mask);
-// 	//waitKey(0);
-// 	return 0;
-// }
+//namedWindow("my window", CV_WINDOW_NORMAL);
+	//imshow("my window", mask);
+	//waitKey(0);
+	return 0;
+}

@@ -27,14 +27,20 @@ using namespace std;
 
 using namespace std;
 using namespace cv;
+
+map<int, string> hueColor;
+
+string getColorName(int hue){
+  return hueColor[(hue + 5)%360/20];
+}
 // take pixels xsamples as input, gives pixels ysamples as output.
-vector<pair<bool, int> > getData(Mat bin, vector<int> xsamples) {
-  vector<pair<bool, int> > ysamples;
+vector<pair<bool, double> > getData(Mat bin, vector<double> xsamples) {
+  vector<pair<bool, double> > ysamples;
   for (int i = 0; i < xsamples.size(); i++) {
     int x = xsamples[i];
     assert(x >= 0 && x < bin.cols);
     bool found = false;
-    vector<int> val;
+    vector<double> val;
     for (int i = 0; i < bin.rows; i++) {
       int intensity = bin.at<uchar>(i,x);
       // should probably see all non-zero pixels and choose one
@@ -53,11 +59,11 @@ vector<pair<bool, int> > getData(Mat bin, vector<int> xsamples) {
   return ysamples;
 }
 
-double pixToVal(int pix, double scale, double refPix, double refVal) {
+double pixToVal(double pix, double scale, double refPix, double refVal) {
   return refVal + (pix-refPix)*scale;
 }
 // column for data of a graph
-vector<string> getColumn(string title, vector<pair<bool, int> > samples, double scale, double refPix, double refVal) {
+vector<string> getColumn(string title, vector<pair<bool, double> > samples, double scale, double refPix, double refVal) {
   vector<string> ret;
   ret.push_back(title);
   for (int i = 0; i < samples.size(); i++) {
@@ -73,7 +79,7 @@ vector<string> getColumn(string title, vector<pair<bool, int> > samples, double 
   return ret;
 }
 
-vector<pair<bool, int> > interpolate(vector<int> xsamples, vector<pair<bool, int> > ysamples){
+vector<pair<bool, double> > interpolate(vector<double> xsamples, vector<pair<bool, double> > ysamples){
   int degree = 3, np = 0;
   // cout << xsamples.size() << endl;
   vector<double> x, y;
@@ -167,9 +173,13 @@ vector<pair<bool, int> > interpolate(vector<int> xsamples, vector<pair<bool, int
     
   return ysamples;
 }
-vector<int> getXSamples(string fileName)
+
+double getPixFromVal(double y, double scale, double refPix, double refVal) {
+  return (y-refVal)/scale + refPix;
+}
+vector<double> getXSamples(string fileName, double scale, double refPix, double refVal)
 {
-  vector<int> ret;
+  vector<double> ret;
   ifstream in(fileName.c_str(),ifstream::in);
   if(!in) return ret;
   string line;
@@ -177,21 +187,32 @@ vector<int> getXSamples(string fileName)
   {
     istringstream ss(line);
     bool firstNum = true;
-    int x;
+    double x, candidate;
     while(ss>>x){
       if(firstNum)
       { 
-        ret.push_back(x);
+        // ret.push_back(x);
+        candidate = x;
         firstNum = false;
-      } 
+      } else {
+        // the second number is the true value (val)
+        // conver it to pix and add instead of candidate
+        candidate = getPixFromVal(x, scale, refPix, refVal);
+      }
     }
-  } 
+    if (ret.size())
+      assert(candidate >= ret[ret.size()-1]);
+    ret.push_back(candidate);
+  }
+  // printf("x samples: ");
+  // for (int i= 0; i < ret.size(); i++)
+  //   printf("%.2lf(%.2lf) ", ret[i], pixToVal(ret[i], scale, refPix, refVal));
   return ret;
 
 }
-vector<int> InsertPositions(vector<int> &X)
+vector<double> InsertPositions(vector<double> &X, double scale, double refPix, double refVal)
 {
-  vector<int> ret;
+  vector<double> ret;
   if(X.empty()) return ret;
   int n = X.size();
   for(int pres = 0;pres<n-1;pres++)
@@ -200,20 +221,40 @@ vector<int> InsertPositions(vector<int> &X)
     int nxt = pres + 1;
     if(X[pres]!=X[nxt])
     {
-      int lc = (X[nxt] - X[pres])/10;
+      double lc = (pixToVal(X[nxt],scale, refPix,refVal) - pixToVal(X[pres],scale,refPix,refVal))/10;
       for(int i = 1;i<=9;i++)
       {
-        int posToBeInserted = X[pres] + i*lc;
+        int posToBeInserted = getPixFromVal(pixToVal(X[pres],scale,refPix,refVal) + i*lc,scale,refPix,refVal);
         ret.push_back(posToBeInserted);
       }
     }
   }
   ret.push_back(X[n-1]);
+
   return ret;
 }
 int main(int argc, char const *argv[])
 {
   printf("usage: ./gen-table <xml-file> <binimg-basename> <outxml-file>\n");
+  hueColor[0] = "red";
+  hueColor[1] = "orange";
+  hueColor[2] = "yellowish orange";
+  hueColor[3] = "yellow";
+  hueColor[4] = "lime";
+  hueColor[5] = "light green";
+  hueColor[6] = "green";
+  hueColor[7] = "dark green";
+  hueColor[8] = "cyanish green";
+  hueColor[9] = "cyan";
+  hueColor[10] = "light blue";
+  hueColor[11] = "blue";
+  hueColor[12] = "dark blue";
+  hueColor[13] = "indigo";
+  hueColor[14] = "violet";
+  hueColor[15] = "purple";
+  hueColor[16] = "magenta";
+  hueColor[17] = "rose red";
+
   vector<Point> contour;
   // read the bb conotur;
   for (int i = 0; i < 4; i++) {
@@ -227,10 +268,25 @@ int main(int argc, char const *argv[])
   // read number of binary images from stdin
   scanf("%d\n", &n);
   // read the least count granularity. keep it atleast 10 or we will get infinite loop...
-  int lc = 10;
-  scanf("%d\n", &lc);
-  if (lc == 0)
-    lc = 10;
+  // actually don't read the granularity.
+  // read the color and legend data generate by color-segmentation
+  vector<string> legendTexts(n, "");
+  vector<int> hvals(n, -1);
+  for (int i = 0; i < n; i++) {
+    int id;
+    int hlow, hhi;
+    char buf[1000];
+    scanf("%*d %d %d %d %[^\n]s\n", &id, &hlow, &hhi, buf);
+    if (id < 0 || id >= n)
+      continue;
+    if (legendTexts[id].empty())
+      legendTexts[id] = buf;
+    hvals[id] = (hlow+hhi);
+  }
+  for (int i = 0; i < n; i++) {
+    if (legendTexts[i].empty())
+      legendTexts[i] = getColorName(hvals[i]);
+  }
   // read xml
   pugi::xml_document doc;
   printf("loading xml %s\n", argv[1]);
@@ -258,8 +314,8 @@ int main(int argc, char const *argv[])
   // with the axis text.
   double closestDiff = 1e15;
   // make xsamples only with lest count
-  vector<int> xsamples = getXSamples("tot_out.txt");
-  xsamples = InsertPositions(xsamples);  
+  vector<double> xsamples = getXSamples("tot_out.txt", xscale,xrefPix, xrefVal);
+  xsamples = InsertPositions(xsamples, xscale, xrefPix, xrefVal);  
   /*
   assert (lc > 0);
   for (int x = bl.x; x <= br.x; x += lc) {
@@ -283,7 +339,11 @@ int main(int argc, char const *argv[])
     xsamples.push_back(x);
   }
   */
-  vector<pair<bool, int> > xsamples_p;
+  // printf("after inserting:\n");
+  // for (int i = 0; i < xsamples.size(); i++) {
+  //   printf("%.2lf(%.2lf)\n", xsamples[i], pixToVal(xsamples[i], xscale, xrefPix, xrefVal));
+  // }
+  vector<pair<bool, double> > xsamples_p;
   for (int i = 0 ; i < xsamples.size(); i++) {
     xsamples_p.push_back(make_pair(true, xsamples[i]));
   }
@@ -293,11 +353,14 @@ int main(int argc, char const *argv[])
     char buf[1000];
     sprintf(buf, "%s-%d.png", argv[2], i);
     Mat bin = imread(buf, 0);
-    vector<pair<bool, int> > ysamples = getData(bin, xsamples);
+    // open image once.
+    erode(bin, bin, Mat());
+    dilate(bin, bin, Mat());
+    vector<pair<bool, double> > ysamples = getData(bin, xsamples);
     
     ysamples = interpolate(xsamples,ysamples);
     // need leegend text here
-    table.push_back(getColumn(buf, ysamples, yscale, yrefPix, yrefVal));
+    table.push_back(getColumn(legendTexts[i], ysamples, yscale, yrefPix, yrefVal));
   }
   // for (int i = 0; i < table.size(); ++i)
   // {
@@ -327,6 +390,7 @@ int main(int argc, char const *argv[])
   pugi::xml_parse_result result2 = odoc.load_file(argv[3]);
   xml_node tablenode = odoc.append_child("table");
   tablenode.append_attribute("title") = title.c_str();
+  tablenode.append_attribute("ytitle") = vtext.c_str();
   for (int i = 0; i < table.size(); i++) {
     xml_node tr = tablenode.append_child();
     tr.set_name("tr");

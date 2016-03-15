@@ -38,7 +38,7 @@ void compute_skew(const char* filename)
     std::cout << "File " << filename << ": " << angle * 180 / CV_PI << std::endl;
  
     cv::imshow(filename, src);
-    cv::waitKey(0);
+    //cv::waitKey(0);
     cv::destroyWindow(filename);
 }
 

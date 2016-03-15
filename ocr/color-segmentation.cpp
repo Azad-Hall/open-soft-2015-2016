@@ -14,7 +14,7 @@
 #include <algorithm>
 #include <string>
 #include "peakdetect.h"
-#include </home/aytas32/OpenSoft/inter_hall_16/ocr/peakdetect.cpp>
+//#include </home/aytas32/OpenSoft/inter_hall_16/ocr/peakdetect.cpp>
 //Need to run g++ peakdetect.cpp color-segmentation.cpp 
 
 using namespace cv;
@@ -59,7 +59,7 @@ void histogram(vector<int> &rowHist){
 
 
 }
-void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew, Mat &whiteMask, int lowSatThresh) {
+void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew, Mat &whiteMask, int lowSatThresh, Point srcCoord) {
   int iArr[] = {-2, -1, 0, 1, 2};
   for (int k = 0; k < 5; k++) {
     for (int l = 0; l < 5; l++) {
@@ -73,17 +73,22 @@ void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew
         continue;
       visited.at<uchar>(ii,jj) = 1;
       // add special conditions for brown and blue to counter anti aliasing
-      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-30) < 20 || fabs(hsv[0]-200) < 20 || fabs(hsv[0]-216) < 8) && whiteMask.at<uchar>(ii,jj) ) {
+      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-10) < 20 || fabs(hsv[0]-100) < 20) && whiteMask.at<uchar>(ii,jj) ) {
         visited.at<uchar>(ii,jj) = 1;
         bmaskNew.at<uchar>(ii,jj) = 0;
-        traverse(bmask, visited, imgHSV, ii, jj, bmaskNew, whiteMask, lowSatThresh);
+        // only traverse if distance to srcCoord is less than thresh
+        if (norm(srcCoord-Point(jj,ii)) < 20)
+          traverse(bmask, visited, imgHSV, ii, jj, bmaskNew, whiteMask, lowSatThresh, srcCoord);
       }
     }
   }
 }
+
 Mat expandBMask(Mat bmask, Mat imgHSV, Mat whiteMask, int lowSatThresh) {
+  // shouldn't use search for expanding mask, it can completely take away the color!
   Mat visited = Mat::zeros(bmask.size(), CV_8U);
   Mat bmaskNew = Mat::ones(bmask.size(), CV_8U);
+  Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(7,7));
   for (int i = 0; i < bmask.rows; ++i)
   {
     for (int j = 0; j < bmask.cols; ++j)
@@ -91,8 +96,21 @@ Mat expandBMask(Mat bmask, Mat imgHSV, Mat whiteMask, int lowSatThresh) {
       if (bmask.at<uchar>(i,j) == 0)
         bmaskNew.at<uchar>(i,j) = 0;
       if (bmask.at<uchar>(i,j) == 0 && visited.at<uchar>(i,j) == 0) {
+        // don't use search. instead, just use a kernel and mask away shitty pixels.
+        // use search, but only to a fixed radius.
         visited.at<uchar>(i,j) = 1;
-        traverse(bmask, visited, imgHSV, i, j, bmaskNew, whiteMask, lowSatThresh);
+        // for (int ii = 0; ii < kernel.rows; ii++) {
+        //   for (int jj = 0; jj < kernel.cols; jj++) {
+        //     int k = i+ii-kernel.rows/2, l = j+jj-kernel.cols/2;
+        //     Vec3b hsv = imgHSV.at<Vec3b>(k,l);
+        //     // add special conditions for brown and blue to counter anti aliasing
+        //     if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-10) < 20 || fabs(hsv[0]-100) < 20) && whiteMask.at<uchar>(ii,jj) ) {
+        //       visited.at<uchar>(ii,jj) = 1;
+        //       bmaskNew.at<uchar>(ii,jj) = 0;
+        //     }
+        //   }
+        // }
+        traverse(bmask, visited, imgHSV, i, j, bmaskNew, whiteMask, lowSatThresh, Point(j,i));
       }
     }
   }
@@ -155,10 +173,18 @@ void histRGB(Mat src){
 int main(int argc, char const *argv[])
 {
 
-  if (argc != 3) {
-    printf("usage: ./color-segmentation <graph-img-cropped> <out-basename>\n");
+  if (argc != 4) {
+    printf("usage: ./color-segmentation <graph-img-cropped> <out-basename> <graph-img-cropped-nolegend>\n");
     return 0;
   }
+  // cout<<"sdhfukdshf\n";
+  /*string path=argv[1];
+  char Path[]="../ocr/build/graph-box ";
+  strcat(Path,path.c_str()); 
+  strcat(Path," ../ocr/clippedImages/img.png");
+  cout<<Path<<endl;
+  system(Path);
+  system("../ocr/build/graph-box  ../ocr/clippedImages/img.png ../ocr/clippedImages/img.png");*/
   
   Mat img = imread(argv[1], CV_LOAD_IMAGE_COLOR);
   Mat imgHSV;
@@ -202,7 +228,52 @@ int main(int argc, char const *argv[])
   }
   
   mask = mask & bmask;
-  
+  // make mask2 as well, exactly the same way
+  Mat mask2;
+  {
+    Mat img=imread(argv[3]);
+    Mat imgHSV;
+    cvtColor(img, imgHSV, CV_BGR2HSV);
+    Mat mask(img.rows, img.cols, CV_8U, Scalar(1)), bmask = mask.clone(); // to mask away all colorless pixels
+    // bmask = black mask. will dilate to remove some anti-aliased points
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        mask.at<uchar>(i,j) = 1;
+        bmask.at<uchar>(i,j) = 1;
+        Vec3b cRGB = img.at<Vec3b>(i,j);
+        Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
+        if (cRGB[0] >= 210 && cRGB[1] >= 210 && cRGB[2] >= 210) {//210
+          mask.at<uchar>(i,j) = 0;
+        } else if (cRGB[0] <= 120 && cRGB[1] <= 120 && cRGB[2] <= 120) {
+          bmask.at<uchar>(i,j) = 0;
+        }  // if saturation is low i.e less than 10%, it could be black/grey, we don't need that.
+        else if (cHSV[1] <= .03*255) {
+          bmask.at<uchar>(i,j) = 0;
+        }      
+      }
+    }
+    //anti aliasing correction
+    // using search method
+    //again adding all black pixels to bmask for higher threshold of saturation
+    bmask = expandBMask(bmask, imgHSV, mask, 0.15*255);//0.11
+    bool got=false;
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        Vec3b cRGB = img.at<Vec3b>(i,j);
+        Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
+         if (cHSV[1] <= .06*255)// || (cHSV[0]<166+5 && cHSV[0]>166-5)) //because 166 was the text hue//0.06
+        {
+          bmask.at<uchar>(i,j) = 0;
+        }      
+      }
+    }
+    mask = mask & bmask;
+    mask2 = mask;
+  }
   // we will now classify with H value only.
   // make histogram on H
   vector<int> hist(256, 0);
@@ -369,6 +440,8 @@ int main(int argc, char const *argv[])
     // cout<<"pushed"<<i-1<<" "<<i<<"\n";
     plothues.push_back(make_pair(maxima[i-1],maxima[i]));
   }
+  // use mask2 instead of mask, so that legend colors are not output in the binary images.
+  swap(mask, mask2);
   if(maxima[maxNo+1]<=20){
     plothues[0]=*(--plothues.end());
     plothues.pop_back();
@@ -415,6 +488,8 @@ int main(int argc, char const *argv[])
   }
   //printf("%d\n",plothues.size());
 
+  swap(mask, mask2);
+  
 
   Mat imgBW = Mat(imgHSV.rows,imgHSV.cols,CV_8UC1);
   for(int i=0;i<imgHSV.rows;i++){
@@ -551,7 +626,7 @@ int main(int argc, char const *argv[])
     ++h;
     strcpy(a,legendText[h].c_str());
     printf("%d %d %d %d %s\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second,a);
-
+    h++;
   }
         
   // imshow("weird", yellow);

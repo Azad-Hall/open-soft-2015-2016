@@ -23,6 +23,7 @@ using namespace std;
 #include <fstream>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_spline.h>
+#include <gsl/gsl_interp.h>
 
 using namespace std;
 using namespace cv;
@@ -74,32 +75,142 @@ vector<string> getColumn(string title, vector<pair<bool, int> > samples, double 
 
 vector<pair<bool, int> > interpolate(vector<int> xsamples, vector<pair<bool, int> > ysamples){
   int degree = 3, np = 0;
-  for(int i = 0 ; i < ysamples.size() ; i++){
-    if ( ysamples[i].first == true )
-      np++;
-  }
-  double x[np], y[np];
+  // cout << xsamples.size() << endl;
+  vector<double> x, y;
   int ind = 0;
-  for(int i = 0 ; i < ysamples.size() ; i++ ){
+
+  int start,start1,end,end1;
+  for(int i = 0  ; i < ysamples.size() ; i++ ){
     if ( ysamples[i].first == true){
-      x[ind] = xsamples[i];
-      y[ind] = ysamples[i].second;
+      x.push_back(xsamples[i]);
+      y.push_back(ysamples[i].second);
       ind++;
     }
   }
-  
+  // make sure atleast 2 poitns are there in truee samples..
+  assert(x.size() >= 2);
+  // check if start point is needed
+  if (ysamples[0].first == false) {
+    double x1 = x[0], x2 = x[1];
+    double y1 = y[0], y2 = y[1];
+    double m = (y2-y1)/(x2-x1);
+    double c = y1 - m*x1;
+    // get the y value
+    double x0 = xsamples[0];
+    double y0 = x0*m+c;
+    x.insert(x.begin(), x0);
+    y.insert(y.begin(), y0);
+  }
+  // check if end point is needed
+  if (ysamples[ysamples.size()-1].first == false) {
+    int sz = y.size();
+    double x1 = x[sz-1], x2 = x[sz-2];
+    double y1 = y[sz-1], y2 = y[sz-2];
+    double m = (y2-y1)/(x2-x1);
+    double c = y1 - m*x1;
+    // get the y value
+    double x0 = xsamples[xsamples.size()-1];
+    double y0 = x0*m+c;
+    x.insert(x.end(), x0);
+    y.insert(y.end(), y0);
+  }
+  np = y.size();
+  // for (int i = 0; i < np; ++i)
+  // {
+  //   printf("%lf ", x[i]);
+  // }
+  // printf("\n");
+  // for (int i = 0; i < np; i++) {
+  //   printf("%lf", y[i]);
+  // }
+  // printf("\n");
   gsl_interp_accel *acc = gsl_interp_accel_alloc ();
-  gsl_spline *spline  = gsl_spline_alloc (gsl_interp_cspline, np);
+  gsl_spline *spline  = gsl_spline_alloc (gsl_interp_cspline, np); 
 
-  gsl_spline_init (spline, x, y, np);
-  for(int i = 0 ; i < ysamples.size() ; i++ ){
+  //cout<<"np = "<<np << " " << xsamples.size() <<endl;
+  gsl_spline_init (spline, &x[0], &y[0], np);
+
+  for(int i = 0 ; i < ysamples.size(); i++ ){
     if ( ysamples[i].first == false){
-      ysamples[i].second = gsl_spline_eval(spline, xsamples[i], acc);
+        if (!(xsamples[i] >= x[0])) {
+          assert(0);
+        }
+        ysamples[i].second = gsl_spline_eval(spline, xsamples[i], acc);
+		ysamples[i].first = true;
     }
   }
+   gsl_spline_free (spline);
+   gsl_interp_accel_free (acc);
+
+  //  //computing for end points using linear extrapolation
+  // start = ysamples.size()-1;end = 1;
+  // for(int i = 1 ; i < ysamples.size() - 1; i++ ){
+  //   if( ysamples[i].first == true && start==ysamples.size()-1)
+  //     {start = i;/*cout<<"starta "<<start<<"\n";*/}
+  //   if( ysamples[ysamples.size() - i].first == true && end==1)
+  //     {end = ysamples.size() - i;/*cout<<"enda "<<end<<"\n";*/}
+  // }
+  // start1 = start;end1 = end;
+  // while(ysamples[++start1].first==false)
+  // {
+  //   ++start1;
+  // }
+  // //cout<<"start1 "<<start1<<"\n";
+  // while(ysamples[--end1].first==false)
+  // {
+  //   --end1;
+  // }
+  // //cout<<"end1 "<<end1<<"\n";
+  //   ysamples[0].second = ( ysamples[start1].second - ysamples[start].second ) * xsamples[0] / ( xsamples[start1] - xsamples[start] ) ;
+   
+  //   ysamples[ysamples.size()-1].second = ( ysamples[end].second - ysamples[end1].second ) * xsamples[ysamples.size()-1] / ( xsamples[end] - xsamples[end1] ) ;
+    
   return ysamples;
 }
+vector<int> getXSamples(string fileName)
+{
+  vector<int> ret;
+  ifstream in(fileName.c_str(),ifstream::in);
+  if(!in) return ret;
+  string line;
+  while(getline(in,line))
+  {
+    istringstream ss(line);
+    bool firstNum = true;
+    int x;
+    while(ss>>x){
+      if(firstNum)
+      { 
+        ret.push_back(x);
+        firstNum = false;
+      } 
+    }
+  } 
+  return ret;
 
+}
+vector<int> InsertPositions(vector<int> &X)
+{
+  vector<int> ret;
+  if(X.empty()) return ret;
+  int n = X.size();
+  for(int pres = 0;pres<n-1;pres++)
+  {
+    ret.push_back(X[pres]);
+    int nxt = pres + 1;
+    if(X[pres]!=X[nxt])
+    {
+      int lc = (X[nxt] - X[pres])/10;
+      for(int i = 1;i<=9;i++)
+      {
+        int posToBeInserted = X[pres] + i*lc;
+        ret.push_back(posToBeInserted);
+      }
+    }
+  }
+  ret.push_back(X[n-1]);
+  return ret;
+}
 int main(int argc, char const *argv[])
 {
   printf("usage: ./gen-table <xml-file> <binimg-basename> <outxml-file>\n");
@@ -147,7 +258,9 @@ int main(int argc, char const *argv[])
   // with the axis text.
   double closestDiff = 1e15;
   // make xsamples only with lest count
-  vector<int> xsamples;
+  vector<int> xsamples = getXSamples("tot_out.txt");
+  xsamples = InsertPositions(xsamples);  
+  /*
   assert (lc > 0);
   for (int x = bl.x; x <= br.x; x += lc) {
     xsamples.push_back(x);
@@ -161,12 +274,15 @@ int main(int argc, char const *argv[])
     }
   }
   xsamples.clear();
+  
+
   printf("offset = %lf, xstart = %d, xend = %d, incr = %d\n", closestDiff, bl.x + (int)closestDiff, 
     br.x, (int)(lc/10.));
   assert(lc/10. >= 1);
   for (int x = bl.x+closestDiff; x <= br.x; x += lc/10.) {
     xsamples.push_back(x);
   }
+  */
   vector<pair<bool, int> > xsamples_p;
   for (int i = 0 ; i < xsamples.size(); i++) {
     xsamples_p.push_back(make_pair(true, xsamples[i]));
@@ -178,6 +294,8 @@ int main(int argc, char const *argv[])
     sprintf(buf, "%s-%d.png", argv[2], i);
     Mat bin = imread(buf, 0);
     vector<pair<bool, int> > ysamples = getData(bin, xsamples);
+    
+    ysamples = interpolate(xsamples,ysamples);
     // need leegend text here
     table.push_back(getColumn(buf, ysamples, yscale, yrefPix, yrefVal));
   }
