@@ -14,6 +14,7 @@
 #include <iostream>
 #include <math.h>
 #include <algorithm>
+#include <map>
 
 using namespace cv;
 using namespace std;
@@ -27,6 +28,13 @@ using namespace std;
 
 using namespace std;
 using namespace cv;
+
+map<int, string> hueColor;
+
+string getColorName(int hue){
+  return hueColor[(hue + 5)%360/20];
+}
+
 // take pixels xsamples as input, gives pixels ysamples as output.
 vector<pair<bool, int> > getData(Mat bin, vector<int> xsamples) {
   vector<pair<bool, int> > ysamples;
@@ -168,9 +176,30 @@ vector<pair<bool, int> > interpolate(vector<int> xsamples, vector<pair<bool, int
   return ysamples;
 }
 
+
+
 int main(int argc, char const *argv[])
 {
   printf("usage: ./gen-table <xml-file> <binimg-basename> <outxml-file>\n");
+  hueColor[0] = "red";
+  hueColor[1] = "orange";
+  hueColor[2] = "yellowish orange";
+  hueColor[3] = "yellow";
+  hueColor[4] = "lime";
+  hueColor[5] = "light green";
+  hueColor[6] = "green";
+  hueColor[7] = "dark green";
+  hueColor[8] = "cyanish green";
+  hueColor[9] = "cyan";
+  hueColor[10] = "light blue";
+  hueColor[11] = "blue";
+  hueColor[12] = "dark blue";
+  hueColor[13] = "indigo";
+  hueColor[14] = "violet";
+  hueColor[15] = "purple";
+  hueColor[16] = "magenta";
+  hueColor[17] = "rose red";
+
   vector<Point> contour;
   // read the bb conotur;
   for (int i = 0; i < 4; i++) {

@@ -188,7 +188,7 @@ vector<Point> shrinkContour(vector<Point> contour, double pix)  {
   return shrinked;
 }
 // minLineLength = min length in pixels for a line to be detectes
-std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30, int houghLineThresh = 230, int houghMergeThresh = 20
+std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30, int houghLineThresh = 200, int houghMergeThresh = 60
   , double slopeThresh = 1e-2) {
   cv::Mat gray;
   // will threshold this gray image
@@ -196,7 +196,8 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
   cv::Mat mask;
   // threshold white/non-white
   cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
-  imwrite("/tmp/thresholded.png", mask);
+  // try dilating a litte... maybe more lines will be detected??
+  imwrite("tmp/thresholded.png", mask);
   vector<Vec4i> lines;
   vector<Vec4i> hlines, vlines; // horizontal and vertical lines
   HoughLinesP( mask, lines, 1, CV_PI/180*2., houghLineThresh, minLineLength, houghMergeThresh );
@@ -222,7 +223,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
   // dilate to close the rectangles
   dilate(linesImg, linesImg, Mat());
   dilate(linesImg, linesImg, Mat());
-  imwrite("/tmp/lines.png", linesImg);
+  imwrite("tmp/lines.png", linesImg);
   // find contours. keep rectangle contours.
   std::vector<std::vector<cv::Point> > contours, rectContours;
   std::vector<cv::Vec4i> hierarchy;
@@ -253,7 +254,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
       drawContours(drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point());
     }
   }
-  imwrite("/tmp/box-contours.png", drawing);
+  imwrite("tmp/box-contours.png", drawing);
   return rectContours;
 }
 
@@ -312,7 +313,7 @@ vector<Point> getRectangularContour(vector<Point> largest) {
   // {
   //   drawContours(drawing, dummy, 0, Scalar(255,0,0), 2, 8);
   // }
-  // imwrite("/tmp/boxes.png", drawing);
+  // imwrite("tmp/boxes.png", drawing);
 
   return finalContour;
 }
@@ -464,7 +465,7 @@ vector<Point> getRectangularContour2(vector<Point> contour) {
 //   // dilate(mask, mask, Mat());
 //   // // dilate(mask, mask, Mat());
 //   // // dilate(mask, mask, Mat());
-//   // imwrite("/tmp/dilated-mask.png", mask);
+//   // imwrite("tmp/dilated-mask.png", mask);
 //   // for (int i = 0; i < vlines.size(); ++i)
 //   // {
 //   //   for (int j = 0; j < hlines.size(); ++j)
@@ -516,6 +517,6 @@ vector<Point> getRectangularContour2(vector<Point> contour) {
 //   //     drawContours(drawing, contours, i, color, 1, 8, hierarchy, 0, cv::Point());
 //   //   }
 //   // }
-//   imwrite("/tmp/lines.png", drawing);
+//   imwrite("tmp/lines.png", drawing);
 //   return 0;
 // }

@@ -5,8 +5,6 @@
 #include <QString>
 #include <QProcess>
 #include <QTextStream>
-#include <QDir>
-#include <QDebug>
 
 class PDFProcessor : public QObject
 {
