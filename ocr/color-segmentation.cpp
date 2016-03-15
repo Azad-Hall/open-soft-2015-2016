@@ -11,6 +11,7 @@
 #include <math.h>
 #include <vector>
 #include <map>
+#include <algorithm>
 #include <string>
 
 using namespace cv;
@@ -18,6 +19,43 @@ using namespace std;
 typedef unsigned char uchar;
 int run(int argc, char **argv); // for peakdetect
 // expands black mask using a looser threshold for saturation to be considered black (eg. 20%)
+
+void histogram(vector<int> &rowHist){
+
+  int maxH=0;
+  int sum=0,avg;
+  for(int i=0;i<rowHist.size();i++){
+    //cout<<rowHist[i]<<endl;
+    sum+=rowHist[i];
+    maxH=max(maxH,rowHist[i]);
+  }
+  if(maxH==0)
+    return;
+  avg=sum/rowHist.size();
+
+  //cout<<"MAx "<<maxH<<" "<<avg<<" "<<sum<<endl;
+  int hist_w = 256; int hist_h = 400;
+    for (int i = 0; i < rowHist.size(); ++i)
+    {
+      rowHist[i] = (rowHist[i] *hist_h)/maxH;
+    }
+   int bin_w = cvRound( (double) hist_w/rowHist.size() );
+    Mat histImg(hist_h, hist_w, CV_8U, Scalar(0));
+    for (int i = 1; i < rowHist.size(); i++) {
+      line( histImg, Point( bin_w*(i-1), hist_h - cvRound(rowHist[i-1]) ) ,
+                         Point( bin_w*(i), hist_h - cvRound(rowHist[i]) ),
+                         Scalar( 255), 2, 8, 0  );
+    }
+    imshow("column Histogram",histImg);
+   
+
+    
+  
+  // return maxLen;
+
+
+
+}
 void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew, Mat &whiteMask, int lowSatThresh, Point srcCoord) {
   int iArr[] = {-2, -1, 0, 1, 2};
   for (int k = 0; k < 5; k++) {
@@ -96,10 +134,6 @@ void histRGB(Mat src){
   calcHist( &bgr_planes[1], 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
   calcHist( &bgr_planes[2], 1, 0, Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate );
 
-  /*imshow("blue hist",b_hist);
-  imshow("red hist",r_hist);
-  imshow("green hist",g_hist);*/
-
   // Draw the histograms for B, G and R
   int hist_w = 512; int hist_h = 400;
   int bin_w = cvRound( (double) hist_w/histSize );
@@ -135,8 +169,9 @@ void histRGB(Mat src){
 
 int main(int argc, char const *argv[])
 {
-  if (argc != 3) {
-    printf("usage: ./color-segmentation <graph-img-cropped> <out-basename>\n");
+
+  if (argc != 4) {
+    printf("usage: ./color-segmentation <graph-img-cropped> <out-basename> <graph-img-cropped-nolegend>\n");
     return 0;
   }
   // cout<<"sdhfukdshf\n";
@@ -190,7 +225,52 @@ int main(int argc, char const *argv[])
   }
   
   mask = mask & bmask;
-  
+  // make mask2 as well, exactly the same way
+  Mat mask2;
+  {
+    Mat img=imread(argv[3]);
+    Mat imgHSV;
+    cvtColor(img, imgHSV, CV_BGR2HSV);
+    Mat mask(img.rows, img.cols, CV_8U, Scalar(1)), bmask = mask.clone(); // to mask away all colorless pixels
+    // bmask = black mask. will dilate to remove some anti-aliased points
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        mask.at<uchar>(i,j) = 1;
+        bmask.at<uchar>(i,j) = 1;
+        Vec3b cRGB = img.at<Vec3b>(i,j);
+        Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
+        if (cRGB[0] >= 210 && cRGB[1] >= 210 && cRGB[2] >= 210) {//210
+          mask.at<uchar>(i,j) = 0;
+        } else if (cRGB[0] <= 120 && cRGB[1] <= 120 && cRGB[2] <= 120) {
+          bmask.at<uchar>(i,j) = 0;
+        }  // if saturation is low i.e less than 10%, it could be black/grey, we don't need that.
+        else if (cHSV[1] <= .03*255) {
+          bmask.at<uchar>(i,j) = 0;
+        }      
+      }
+    }
+    //anti aliasing correction
+    // using search method
+    //again adding all black pixels to bmask for higher threshold of saturation
+    bmask = expandBMask(bmask, imgHSV, mask, 0.15*255);//0.11
+    bool got=false;
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        Vec3b cRGB = img.at<Vec3b>(i,j);
+        Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
+         if (cHSV[1] <= .06*255)// || (cHSV[0]<166+5 && cHSV[0]>166-5)) //because 166 was the text hue//0.06
+        {
+          bmask.at<uchar>(i,j) = 0;
+        }      
+      }
+    }
+    mask = mask & bmask;
+    mask2 = mask;
+  }
   // we will now classify with H value only.
   // make histogram on H
   vector<int> hist(256, 0);
@@ -217,11 +297,11 @@ int main(int argc, char const *argv[])
   // make string for running peakdetect
   int noLegends=6;//read from file of legendDetection
   int noPlots=0;
-  int deltaParam=3;
+  int deltaParam=2;
   vector<float> maxima;
-  int tick=5;
+  int tick=4;//=1 for a.png
 
-  while(noPlots!=noLegends){
+  
 
     if(noPlots<noLegends){
       // deltaParam--;
@@ -233,9 +313,7 @@ int main(int argc, char const *argv[])
     }
         
 
-    cout<<"PLOT DATA: "<<noLegends<<" "<<noPlots<<" "<<deltaParam<<" "<<tick<<"\n";
-     getchar();
-
+    
     for(int k = 0 ; k < 1; k++){
 
       int nhist[260] = {0};
@@ -249,7 +327,6 @@ int main(int argc, char const *argv[])
         hist[i] = nhist[i];
       }
     }
-    // cout<<"maxH : "<<maxH<<endl;
      maxH = 0;
     ////////////////////////////file peak detect
     FILE* fp = fopen("res.csv","w");
@@ -294,12 +371,10 @@ int main(int argc, char const *argv[])
       //hist[stof(as)]=10000;
     }
     noPlots=maxima.size()/2;
-    if(maxima[noPlots+1]<=20)
-      --noPlots;
+    
 
 
-  }
-  cout<<"OUT\n";
+  
   
   ///-------------------------------------------------------------------------------------------------------------------------------------
   // first half of maxima array is max, second half is min
@@ -367,8 +442,19 @@ int main(int argc, char const *argv[])
   //merging folding of red
   int k=maxNo,t=0;
   plots=Scalar(0);
+  vector<pair<int,int> > plothues;
+
+  // cout<<"BrBa : "<<maxima.size()<<" "<<maxNo<<"\n\n";
+  for(int i=maxNo+1;i<maxima.size();++i)
+  {
+    // cout<<"pushed"<<i-1<<" "<<i<<"\n";
+    plothues.push_back(make_pair(maxima[i-1],maxima[i]));
+  }
+  // use mask2 instead of mask, so that legend colors are not output in the binary images.
+  swap(mask, mask2);
   if(maxima[maxNo+1]<=20){
-    printf("%d\n", (int)maxima.size()/2-1);
+    plothues[0]=*(--plothues.end());
+    plothues.pop_back();
     k++;
     t=1;
     plots=Scalar(0);
@@ -394,9 +480,6 @@ int main(int argc, char const *argv[])
     sprintf(name, "%s-0.png", argv[2]);
     imwrite(name,plots);
   }
-  else
-    printf("%d\n", (int)maxima.size()/2);
-  
   for(;k<2*maxNo-t;k++){
     plots=Scalar(0);
     for(int i=0;i<imgHSV.rows;i++){
@@ -413,6 +496,8 @@ int main(int argc, char const *argv[])
     imwrite(name,plots);
    
   }
+  swap(mask, mask2);
+  printf("%d\n",plothues.size());
 
   Mat imgBW = Mat(imgHSV.rows,imgHSV.cols,CV_8UC1);
   for(int i=0;i<imgHSV.rows;i++){
@@ -420,9 +505,68 @@ int main(int argc, char const *argv[])
       imgBW.at<uchar>(i,j)=imgHSV.at<Vec3b>(i,j)[1]*2;
     }
   }
-  imshow("weird", yellow);
-  imwrite("weird2.png", yellow);
+  vector<string> legendText;
+  vector<pair<int,int> > X,Y;
+  {
+    ifstream fin("legend_boxes.txt");
+    int sz;fin>>sz;
+    X.resize(sz);Y.resize(sz);legendText.resize(sz);
+    for(int i=0;i<sz;++i){
+      fin>>X[i].first>>X[i].second>>Y[i].first>>Y[i].second;
+      string temp;
+      getline(fin,temp);
+      getline(fin,legendText[i]);
+    }
+
+    fin.close();
+  }
+  int xmax=-1e9,xmin=1e9;
+  for(auto it:X)
+    xmax=max(it.first,xmax),xmin=min(it.second,xmin);
+  int xthr=0.18*imgHSV.cols;
+
+  map<int,int> mp;
+  for(int i=0;i<Y.size();++i)
+  {
+    vector<int> legendHist(256);
+    for(int j=max(0,xmax-xthr);j<=xmax;++j)
+    {
+      for(int k=Y[i].first;k<=Y[i].second;++k)
+      {
+        if(!mask.at<uchar>(k,j))continue;
+        ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+        yellow.at<Vec3b>(k,j)=Vec3b(255,255,0);
+      }
+    }
+    for(int j=xmin;j<=min(xmin+xthr,imgHSV.cols-1);++j)
+    {
+      for(int k=Y[i].first;k<=Y[i].second;++k)
+      {
+        if(!mask.at<uchar>(k,j))continue;
+        ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+        yellow.at<Vec3b>(k,j)=Vec3b(0,255,0);
+      }
+    }
+    int maxpos=max_element(legendHist.begin(),legendHist.end())-legendHist.begin();
+    for(int j=0;j<plothues.size();++j)
+      if(maxpos>=plothues[j].first and maxpos<=plothues[j].second)
+        {mp[i]=j;break;}
+    histogram(legendHist);
+  }
+
+
+  // legend id SPACE hue id SPACE hue.first SPACE hue.second \n
+  char a[200];
+  int h=0;
+  for(auto it:mp){
+    strcpy(a,legendText[h].c_str());
+    printf("%d %d %d %d %s\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second,a);
+
+  }
+        
+  // imshow("weird", yellow);
+  // imwrite("weird2.png", yellow);
  
-  
+  // waitKey(0);
   return 0;
 }

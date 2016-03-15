@@ -68,3 +68,7 @@ target_link_libraries( make-pdf  -lm )
 
 add_executable(unColoring unColoring.cpp peakdetect.cpp)
 target_link_libraries( unColoring ${OpenCV_LIBS} )
+
+
+add_executable(legendDetection legendDetection.cpp peakdetect.cpp)
+target_link_libraries( legendDetection ${OpenCV_LIBS} )

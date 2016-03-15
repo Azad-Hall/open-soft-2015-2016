@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include "peakdetect.h"
 void print_help(void)
 {
     fprintf(stdout,
@@ -261,12 +261,15 @@ int run(int argc,  char **argv)
         fprintf(stdout, "There are too many peaks.\n");
         exit(1);
     }
+
     for(i = 0; i < emi_count; ++i)
         fprintf(out, "%e,%e\n", data[0][emi_peaks[i]], data[1][emi_peaks[i]]);
     puts("");
+
     for(i = 0; i < absorp_count; ++i)
-        fprintf(out, "%e,%e\n", data[0][absorp_peaks[i]],
+        fprintf(out, " %e,%e\n", data[0][absorp_peaks[i]],
                 data[1][absorp_peaks[i]]);
+
     fclose(out);
     return 0;
 }

@@ -30,7 +30,12 @@ function graphFn {
   # color processing will be done on the cropped image
   # make a new file for input to gen-table
   cp bb.txt gen.txt
-  ../../color-segmentation $img_cropped "bin" >> gen.txt
+  # run legend removal
+  ../../legend-box "$img_cropped" "nolegend-$img_cropped"
+  # run legend detection
+  ../../legendDetection "$img_cropped"
+  # color segmentation
+  ../../color-segmentation $img_cropped "bin" "nolegend-$img_cropped" >> gen.txt
   # run granularity detction
   ../../xaxis-granularity "$1" < bb.txt >> gen.txt
   # fingers crossed
