@@ -104,8 +104,6 @@ function pageFn {
 
 function pdfFn {
   # print the output file name first
-  # print 0 in the begninng because of qt problem
-  echo "0"
   doneFileLoc=" "
   if [ "$#" -ne 1 ]; then
     echo "Illegal number of parameters"
@@ -113,7 +111,8 @@ function pdfFn {
   fi
   basename=`basename $1 .pdf`
   folder="$basename-dir"
-  echo `pwd`"/$folder/out.pdf"
+  # print 0 in the begninng because of qt problem. then print output file name
+  echo "0 "`pwd`"/$folder/out.pdf"
   # commenting these out for now
   rm -rf "$folder"
   mkdir "$folder"
