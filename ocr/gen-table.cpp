@@ -14,7 +14,6 @@
 #include <iostream>
 #include <math.h>
 #include <algorithm>
-#include <map>
 
 using namespace cv;
 using namespace std;
@@ -28,13 +27,6 @@ using namespace std;
 
 using namespace std;
 using namespace cv;
-
-map<int, string> hueColor;
-
-string getColorName(int hue){
-  return hueColor[(hue + 5)%360/20];
-}
-
 // take pixels xsamples as input, gives pixels ysamples as output.
 vector<pair<bool, int> > getData(Mat bin, vector<int> xsamples) {
   vector<pair<bool, int> > ysamples;
@@ -141,31 +133,53 @@ vector<pair<bool, int> > interpolate(vector<int> xsamples, vector<pair<bool, int
     
   return ysamples;
 }
+vector<int> getXSamples(string fileName)
+{
+  vector<int> ret;
+  ifstream in(fileName.c_str(),ifstream::in);
+  if(!in) return ret;
+  string line;
+  while(getline(in,line))
+  {
+    istringstream ss(line);
+    bool firstNum = true;
+    int x;
+    while(ss>>x){
+      if(firstNum)
+      { 
+        ret.push_back(x);
+        firstNum = false;
+      } 
+    }
+  } 
+  return ret;
 
-
-
+}
+vector<int> InsertPositions(vector<int> &X)
+{
+  vector<int> ret;
+  if(X.empty()) return ret;
+  int n = X.size();
+  for(int pres = 0;pres<n-1;pres++)
+  {
+    ret.push_back(X[pres]);
+    int nxt = pres + 1;
+    if(X[pres]!=X[nxt])
+    {
+      int lc = (X[nxt] - X[pres])/10;
+      for(int i = 1;i<=9;i++)
+      {
+        int posToBeInserted = X[pres] + i*lc;
+        ret.push_back(posToBeInserted);
+      }
+    }
+  }
+  ret.push_back(X[n-1]);
+  return ret;
+}
 int main(int argc, char const *argv[])
 {
   printf("usage: ./gen-table <xml-file> <binimg-basename> <outxml-file>\n");
-  hueColor[0] = "red";
-  hueColor[1] = "orange";
-  hueColor[2] = "yellowish orange";
-  hueColor[3] = "yellow";
-  hueColor[4] = "lime";
-  hueColor[5] = "light green";
-  hueColor[6] = "green";
-  hueColor[7] = "dark green";
-  hueColor[8] = "cyanish green";
-  hueColor[9] = "cyan";
-  hueColor[10] = "light blue";
-  hueColor[11] = "blue";
-  hueColor[12] = "dark blue";
-  hueColor[13] = "indigo";
-  hueColor[14] = "violet";
-  hueColor[15] = "purple";
-  hueColor[16] = "magenta";
-  hueColor[17] = "rose red";
-
   vector<Point> contour;
   // read the bb conotur;
   for (int i = 0; i < 4; i++) {
@@ -210,7 +224,9 @@ int main(int argc, char const *argv[])
   // with the axis text.
   double closestDiff = 1e15;
   // make xsamples only with lest count
-  vector<int> xsamples;
+  vector<int> xsamples = getXSamples("tot_out.txt");
+  xsamples = InsertPositions(xsamples);  
+  /*
   assert (lc > 0);
   for (int x = bl.x; x <= br.x; x += lc) {
     xsamples.push_back(x);
@@ -224,12 +240,15 @@ int main(int argc, char const *argv[])
     }
   }
   xsamples.clear();
+  
+
   printf("offset = %lf, xstart = %d, xend = %d, incr = %d\n", closestDiff, bl.x + (int)closestDiff, 
     br.x, (int)(lc/10.));
   assert(lc/10. >= 1);
   for (int x = bl.x+closestDiff; x <= br.x; x += lc/10.) {
     xsamples.push_back(x);
   }
+  */
   vector<pair<bool, int> > xsamples_p;
   for (int i = 0 ; i < xsamples.size(); i++) {
     xsamples_p.push_back(make_pair(true, xsamples[i]));
