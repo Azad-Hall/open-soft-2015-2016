@@ -12,6 +12,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include </home/aytas32/OpenSoft/inter_hall_16/ocr/peakdetect.cpp>
 
 using namespace cv;
 using namespace std;
@@ -32,7 +33,8 @@ void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew
         continue;
       visited.at<uchar>(ii,jj) = 1;
       // add special conditions for brown and blue to counter anti aliasing
-      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-10) < 20 || fabs(hsv[0]-100) < 20 || fabs(hsv[0]-170) < 20) && whiteMask.at<uchar>(ii,jj) ) {
+      if ((hsv[1] <= lowSatThresh || fabs(hsv[1]-10)<20 || fabs(hsv[1]-100)<20 || fabs(hsv[1]-170) < 20 || 
+          hsv[2] <= 0.5*255) && whiteMask.at<uchar>(ii,jj) ) {
         visited.at<uchar>(ii,jj) = 1;
         bmaskNew.at<uchar>(ii,jj) = 0;
         // only traverse if distance to srcCoord is less than thresh
@@ -154,12 +156,12 @@ int main(int argc, char const *argv[])
       bmask.at<uchar>(i,j) = 1;
       Vec3b cRGB = img.at<Vec3b>(i,j);
       Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
-      if (cRGB[0] >= 210 && cRGB[1] >= 210 && cRGB[2] >= 210) {//210
+      if (cRGB[0] >= 180 && cRGB[1] >= 180 && cRGB[2] >= 180) {//210
         mask.at<uchar>(i,j) = 0;
-      } else if (cRGB[0] <= 120 && cRGB[1] <= 120 && cRGB[2] <= 120) {
+      } else if (cRGB[0] <= 80 && cRGB[1] <= 80 && cRGB[2] <= 80) {
         bmask.at<uchar>(i,j) = 0;
       }  // if saturation is low i.e less than 10%, it could be black/grey, we don't need that.
-      else if (cHSV[1] <= .03*255) {
+      else if (cHSV[1] <= .0003*255 || cHSV[2] <= 0.35*255) {
         bmask.at<uchar>(i,j) = 0;
       }      
     }
@@ -167,22 +169,23 @@ int main(int argc, char const *argv[])
   //anti aliasing correction
   // using search method
   //again adding all black pixels to bmask for higher threshold of saturation
-  bmask = expandBMask(bmask, imgHSV, mask, 0.15*255);//0.11
+  bmask = expandBMask(bmask, imgHSV, mask, 0.2*255);//0.11
   bool got=false;
-  for (int i = 0; i < mask.rows; ++i)
-  {
-    for (int j = 0; j < mask.cols; ++j)
-    {
-      Vec3b cRGB = img.at<Vec3b>(i,j);
-      Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
-       if (cHSV[1] <= .09*255)// || (cHSV[0]<166+5 && cHSV[0]>166-5)) //because 166 was the text hue//0.06
-      {
-        bmask.at<uchar>(i,j) = 0;
-      }      
-    }
-  }
+  // for (int i = 0; i < mask.rows; ++i)
+  // {
+  //   for (int j = 0; j < mask.cols; ++j)
+  //   {
+  //     Vec3b cRGB = img.at<Vec3b>(i,j);
+  //     Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
+  //      if (cHSV[1] <= .09*255)// || (cHSV[0]<166+5 && cHSV[0]>166-5)) //because 166 was the text hue//0.06
+  //     {
+  //       bmask.at<uchar>(i,j) = 0;
+  //     }      
+  //   }
+  // }
  
-  mask = mask & bmask;
+  // mask = mask & bmask;
+  mask =bmask;
   // for display, show all pixels that are not masked (colored pixels)
   Mat display = img.clone();
   for (int i = 0; i < display.rows; ++i) {
@@ -337,7 +340,7 @@ int main(int argc, char const *argv[])
   // path=strcat(path,)
   imshow(path,unColor);
   imwrite(path,unColor);
-  //waitKey(0);
+  waitKey(0);
 
   
   return 0;
