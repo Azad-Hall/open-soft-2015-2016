@@ -36,6 +36,7 @@ int main(int argc, char const *argv[])
     for (pugi::xml_node n = odoc.first_child(); n; n = n.next_sibling()) {
       vector<vector<string> > table;
       string title = n.attribute("title").value();
+      string ytitle = n.attribute("ytitle").value();
       for (xml_node tr = n.first_child(); tr; tr = tr.next_sibling()) {
         table.push_back(vector<string>());
         for (xml_node td = tr.first_child(); td; td = td.next_sibling()) {
@@ -43,7 +44,7 @@ int main(int argc, char const *argv[])
         }
       }
       printf("adding table with title %s\n", title.c_str());
-      builder.addTable(table, title,"x-title","y-title");
+      builder.addTable(table, title," ",ytitle);
     }
   }
   builder.endDocument();

@@ -212,7 +212,7 @@ int main(int argc, char const *argv[])
   //anti aliasing correction
   // using search method
   //again adding all black pixels to bmask for higher threshold of saturation
-  bmask = expandBMask(bmask, imgHSV, mask, 0.15*255);//0.11
+  bmask = expandBMask(bmask, imgHSV, mask, 0.11*255);//0.11
   bool got=false;
   for (int i = 0; i < mask.rows; ++i)
   {
