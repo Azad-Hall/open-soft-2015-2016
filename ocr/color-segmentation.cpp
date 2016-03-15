@@ -119,10 +119,6 @@ void histRGB(Mat src){
   calcHist( &bgr_planes[1], 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
   calcHist( &bgr_planes[2], 1, 0, Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate );
 
-  /*imshow("blue hist",b_hist);
-  imshow("red hist",r_hist);
-  imshow("green hist",g_hist);*/
-
   // Draw the histograms for B, G and R
   int hist_w = 512; int hist_h = 400;
   int bin_w = cvRound( (double) hist_w/histSize );
@@ -158,18 +154,11 @@ void histRGB(Mat src){
 
 int main(int argc, char const *argv[])
 {
+
   if (argc != 3) {
     printf("usage: ./color-segmentation <graph-img-cropped> <out-basename>\n");
     return 0;
   }
-  cout<<"sdhfukdshf\n";
-  /*string path=argv[1];
-  char Path[]="../ocr/build/graph-box ";
-  strcat(Path,path.c_str()); 
-  strcat(Path," ../ocr/clippedImages/img.png");
-  cout<<Path<<endl;
-  system(Path);
-  system("../ocr/build/graph-box  ../ocr/clippedImages/img.png ../ocr/clippedImages/img.png");*/
   
   Mat img = imread(argv[1], CV_LOAD_IMAGE_COLOR);
   Mat imgHSV;
@@ -242,7 +231,7 @@ int main(int argc, char const *argv[])
   int noPlots=0;
   int deltaParam=2;
   vector<float> maxima;
-  int tick=4;
+  int tick=4;//=1 for a.png
 
   
 
@@ -270,7 +259,6 @@ int main(int argc, char const *argv[])
         hist[i] = nhist[i];
       }
     }
-    // cout<<"maxH : "<<maxH<<endl;
      maxH = 0;
     ////////////////////////////file peak detect
     FILE* fp = fopen("res.csv","w");
@@ -319,7 +307,6 @@ int main(int argc, char const *argv[])
 
 
   
-  // cout<<"OUT\n";
   
   ///-------------------------------------------------------------------------------------------------------------------------------------
   // first half of maxima array is max, second half is min
@@ -398,8 +385,6 @@ int main(int argc, char const *argv[])
   if(maxima[maxNo+1]<=20){
     plothues[0]=*(--plothues.end());
     plothues.pop_back();
-    // cout<<"yooyoyo"<<plothues.size()<<"\n";
-    // printf("%d\n", (int)maxima.size()/2-1);
     k++;
     t=1;
     plots=Scalar(0);
@@ -442,8 +427,6 @@ int main(int argc, char const *argv[])
    
   }
   printf("%d\n",plothues.size());
-  for(auto it:plothues)
-    printf("%d %d\n",it.first,it.second);
 
   Mat imgBW = Mat(imgHSV.rows,imgHSV.cols,CV_8UC1);
   for(int i=0;i<imgHSV.rows;i++){
@@ -451,22 +434,25 @@ int main(int argc, char const *argv[])
       imgBW.at<uchar>(i,j)=imgHSV.at<Vec3b>(i,j)[1]*2;
     }
   }
+  vector<string> legendText;
   vector<pair<int,int> > X,Y;
   {
     ifstream fin("legend_boxes.txt");
     int sz;fin>>sz;
-    X.resize(sz);Y.resize(sz);
-    for(int i=0;i<sz;++i)
+    X.resize(sz);Y.resize(sz);legendText.resize(sz);
+    for(int i=0;i<sz;++i){
       fin>>X[i].first>>X[i].second>>Y[i].first>>Y[i].second;
+      string temp;
+      getline(fin,temp);
+      getline(fin,legendText[i]);
+    }
+
     fin.close();
   }
   int xmax=-1e9,xmin=1e9;
   for(auto it:X)
     xmax=max(it.first,xmax),xmin=min(it.second,xmin);
   int xthr=0.18*imgHSV.cols;
-  // cout<<xmax<<" "<<xmin<<"\n";
-  // cout<<xmax-xthr<<" "<<imgHSV.cols<<"\n";
-  // return 0;
 
   map<int,int> mp;
   for(int i=0;i<Y.size();++i)
@@ -490,26 +476,26 @@ int main(int argc, char const *argv[])
         yellow.at<Vec3b>(k,j)=Vec3b(0,255,0);
       }
     }
-    // for(int id=0;id<legendHist.size();id++)
-    //   cout<<legendHist[id]<<" ";
-    // cout<<"\n";
-    cout<<"PLotHues :"<<plothues.size()<<"\n";
     int maxpos=max_element(legendHist.begin(),legendHist.end())-legendHist.begin();
-    for(int j=0;i<plothues.size();++j)
+    for(int j=0;j<plothues.size();++j)
       if(maxpos>=plothues[j].first and maxpos<=plothues[j].second)
         {mp[i]=j;break;}
     histogram(legendHist);
-    waitKey(0);
   }
 
 
   // legend id SPACE hue id SPACE hue.first SPACE hue.second \n
-  for(auto it:mp)
-        printf("%d %d %d %d\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second);
+  char a[200];
+  int h=0;
+  for(auto it:mp){
+    strcpy(a,legendText[h].c_str());
+    printf("%d %d %d %d %s\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second,a);
 
-  imshow("weird", yellow);
-  imwrite("weird2.png", yellow);
+  }
+        
+  // imshow("weird", yellow);
+  // imwrite("weird2.png", yellow);
  
-  waitKey(0);
+  // waitKey(0);
   return 0;
 }
