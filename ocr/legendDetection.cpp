@@ -78,9 +78,46 @@ pair<int,int> histogram(vector<int> &rowHist,Mat& img){
   }
   
   return maxLen;
+}
 
 
+void tessy(int ind,map<int,string>& mp,Mat& imgx, pair<int,int> X,pair<int,int> Y)
+{
+	Point a,b2;
+  double c,d;
 
+  // imshow("",imgx);
+
+  	c=X.second-X.first;
+  	d=Y.second-Y.first;
+  	a.x=max(0.0,X.first-imgx.cols*0.01);
+  	a.y=max(0.0,Y.first-imgx.rows*0.007);
+  	b2.x=min(imgx.cols-1.0,X.second+imgx.cols*0.01);
+  	b2.y=min(imgx.rows-1.0,Y.second+imgx.rows*0.007);
+  	Rect rct(a,b2);
+  	Mat imgTemp=imgx(rct);
+  	imwrite("output.jpg",imgTemp);
+
+  	char buf1[1000],buf2[1000];
+  	remove("temp.ppm");remove("temp.png");
+	sprintf(buf1,"convert output.jpg temp.ppm");
+	sprintf(buf2,"unpaper  --no-mask-center --no-border-align temp.ppm temp.png");
+	system(buf1);
+	system(buf2);
+	system("tesseract temp.png dig_out -psm 6");
+	 char txt[1024];
+  ifstream in;
+  in.open("dig_out.txt");
+  in.getline(txt, 1000, '\n');
+  in.close();
+  mp[ind]=txt;
+  // ofstream of;
+  // of.open("tot_out_y.txt",ofstream::app);
+  // of<<txt<<"\n";
+  // of.close();
+  // cout<<"\n txt :    "<<txt;
+ 	// imshow("label",imgTemp);
+  	// waitKey(0);
 }
 
 int main(int argc, char const *argv[]){
@@ -251,7 +288,10 @@ int main(int argc, char const *argv[]){
   	whites.push_back(make_pair(finalseg[i-1].second+1,finalseg[i].first-1));
   }
  
-  
+  ofstream fout("legend_boxes.txt");
+  map<int,string> mp;
+  Mat imgx=imread(argv[1]);
+  fout<<whites.size()<<"\n";
   for(int i=0;i<whites.size();i++){
   	vector<int> colHist(un.cols,0);
   	for(int j=whites[i].first;j<whites[i].second;j++){
@@ -262,15 +302,22 @@ int main(int argc, char const *argv[]){
   	}
   	pair<int,int> X=histogram(colHist,un);
   	pair<int,int> Y=whites[i];
+  	// fout<<X.first<<" "<<X.second<<" "<<Y.first<<" "<<Y.second<<"\n";
   	for(int m=Y.first;m<Y.second;m++){
   		for(int n=X.first;n<X.second;n++){
   			un.at<Vec3b>(m,n)=Vec3b(255,0,0);
   		}
   	}
 
+  	tessy(i,mp,imgx,X,Y);
+
   }
-  printf("%d\n",whites.size());
-  
+  fout.close();
+  // printf("%d\n",whites.size());
+  printf("%d\n",mp.size());
+  for(auto it:mp)
+  	printf("%d %s\n",it.first,it.second.c_str());
+
   
  
   imshow("green",un);
