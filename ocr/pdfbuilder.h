@@ -4,7 +4,10 @@ using namespace std;
 
 class PDFbuilder
 {
+	vector<char> special_chars = {'&', '%', '$', '#', '_', '{', '}', '~', '^', '\\'};
 	string latex_string;
+
+	string preprocess(const string& str);
 public:
 	PDFbuilder();
 	void beginDocument();
