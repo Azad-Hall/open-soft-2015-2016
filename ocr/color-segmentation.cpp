@@ -213,24 +213,24 @@ int main(int argc, char const *argv[])
     printf("usage: ./color-segmentation <graph-img-cropped> <out-basename> <graph-img-cropped-nolegend>\n");
     return 0;
   }
-  hueColor[0] = "red";
-  hueColor[1] = "orange";
-  hueColor[2] = "yellowish orange";
-  hueColor[3] = "yellow";
-  hueColor[4] = "lime";
-  hueColor[5] = "light green";
-  hueColor[6] = "green";
-  hueColor[7] = "dark green";
-  hueColor[8] = "cyanish green";
-  hueColor[9] = "cyan";
-  hueColor[10] = "light blue";
-  hueColor[11] = "blue";
-  hueColor[12] = "dark blue";
-  hueColor[13] = "indigo";
-  hueColor[14] = "violet";
-  hueColor[15] = "purple";
-  hueColor[16] = "magenta";
-  hueColor[17] = "rose red";
+  hueColor[0] = "Red";
+  hueColor[1] = "Orange";
+  hueColor[2] = "Yellowish orange";
+  hueColor[3] = "Yellow";
+  hueColor[4] = "Lime";
+  hueColor[5] = "Light green";
+  hueColor[6] = "Green";
+  hueColor[7] = "Dark green";
+  hueColor[8] = "Cyanish green";
+  hueColor[9] = "Cyan";
+  hueColor[10] = "Light blue";
+  hueColor[11] = "Blue";
+  hueColor[12] = "Dark blue";
+  hueColor[13] = "Indigo";
+  hueColor[14] = "Violet";
+  hueColor[15] = "Purple";
+  hueColor[16] = "Magenta";
+  hueColor[17] = "Rose red";
   // cout<<"sdhfukdshf\n";
   /*string path=argv[1];
   char Path[]="../ocr/build/graph-box ";
@@ -473,6 +473,7 @@ int main(int argc, char const *argv[])
                        Scalar( 255), 2, 8, 0  );
   }
   // imshow("histogram", histImg);
+  // waitKey();
   // draw all pixels with H < 50 degrees. Troublesome in 1.png?
   
   Mat yellow;
