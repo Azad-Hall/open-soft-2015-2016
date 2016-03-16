@@ -31,7 +31,6 @@ void PDFbuilder::addTable(const vector< vector<string> >& table, const string& t
 	int cols = table[0].size();
 
 	latex_string += "\\begin{center}\n";
-	if(!title.empty() and title != "NA") latex_string += "\\caption{" + preprocess(title) +"}\n";	
 	latex_string += "\\begin{longtable}{ |";
 	for (int i = 0; i < cols; ++i)
 	{
@@ -39,9 +38,9 @@ void PDFbuilder::addTable(const vector< vector<string> >& table, const string& t
 	}
 	latex_string += " }\n";
 	
-	latex_string += "\\multicolumn{" + to_string(cols) + "}{|r|}{{Continued on next page}} \\\\ \\hline\n";
-	latex_string += "\\endfoot\n";
-	latex_string += "\\endlastfoot\n";
+	if(!title.empty() and title != "NA") latex_string += "\\caption[" + preprocess(title) + "]{" + preprocess(title) +"}\\ \n";	
+    else
+        latex_string += "\\caption[Could not process title]{ Could not process title. }\\ \n";
 	latex_string += "\\hline\n";
 	latex_string += "\\multicolumn{1}{|c|}{{ " + preprocess(table[0][0]) + " }} & \\multicolumn{" + to_string(cols-1) + "}{|c|}{{" + preprocess(y_title) + "}}\\\\\n";
 	latex_string += "\\cline{2-" + to_string(cols) + "}\n";
@@ -53,6 +52,12 @@ void PDFbuilder::addTable(const vector< vector<string> >& table, const string& t
 	}
 	latex_string += "\\\\\n";
 	latex_string += "\\cline{1-" + to_string(cols) + "}\n";
+
+	latex_string += "\\hline\n";
+    latex_string += "\\endhead\n";
+	latex_string += "\\multicolumn{" + to_string(cols) + "}{|r|}{{Continued on next page}} \\\\ \\hline\n";
+	latex_string += "\\endfoot\n";
+	latex_string += "\\endlastfoot\n";
 	
 	for (int i = 1; i < rows; ++i)
 	{
