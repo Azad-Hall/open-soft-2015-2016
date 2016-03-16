@@ -98,8 +98,10 @@ string PDFbuilder::preprocess(const string& str) {
 	{
 		if(find(special_chars.begin(), special_chars.end(), str[i]) != special_chars.end()) {
 			ret.push_back('\\');
+			
 		}
-		ret.push_back(str[i]);
+		if(find(special_chars.begin(), special_chars.end(), str[i]) == special_chars.end())
+			ret.push_back(str[i]);
 	}
 
 	return ret;
