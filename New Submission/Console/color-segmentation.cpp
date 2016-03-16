@@ -530,8 +530,9 @@ int main(int argc, char const *argv[])
       }
     }
     char name[1000];
-    // close image once.
-    morphologyEx( plots, plots, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
+    // open small, then close image once.
+    // morphologyEx( plots, plots, MORPH_OPEN, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)) );
+    morphologyEx( plots, plots, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(plots.cols*0.05, plots.cols*0.05)) );
     sprintf(name, "%s-0.png", argv[2]);
     imwrite(name,plots);
   }
@@ -547,8 +548,9 @@ int main(int argc, char const *argv[])
       }
     }
     char name[1000];
-    // close image once.
-    morphologyEx( plots, plots, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
+    // open small, then close image once.
+    // morphologyEx( plots, plots, MORPH_OPEN, getStructuringElement(MORPH_ELLIPSE, Size(3, 3)) );
+    morphologyEx( plots, plots, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(plots.cols*0.05, plots.cols*0.05)) );
     sprintf(name, "%s-%d.png", argv[2], (k-maxNo));
     imwrite(name,plots);
    

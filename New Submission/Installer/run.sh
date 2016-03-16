@@ -52,7 +52,7 @@ function incrementDone {
     exit
   fi
   # hopefully don't need mutex....
-  value=`cat $doneFileLoc`
+  value="`cat \"$doneFileLoc\"`"
   ((value+=$1))
   echo "$value" > "$doneFileLoc"
 }
@@ -61,7 +61,7 @@ function printDone {
     echo "Illegal number of parameters"
     exit
   fi
-  value=`cat $doneFileLoc`
+  value="`cat \"$doneFileLoc\"`"
   echo $value $1
 }
 function pageFn {
@@ -122,7 +122,7 @@ function pdfFn {
   # $image_tmp->pingImage("$1");
   # numpages=$image_tmp->getNumberImages();
   numpages=`identify -format %n "$1"`
-  basename=`basename $1 .pdf`
+  basename="`basename $1 .pdf`"
   folder="$basename-dir"
   # print 0 in the begninng because of qt problem. then print output file name
   echo "$numpages "`pwd`"/$folder/out.pdf"
@@ -151,7 +151,7 @@ function pdfFn {
   printDone "Rendering PDF"
   pth=`pwd`"/scan"
   outname="out"
-  echo "$cnt\n" | ../make-pdf $pth $outname &> /dev/null
+  echo "$cnt\n" | ../make-pdf "$pth" "$outname" &> /dev/null
   echo "100 Done."
   exit
 }

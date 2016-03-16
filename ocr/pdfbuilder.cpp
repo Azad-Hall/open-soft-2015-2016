@@ -4,6 +4,7 @@ PDFbuilder::PDFbuilder() {
 	latex_string += "\\documentclass{article}\n";
 	latex_string += "\\usepackage[utf8]{inputenc}\n";
 	latex_string += "\\usepackage{graphicx}\n";
+	latex_string += "\\usepackage{grffile}\n";
 	latex_string += "\\usepackage{geometry}\n";
 	latex_string += "\\usepackage{longtable}\n";
 	latex_string += "\\title{}\n";

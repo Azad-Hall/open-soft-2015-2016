@@ -132,7 +132,7 @@ function pdfFn {
   doneFileLoc=`pwd`"/doneFile.txt"
   echo '0' > "$doneFileLoc"
   printDone "Converting pdf to images"
-  convert -density 300 $1 "$folder/scan.png" &> /dev/null
+  convert -density 300 "$1" "$folder/scan.png" &> /dev/null
   # if only 1 page, then rename the file to scan-0.png
   incrementDone "10"
   cd "$folder"
