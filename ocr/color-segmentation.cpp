@@ -213,24 +213,24 @@ int main(int argc, char const *argv[])
     printf("usage: ./color-segmentation <graph-img-cropped> <out-basename> <graph-img-cropped-nolegend>\n");
     return 0;
   }
-  hueColor[0] = "red";
-  hueColor[1] = "orange";
-  hueColor[2] = "yellowish orange";
-  hueColor[3] = "yellow";
-  hueColor[4] = "lime";
-  hueColor[5] = "light green";
-  hueColor[6] = "green";
-  hueColor[7] = "dark green";
-  hueColor[8] = "cyanish green";
-  hueColor[9] = "cyan";
-  hueColor[10] = "light blue";
-  hueColor[11] = "blue";
-  hueColor[12] = "dark blue";
-  hueColor[13] = "indigo";
-  hueColor[14] = "violet";
-  hueColor[15] = "purple";
-  hueColor[16] = "magenta";
-  hueColor[17] = "rose red";
+  hueColor[0] = "Red";
+  hueColor[1] = "Orange";
+  hueColor[2] = "Yellowish orange";
+  hueColor[3] = "Yellow";
+  hueColor[4] = "Lime";
+  hueColor[5] = "Light green";
+  hueColor[6] = "Green";
+  hueColor[7] = "Dark green";
+  hueColor[8] = "Cyanish green";
+  hueColor[9] = "Cyan";
+  hueColor[10] = "Light blue";
+  hueColor[11] = "Blue";
+  hueColor[12] = "Dark blue";
+  hueColor[13] = "Indigo";
+  hueColor[14] = "Violet";
+  hueColor[15] = "Purple";
+  hueColor[16] = "Magenta";
+  hueColor[17] = "Rose red";
   // cout<<"sdhfukdshf\n";
   /*string path=argv[1];
   char Path[]="../ocr/build/graph-box ";
@@ -300,10 +300,10 @@ int main(int argc, char const *argv[])
         Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
         if (cRGB[0] >= 210 && cRGB[1] >= 210 && cRGB[2] >= 210) {//210
           mask.at<uchar>(i,j) = 0;
-        } else if (cRGB[0] <= 120 && cRGB[1] <= 120 && cRGB[2] <= 120) {
+        } else if (cRGB[0] <= 80 && cRGB[1] <= 80 && cRGB[2] <= 80) {
           bmask.at<uchar>(i,j) = 0;
         }  // if saturation is low i.e less than 10%, it could be black/grey, we don't need that.
-        else if (cHSV[1] <= .03*255) {
+        else if (cHSV[1] <= .03*255 || cHSV[2] <= 0.35*255) {
           bmask.at<uchar>(i,j) = 0;
         }      
       }
@@ -311,7 +311,7 @@ int main(int argc, char const *argv[])
     //anti aliasing correction
     // using search method
     //again adding all black pixels to bmask for higher threshold of saturation
-    bmask = expandBMask(bmask, imgHSV, mask, 0.15*255);//0.11
+    // bmask = expandBMask(bmask, imgHSV, mask, 0.11*255);//0.11
     bool got=false;
     for (int i = 0; i < mask.rows; ++i)
     {
@@ -327,6 +327,14 @@ int main(int argc, char const *argv[])
     }
     mask = mask & bmask;
     mask2 = mask;
+    // for (int i = 0; i < mask2.rows; i++) {
+    //   for (int j = 0; j < mask2.cols; j++) {
+    //     if (mask2.at<uchar>(i,j))
+    //       mask2.at<uchar>(i,j) = 255;
+    //   }
+    // }
+    // imshow("mask2", mask2);
+    // waitKey(0);
   }
   // we will now classify with H value only.
   // make histogram on H
@@ -473,6 +481,7 @@ int main(int argc, char const *argv[])
                        Scalar( 255), 2, 8, 0  );
   }
   // imshow("histogram", histImg);
+  // waitKey();
   // draw all pixels with H < 50 degrees. Troublesome in 1.png?
   
   Mat yellow;
