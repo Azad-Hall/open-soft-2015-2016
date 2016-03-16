@@ -324,9 +324,60 @@ os << d;
 std::string str = os.str();
 return str;
 }
+double cross_product( Point a, Point b ){
+   return a.x*b.y - a.y*b.x;
+}
+double distance_to_line( Point begin, Point end, Point x ){
+   //translate the begin to the origin
+   end -= begin;
+   x -= begin;
+
+   //¿do you see the triangle?
+   double area = cross_product(x, end);
+   return fabs(area / norm(end));
+}
 
 
-
+double RANSAC(vector<Point2f> pts, vector<int> &inlierIdx) {
+  assert(pts.size() > 1);
+  inlierIdx.clear();
+  // returns the slope i.e x to y conversion ratio
+  double maxx=-1e9, maxy= -1e9;
+  for (int i = 0; i < pts.size(); i++) {
+    maxx = max(maxx, (double)pts[i].x);
+    maxy = max(maxy, (double)pts[i].y);
+  }
+  // threshold should be based on min of maxx and maxy?
+  double distThresh = min(maxx,maxy)/100.;
+  // score = (-numInliners, sumInlierDist);
+  pair<int,double> minScore(1e9, 1e9);
+  int mini = 0, minj = 1;
+  for (int i = 0; i < pts.size(); i++) {
+    for (int j = i+1; j < pts.size(); j++) {
+      pair<int,double> score(0, 0);
+      for (int k = 0; k < pts.size(); k++) {
+        double dst = fabs(distance_to_line(pts[i], pts[j], pts[k]));
+        // printf("distance((%lf,%lf), (%lf,%lf)) to (%lf,%lf) is = %lf\n", pts[i].x, pts[i].y,
+          // pts[j].x, pts[j].y, pts[k].x, pts[k].y, dst);
+        if (dst < distThresh) {
+          score.first--;
+          score.second += dst;
+          if (minScore > score) {
+            minScore = score;
+            mini = i, minj = j;
+          }
+        }
+      }
+    }
+  }
+  for (int i= 0; i < pts.size(); i++) {
+    if (fabs(distance_to_line(pts[mini], pts[minj], pts[i])) < distThresh) {
+      inlierIdx.push_back(i);
+    }
+  }
+  // return slope
+  return (pts[minj].y-pts[mini].y)/(pts[minj].x-pts[mini].x);
+}
 int main(int argc, char* argv[])
 {
 	double xscale,yscale,xgran;
@@ -373,6 +424,7 @@ double v,h;
         //   labelv1.push_back(temp2);
         // }
 ifstream f("tot_out_y.txt");
+vector<Point2f> ydata;
   while(f) {
     char txt[1000];
     f.getline(txt, 1000, '\n');
@@ -381,6 +433,9 @@ ifstream f("tot_out_y.txt");
     iss>>temp2.x;
     float a;
     iss>>a;
+    if (!iss.fail()) { // number read
+      ydata.push_back(Point2f(temp2.x, a));
+    }
     temp2.text = to_string(a);
     temp2.a = Point2f(0,0);
     temp2.b = Point2f(0,0);
@@ -397,7 +452,16 @@ ifstream f("tot_out_y.txt");
   vector<bool> inline_y(labelv.size(),false);
     v=yScale(labelv,(labelv[0].x-labelv[labelv.size()-1].x),inline_y);
   cout<<"\n\nVertical Scale Final:      "<<v;
-  
+  vector<int> inliers_y_RANSAC;
+  double vscale_RANSAC = RANSAC(ydata, inliers_y_RANSAC);
+  cout << "VSCALE RANSAC : " << vscale_RANSAC << endl;
+  printf("inliers: (RANSAC): \n");
+  for (int i= 0;i <inliers_y_RANSAC.size();i++) {
+    int idx = inliers_y_RANSAC[i];
+    assert(idx >=0 && idx < ydata.size());
+    printf("(%.2lf, %.2lf) ", ydata[idx].x, ydata[idx].y);
+  }
+  printf("\n");
 // pugi::xml_document doc1;
 // pugi::xml_parse_result result1 = doc1.load_file("tes_out1.hocr");
 // simple_walker walker1;
@@ -415,6 +479,7 @@ ifstream f("tot_out_y.txt");
 //           labelh.push_back(temp2);
 //           }
 f.open("tot_out.txt");
+vector<Point2f> xdata;
   while(f) {
     char txt[1000];
     f.getline(txt, 1000, '\n');
@@ -423,6 +488,9 @@ f.open("tot_out.txt");
     iss>>temp2.x;
     float a;
     iss>>a;
+    if (!iss.fail()) {
+      xdata.push_back(Point2f(temp2.x, a));
+    }
     temp2.text = to_string(a);
     temp2.a = Point2f(0,0);
     temp2.b = Point2f(0,0);
@@ -435,8 +503,17 @@ for(int i=0;i<labelh.size();i++) {
   }
   vector<bool> inline_x(labelh.size(),false);
     h=xScale(labelh,(labelh[labelh.size()-1].x-labelh[0].x),inline_x);
-  cout<<"\n\nHorizontal Scale Final:      "<<h;
-
+  cout<<"\n\nHorizontal Scale Final:      "<<h <<endl;
+  vector<int> inliers_x_RANSAC;
+  double hscale_ransac = RANSAC(xdata, inliers_x_RANSAC);
+  cout << "HSCALE RANSAC : " << hscale_ransac << endl;
+  printf("inliers: (RANSAC): \n");
+  for (int i= 0;i <inliers_x_RANSAC.size();i++) {
+    int idx = inliers_x_RANSAC[i];
+    assert(idx >=0 && idx < xdata.size());
+    printf("(%.2lf, %.2lf) ", xdata[idx].x, xdata[idx].y);
+  }
+  printf("\n");
 cout<<"\nStartx:               "<<startx;
 cout<<"\nStartcoordinatex:     "<<startCoordinatex;
 cout<<"\nStarty:               "<<starty;
@@ -490,15 +567,15 @@ cout<<"\nStartcoordinatey:     "<<startCoordinatey;
  
   pugi::xml_node xnode = outdoc.append_child();
   xnode.set_name("xscale");
-  xnode.append_attribute("valPerPix") = h;
-  xnode.append_attribute("xrefCoord") = startCoordinatex;
-  xnode.append_attribute("xrefValue") = startx;
+  xnode.append_attribute("valPerPix") = hscale_ransac;
+  xnode.append_attribute("xrefCoord") = xdata[inliers_x_RANSAC[0]].x;
+  xnode.append_attribute("xrefValue") = xdata[inliers_x_RANSAC[0]].y;
   
   pugi::xml_node ynode = outdoc.append_child();
   ynode.set_name("yscale");
-  ynode.append_attribute("valPerPix") = v;
-  ynode.append_attribute("yrefCoord") = startCoordinatey;
-  ynode.append_attribute("yrefValue") = starty;
+  ynode.append_attribute("valPerPix") = vscale_RANSAC;
+  ynode.append_attribute("yrefCoord") = ydata[inliers_y_RANSAC[0]].x;
+  ynode.append_attribute("yrefValue") = ydata[inliers_y_RANSAC[0]].y;
 
  	pugi::xml_node htxt = outdoc.append_child();
   htxt.set_name("horizontal_text");
@@ -514,27 +591,40 @@ cout<<"\nStartcoordinatey:     "<<startCoordinatey;
 
    pugi::xml_node y_label = outdoc.append_child();
   y_label.set_name("y_label");
-  for(int i=0;i<labelv.size();i++){
-    if(inline_y[i]) {
-      pugi::xml_node inliney = y_label.append_child();
-      inliney.set_name("inliney");
-      string s=labelv[i].text;
-      inliney.append_attribute("pix")=(int)labelv[i].x;
-      inliney.append_attribute("val")=s.c_str();
-    }
+  // output inliners from xdata and inliers_x_RANSACE and same for y
+  for (int i = 0; i < inliers_y_RANSAC.size(); i++) {
+    pugi::xml_node inliney = y_label.append_child("inliney");
+    int idx = inliers_y_RANSAC[i];
+    inliney.append_attribute("pix") = ydata[idx].x;
+    inliney.append_attribute("val") = ydata[idx].y;
   }
+  // for(int i=0;i<labelv.size();i++){
+  //   if(inline_y[i]) {
+  //     pugi::xml_node inliney = y_label.append_child();
+  //     inliney.set_name("inliney");
+  //     string s=labelv[i].text;
+  //     inliney.append_attribute("pix")=(int)labelv[i].x;
+  //     inliney.append_attribute("val")=s.c_str();
+  //   }
+  // }
 
   pugi::xml_node x_label = outdoc.append_child();
   x_label.set_name("x_label");
-  for(int i=0;i<labelh.size();i++){
-    if(inline_x[i]) {
-      pugi::xml_node inlinex = x_label.append_child();
-      inlinex.set_name("inlinex");
-      string s=labelh[i].text;
-      inlinex.append_attribute("pix")=(int)labelh[i].x;
-      inlinex.append_attribute("val")=s.c_str();
-    }
+  for (int i = 0; i < inliers_x_RANSAC.size(); i++) {
+    pugi::xml_node inlinex = x_label.append_child("inlinex");
+    int idx = inliers_x_RANSAC[i];
+    inlinex.append_attribute("pix") = xdata[idx].x;
+    inlinex.append_attribute("val") = xdata[idx].y;
   }
+  // for(int i=0;i<labelh.size();i++){
+  //   if(inline_x[i]) {
+  //     pugi::xml_node inlinex = x_label.append_child();
+  //     inlinex.set_name("inlinex");
+  //     string s=labelh[i].text;
+  //     inlinex.append_attribute("pix")=(int)labelh[i].x;
+  //     inlinex.append_attribute("val")=s.c_str();
+  //   }
+  // }
 
   // pugi::xml_node 
   ofstream xml_out;

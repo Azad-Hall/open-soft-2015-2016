@@ -177,7 +177,8 @@ vector<pair<bool, double> > interpolate(vector<double> xsamples, vector<pair<boo
 double getPixFromVal(double y, double scale, double refPix, double refVal) {
   return (y-refVal)/scale + refPix;
 }
-vector<double> getXSamples(string fileName, double scale, double refPix, double refVal)
+// trueVals is array of inliears for current scale
+vector<double> getXSamples(string fileName, vector<Point2f>trueVals, double scale, double refPix, double refVal)
 {
   vector<double> ret;
   ifstream in(fileName.c_str(),ifstream::in);
@@ -191,22 +192,36 @@ vector<double> getXSamples(string fileName, double scale, double refPix, double 
     while(ss>>x){
       if(firstNum)
       { 
-        // ret.push_back(x);
         candidate = x;
         firstNum = false;
       } else {
-        // the second number is the true value (val)
-        // conver it to pix and add instead of candidate
-        candidate = getPixFromVal(x, scale, refPix, refVal);
       }
     }
-    if (ret.size())
-      assert(candidate >= ret[ret.size()-1]);
     ret.push_back(candidate);
   }
-  // printf("x samples: ");
-  // for (int i= 0; i < ret.size(); i++)
-  //   printf("%.2lf(%.2lf) ", ret[i], pixToVal(ret[i], scale, refPix, refVal));
+  printf("x samples (just read the file): ");
+  for (int i= 0; i < ret.size(); i++)
+    printf("%.2lf(%.2lf) ", ret[i], pixToVal(ret[i], scale, refPix, refVal));
+  printf("\n");
+  for (int i = 0; i < ret.size(); i++) {
+    // check if this pix is there in trueVals. If so, replace it with inverse value using truVals val
+    for (int j = 0; j < trueVals.size(); j++) {
+      if (fabs(trueVals[j].x - ret[i]) < 1e-5) {
+        printf("match: %lf matches %lf\n", trueVals[j].x, ret[i]);
+        // found
+        ret[i] = getPixFromVal(trueVals[j].y, scale, refPix, refVal);
+        break;
+      }
+    }
+  }
+  printf("x samples: ");
+  for (int i= 0; i < ret.size(); i++)
+    printf("%.2lf(%.2lf) ", ret[i], pixToVal(ret[i], scale, refPix, refVal));
+  printf("\n");
+  // check sanity: should be strictly increasing!
+  for (int i = 1; i < ret.size(); i++) {
+    assert(ret[i] > ret[i-1]);
+  }
   return ret;
 
 }
@@ -221,10 +236,11 @@ vector<double> InsertPositions(vector<double> &X, double scale, double refPix, d
     int nxt = pres + 1;
     if(X[pres]!=X[nxt])
     {
-      double lc = (pixToVal(X[nxt],scale, refPix,refVal) - pixToVal(X[pres],scale,refPix,refVal))/10;
+      double prevVal = pixToVal(X[pres],scale, refPix,refVal), nxtVal = pixToVal(X[nxt],scale,refPix,refVal);
+      double lc = (nxtVal - prevVal)/10;
       for(int i = 1;i<=9;i++)
       {
-        int posToBeInserted = getPixFromVal(pixToVal(X[pres],scale,refPix,refVal) + i*lc,scale,refPix,refVal);
+        int posToBeInserted = getPixFromVal(pixToVal(X[pres],scale,X[pres],prevVal) + i*lc,scale,refPix,refVal);
         ret.push_back(posToBeInserted);
       }
     }
@@ -302,20 +318,40 @@ int main(int argc, char const *argv[])
   title = doc.child("Title_text").attribute("ttxt").value();
   xscale = stof(xs.attribute("valPerPix").value());
   printf("htext = %s, vtext = %s\n", htext.c_str(), vtext.c_str());
-  // since yscale shoudl decrease
-  yscale = -stof(ys.attribute("valPerPix").value());
+  // since yscale shoudl decrease. nope removed negative since i'm usign my code for ransac now.
+  yscale = stof(ys.attribute("valPerPix").value());
   xrefPix = stof(xs.attribute("xrefCoord").value());
   xrefVal = stof(xs.attribute("xrefValue").value());
   yrefPix = stof(ys.attribute("yrefCoord").value());
   yrefVal = stof(ys.attribute("yrefValue").value());
+  // read the truVals arra
+  vector<Point2f> trueValsY;
+  pugi::xml_node ylabels = doc.child("y_label");
+  for (pugi::xml_node n = ylabels.first_child(); n; n = n.next_sibling()) {
+    double pix = stof(n.attribute("pix").value());
+    double val = stof(n.attribute("val").value());
+    trueValsY.push_back(Point2f(pix, val));
+  }
+  // actually onlyneed x truvals. i'm retarded
+  vector<Point2f> trueValsX;
+  pugi::xml_node xlabels = doc.child("x_label");
+  for (pugi::xml_node n = xlabels.first_child(); n; n = n.next_sibling()) {
+    double pix = stof(n.attribute("pix").value());
+    double val = stof(n.attribute("val").value());
+    trueValsX.push_back(Point2f(pix, val));
+  }
   // make the samples array
   double xOffset = 0;
   // push the xsamples by an offset, since we want them to align
   // with the axis text.
   double closestDiff = 1e15;
   // make xsamples only with lest count
-  vector<double> xsamples = getXSamples("tot_out.txt", xscale,xrefPix, xrefVal);
+  vector<double> xsamples = getXSamples("tot_out.txt", trueValsX, xscale,xrefPix, xrefVal);
   xsamples = InsertPositions(xsamples, xscale, xrefPix, xrefVal);  
+  printf("xsamples (final): \n");
+  for (int i = 0; i < xsamples.size(); i++) {
+    printf("%lf\n", xsamples[i]);
+  }
   /*
   assert (lc > 0);
   for (int x = bl.x; x <= br.x; x += lc) {

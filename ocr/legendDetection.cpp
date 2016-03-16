@@ -19,7 +19,63 @@ using namespace cv;
 using namespace std;
 
 int run(int argc, char **argv); // for peakdetect
+void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew, Mat &whiteMask, int lowSatThresh, Point srcCoord) {
+  int iArr[] = {-2, -1, 0, 1, 2};
+  for (int k = 0; k < 5; k++) {
+    for (int l = 0; l < 5; l++) {
+      int ii = i+iArr[k], jj = j+iArr[l];
+      if (ii < 0 || ii >= bmask.rows || jj < 0 || jj >= bmask.cols)
+        continue;
+      if (ii == i && jj == j)
+        continue;
+      Vec3b hsv = imgHSV.at<Vec3b>(ii,jj);
+      if (visited.at<uchar>(ii,jj))
+        continue;
+      visited.at<uchar>(ii,jj) = 1;
+      // add special conditions for brown and blue to counter anti aliasing
+      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-10) < 20 || fabs(hsv[0]-100) < 20) && whiteMask.at<uchar>(ii,jj) ) {
+        visited.at<uchar>(ii,jj) = 1;
+        bmaskNew.at<uchar>(ii,jj) = 0;
+        // only traverse if distance to srcCoord is less than thresh
+        if (norm(srcCoord-Point(jj,ii)) < 20)
+          traverse(bmask, visited, imgHSV, ii, jj, bmaskNew, whiteMask, lowSatThresh, srcCoord);
+      }
+    }
+  }
+}
 
+Mat expandBMask(Mat bmask, Mat imgHSV, Mat whiteMask, int lowSatThresh) {
+  // shouldn't use search for expanding mask, it can completely take away the color!
+  Mat visited = Mat::zeros(bmask.size(), CV_8U);
+  Mat bmaskNew = Mat::ones(bmask.size(), CV_8U);
+  Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(7,7));
+  for (int i = 0; i < bmask.rows; ++i)
+  {
+    for (int j = 0; j < bmask.cols; ++j)
+    {
+      if (bmask.at<uchar>(i,j) == 0)
+        bmaskNew.at<uchar>(i,j) = 0;
+      if (bmask.at<uchar>(i,j) == 0 && visited.at<uchar>(i,j) == 0) {
+        // don't use search. instead, just use a kernel and mask away shitty pixels.
+        // use search, but only to a fixed radius.
+        visited.at<uchar>(i,j) = 1;
+        // for (int ii = 0; ii < kernel.rows; ii++) {
+        //   for (int jj = 0; jj < kernel.cols; jj++) {
+        //     int k = i+ii-kernel.rows/2, l = j+jj-kernel.cols/2;
+        //     Vec3b hsv = imgHSV.at<Vec3b>(k,l);
+        //     // add special conditions for brown and blue to counter anti aliasing
+        //     if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-10) < 20 || fabs(hsv[0]-100) < 20) && whiteMask.at<uchar>(ii,jj) ) {
+        //       visited.at<uchar>(ii,jj) = 1;
+        //       bmaskNew.at<uchar>(ii,jj) = 0;
+        //     }
+        //   }
+        // }
+        traverse(bmask, visited, imgHSV, i, j, bmaskNew, whiteMask, lowSatThresh, Point(j,i));
+      }
+    }
+  }
+  return bmaskNew;
+}
 
 pair<int,int> histogram(vector<int> &rowHist,Mat& img){
 
@@ -142,7 +198,7 @@ int main(int argc, char const *argv[]){
 	erode(img0, img0, getStructuringElement(MORPH_ELLIPSE, Size(5 , 1)));	
 	
 	imshow("yo",img0);
-	waitKey(0);
+	// waitKey(0);
 	Mat unCol=img0.clone();
 
 
@@ -184,6 +240,17 @@ int main(int argc, char const *argv[]){
 	  {
 	    rowHist[i] = (rowHist[i] *hist_h)/maxH;
 	  }
+    {
+      int avg=sum/rowHist.size();
+       int bin_w = cvRound( (double) hist_w/rowHist.size() );
+        Mat histImg(hist_h, hist_w, CV_8U, Scalar(0));
+        for (int i = 1; i < rowHist.size(); i++) {
+          line( histImg, Point( bin_w*(i-1), hist_h - cvRound(rowHist[i-1]) ) ,
+                             Point( bin_w*(i), hist_h - cvRound(rowHist[i]) ),
+                             Scalar( 255), 2, 8, 0  );
+        }
+        imshow("row Histogram",histImg);
+    }
 	
 //segments 
 	vector<pair<int,int> > seg;
@@ -294,7 +361,7 @@ int main(int argc, char const *argv[]){
   
  
  //  imshow("green",un);
- //   imshow("histogram", histImg);
+   // imshow("histogram", histImg);
 	// waitKey(0);
  
  return 0;

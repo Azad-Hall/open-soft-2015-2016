@@ -160,10 +160,10 @@ int main(int argc, char const *argv[])
         int xpad = imgRect.width*0.025;
         int ypad = imgRect.height*0.025;
         // pad bit more on left to account for y label
-        int ylabelpad = imgRect.width*0.075;
+        int ylabelpad = imgRect.width*0.225;
         Point tl(imgRect.tl().x-xpad-ylabelpad, imgRect.tl().y-ypad);
         // pad a little more in below, to keep the title and xlabel
-        int titlepad = imgRect.height*0.175;
+        int titlepad = imgRect.height*0.325;
         Point br(imgRect.br().x+xpad, imgRect.br().y + ypad+titlepad);
         tl.x = max(0,tl.x); tl.y = max(0,tl.y);
         br.x = min(input.cols-1, br.x); br.y = min(input.rows-1, br.y);
