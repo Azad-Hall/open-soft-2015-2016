@@ -11,7 +11,7 @@
 #include <QFileInfo>
 #include <cstdio>
 #include <cstdlib>
-
+#include "graphstruct.h"
 class PDFProcessor : public QObject
 {
     Q_OBJECT
@@ -21,7 +21,7 @@ public:
 signals:
     void initialize();
     void loadOutputFile(QString fileName);
-    void loadGraphs(QVector< QVector< QVector < PlotStructure > > > graphs);
+    void loadGraphs(QVector< QVector< GraphStruct > > graphs);
     void updateStatus(QString msg, int value);
     void wrapUpWithError();
     void wrapUpSuccessfully();
@@ -34,7 +34,7 @@ private slots:
     void readOutput();
 
 private:
-    QVector< QVector < PlotStructure > > parseXML(QString xmlFilePath);
+    QVector< GraphStruct > parseXML(QString xmlFilePath);
     int num_pages;
     QString filePath;
     QString outputFilePath;

@@ -12,7 +12,7 @@ void PDFProcessor::run() {
 
     emit loadOutputFile(outputFilePath);
 
-    QVector< QVector< QVector< PlotStructure > > > graphs;
+    QVector< QVector< GraphStruct > > graphs;
 
 //    for (int page = 0; page < 3; ++page) {
 //        graphs.push_back( QVector< QVector < PlotStructure > >() );
@@ -35,7 +35,7 @@ void PDFProcessor::run() {
 
     for (int i = 0; i < num_pages; ++i) {
         QString path = dir + "/" + tr("scan-%1-table.xml").arg(i);
-        QVector< QVector < PlotStructure > > page = parseXML(path);
+        QVector< GraphStruct > page = parseXML(path);
         graphs.push_back(page);
     }
 
@@ -70,19 +70,25 @@ void PDFProcessor::readOutput() {
     }
 }
 
-QVector< QVector < PlotStructure > > PDFProcessor::parseXML(QString xmlFilePath) {
-    QVector< QVector < PlotStructure > > plots;
+QVector<GraphStruct> PDFProcessor::parseXML(QString xmlFilePath) {
+    QVector< GraphStruct > plots;
     pugi::xml_document odoc;
     pugi::xml_parse_result result = odoc.load_file(xmlFilePath.toStdString().c_str());
     int graph = 0;
 
     for (pugi::xml_node n = odoc.first_child(); n; n = n.next_sibling()) {
         QVector< double > hues;
-        plots.push_back(QVector < PlotStructure >() );
-
+        QString xtitle, ytitle, title;
         int count = 0;
         for(pugi::xml_attribute attr = n.first_attribute() ; attr ; attr=attr.next_attribute()) {
             if(count < 2) {
+                if (count == 1) {
+                    // get ytitle
+                    ytitle = QString(attr.value());
+                } else if (count == 0) {
+                    // get title
+                    title = QString(attr.value());
+                }
                 count++;
                 continue;
             }
@@ -90,28 +96,44 @@ QVector< QVector < PlotStructure > > PDFProcessor::parseXML(QString xmlFilePath)
             hues.push_back(hue_value);
             count++;
         }
-
+        plots.push_back(GraphStruct("", ytitle, title) );
+        QVector<QString> legends;
         int row = 0;
         for (pugi::xml_node tr = n.first_child(); tr; tr = tr.next_sibling()) {
             int col = 0;
-            for (pugi::xml_node td = tr.first_child(); td; td = td.next_sibling()) {
+            double xVal;
+            for (pugi::xml_node td = tr.first_child(); td; td = td.next_sibling()) {                
                 if(row != 0) {
                     if(col == 0) {
-                        for (int i = 0; i < plots[graph].size(); ++i) {
-                            plots[graph][i].x.push_back(QString(td.child_value()).toDouble());
-                        }
+                        xVal = QString(td.child_value()).toDouble();
+//                        for (int i = 0; i < plots[graph].size(); ++i) {
+//                            plots[graph][i].x.push_back(QString(td.child_value()).toDouble());
+//                        }
                     }
                     else {
-                        plots[graph][col -1].y.push_back(QString(td.child_value()).toDouble());
+                        bool ok = true;
+//                        plots[graph][col -1].y.push_back(
+                        double yVal = QString(td.child_value()).toDouble(&ok);
+                        if (ok) {
+                            plots[graph].plots[col-1].y.push_back(yVal);
+                            plots[graph].plots[col-1].x.push_back(xVal);
+                        }
+                    }
+                } else {
+                    if (col == 0) {
+                        plots[graph].xtitle = QString(td.child_value());
+                    } else {
+                        legends.push_back(QString(td.child_value()));
                     }
                 }
                 col++;
             }
             if(row == 0) {
                 // Determine number of plots in the graph
+                plots[graph].plotLegends = legends;
                 for (int i = 0; i < col - 1; ++i) {
-                    plots[graph].push_back(PlotStructure());
-                    plots[graph][i].color.setHsvF(hues[i],1,1);
+                    plots[graph].push_back(PlotStructure(), legends[i]);
+                    plots[graph].plots[i].color.setHsvF(hues[i],1,1);
                 }
             }
             row++;

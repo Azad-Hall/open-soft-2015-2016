@@ -17,4 +17,7 @@ public:
     PlotStructure(double hue = 0.0);
 };
 
+
+
+
 #endif // PLOTSTRUCTURE_H

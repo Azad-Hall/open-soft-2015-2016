@@ -23,7 +23,7 @@ int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
 
-    qRegisterMetaType< QVector<QVector<QVector<PlotStructure> > > >("QVector<QVector<QVector<PlotStructure> > >");
+    qRegisterMetaType< QVector<QVector<GraphStruct > > >("QVector<QVector<GraphStruct> >");
     MainWindow mainWindow;
     mainWindow.show();
     mainWindow.showMaximized();

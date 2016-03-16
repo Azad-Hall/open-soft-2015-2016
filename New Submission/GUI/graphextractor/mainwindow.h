@@ -38,7 +38,7 @@
 #include "plotstructure.h"
 #include "pdfprocessor.h"
 #include "customitem.h"
-
+#include "graphstruct.h"
 class QMenu;
 class QProgressBar;
 class QAction;
@@ -65,7 +65,7 @@ private slots:
     void about();
     void initializeOpenFile();
     void updateStatusBar(QString msg, int value);
-    void loadGraphs( QVector< QVector< QVector< PlotStructure > > > graphs );
+    void loadGraphs( QVector< QVector< GraphStruct > > graphs );
     void plotItem(QTreeWidgetItem * item, int column);
     void wrapUpOpenFileWithSuccess();
     void wrapUpOpenFileWithFailure();
@@ -76,7 +76,7 @@ private:
     void createToolBar();
     void createStatusBar();
     void saveFile(const QString &fileName);
-    void plot(const QVector< PlotStructure >&);
+    void plot(const GraphStruct&);
 
     QMenu *fileMenu;
     QMenu *helpMenu;
@@ -94,7 +94,7 @@ private:
     QThread *processorThread;
     PDFProcessor *processor;
     QString outFilePath;
-    QVector< QVector< QVector< PlotStructure > > > graphs;
+    QVector< QVector< GraphStruct > > graphs;
 };
 
 #endif // MAINWINDOW_H

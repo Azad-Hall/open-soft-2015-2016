@@ -6,14 +6,16 @@ HEADERS += mainwindow.h \
     pdfprocessor.h \
     plotstructure.h \
     pugixml.hpp \
-    customitem.h
+    customitem.h \
+    graphstruct.h
 
 SOURCES += mainwindow.cpp\
            main.cpp \
     pdfprocessor.cpp \
     plotstructure.cpp \
     pugixml.cpp \
-    customitem.cpp
+    customitem.cpp \
+    graphstruct.cpp
 
 RESOURCES += \
     graphextractor.qrc

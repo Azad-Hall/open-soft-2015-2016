@@ -144,7 +144,7 @@ void MainWindow::openFile()
     connect(processor, SIGNAL(initialize()), this, SLOT(initializeOpenFile()));
     connect(processor, SIGNAL(updateStatus(QString,int)), this, SLOT(updateStatusBar(QString,int)));
     connect(processor, SIGNAL(loadOutputFile(QString)), this, SLOT(loadFile(QString)));
-    connect(processor, SIGNAL(loadGraphs(QVector<QVector<QVector<PlotStructure> > >)), this, SLOT(loadGraphs(QVector<QVector<QVector<PlotStructure> > >)));
+    connect(processor, SIGNAL(loadGraphs(QVector<QVector<GraphStruct > >)), this, SLOT(loadGraphs(QVector<QVector<GraphStruct > >)));
     connect(processor, SIGNAL(wrapUpSuccessfully()), this, SLOT(wrapUpOpenFileWithSuccess()));
     connect(processor, SIGNAL(wrapUpWithError()), this, SLOT(wrapUpOpenFileWithFailure()));
 
@@ -216,7 +216,7 @@ void MainWindow::about() {
                    "please open the Documentation.pdf file."));
 }
 
-void MainWindow::loadGraphs(QVector<QVector<QVector<PlotStructure> > > graphs) {
+void MainWindow::loadGraphs(QVector<QVector<GraphStruct > > graphs) {
     this->graphs = graphs;
     treeWidget->clear();
     for (int page = 0; page < graphs.size(); ++page) {
@@ -240,13 +240,29 @@ void MainWindow::plotItem(QTreeWidgetItem *item, int column) {
     plot(graphs[c_item->i][c_item->j]);
 }
 
-void MainWindow::plot(const QVector<PlotStructure>& graph) {
+void MainWindow::plot(const GraphStruct &graph) {
+    plotWidget->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
+    plotWidget->xAxis2->setVisible(true);
+    plotWidget->xAxis2->setTickLabels(false);
     plotWidget->clearGraphs();
-    for (int i = 0; i < graph.size(); ++i) {
+    plotWidget->legend->setVisible(true);
+
+    QFont legendFont = font();  // start out with MainWindow's font..
+    legendFont.setPointSize(9); // and make a bit smaller for legend
+    plotWidget->legend->setFont(legendFont);
+    plotWidget->legend->setBrush(QBrush(QColor(255,255,255,230)));
+    plotWidget->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignBottom|Qt::AlignRight);
+    for (int i = 0; i < graph.plots.size(); ++i) {
         plotWidget->addGraph();
-        plotWidget->graph(i)->setData(graph[i].x, graph[i].y);
-        plotWidget->graph(i)->setPen(QPen(graph[i].color));
+        plotWidget->graph(i)->setData(graph.plots[i].x, graph.plots[i].y);
+        plotWidget->graph(i)->setPen(QPen(graph.plots[i].color));
+        plotWidget->graph(i)->setLineStyle(QCPGraph::lsLine);
+        plotWidget->graph(i)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
+        plotWidget->graph(i)->setName(graph.plotLegends[i]);
     }
+    plotWidget->xAxis->setLabel(graph.xtitle);
+    plotWidget->yAxis->setLabel(graph.ytitle);
+    plotWidget->xAxis2->setLabel(graph.title);
     plotWidget->rescaleAxes();
     plotWidget->replot();
 }
