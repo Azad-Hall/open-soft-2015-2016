@@ -9,7 +9,8 @@
 #include "plotstructure.h"
 #include "pugixml.hpp"
 #include <QFileInfo>
-#include <QDebug>
+#include <cstdio>
+#include <cstdlib>
 
 class PDFProcessor : public QObject
 {
