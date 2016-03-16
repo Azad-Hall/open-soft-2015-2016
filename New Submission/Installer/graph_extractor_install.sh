@@ -23,8 +23,8 @@ cd "$DIR"
 
 echo "--- Installing Dependencies"
 
-# add-apt-repository -y ppa:ethereum/ethereum-qt
-# apt-get update || echo "--- Continuing Installation"
+add-apt-repository -y ppa:ethereum/ethereum-qt
+apt-get update || echo "--- Continuing Installation"
 
 source dependencies.sh
 

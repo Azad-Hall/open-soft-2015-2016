@@ -9,7 +9,7 @@ PDFbuilder::PDFbuilder() {
 	latex_string += "\\geometry{a4paper, total={200mm,250mm},left=5mm,top=20mm,}\n";
 	latex_string += "\\usepackage{longtable}\n";
 	latex_string += "\\title{}\n";
-	latex_string += "\\author{Team 7}\n";
+	latex_string += "\\author{Team 9}\n";
 }
 
 void PDFbuilder::beginDocument() {
