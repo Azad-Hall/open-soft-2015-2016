@@ -12,6 +12,8 @@
 using namespace cv;
 using namespace std;
 #include "box-detection.hpp"
+bool detect_color(Mat img);
+
 void rotate_90n(cv::Mat &src, cv::Mat &dst, int angle)
 {
     dst.create(src.size(), src.type());
@@ -52,7 +54,7 @@ int main(int argc, char const *argv[])
     imwrite("tmp/tmp-rot.png", rot);
     char buf[1000];
     sprintf(buf, "tesseract tmp/tmp-rot.png tmp/out-rot -l eng hocr" );
-    // imshow("rotated", rot);
+    // //imshow("rotated", rot);
     // waitKey();
     system(buf);
   }
@@ -146,6 +148,34 @@ int main(int argc, char const *argv[])
           imgCandidates.push_back(imgRect);
           imwrite(buf, croppedGraph);
         }
+      }
+    }
+    if (!done) {
+      // check using color if it is a graph, maybe we couldn't detect vertical text?
+      if (detect_color(Mat(input, boundingRect(rectContours[i])))) {
+        printf("writing graph detected through color.\n");
+        // maybe add it as graph?
+        done = true; // done with this imgRect.
+        // pad 2.5% in each direction
+        int xpad = imgRect.width*0.025;
+        int ypad = imgRect.height*0.025;
+        // pad bit more on left to account for y label
+        int ylabelpad = imgRect.width*0.225;
+        Point tl(imgRect.tl().x-xpad-ylabelpad, imgRect.tl().y-ypad);
+        // pad a little more in below, to keep the title and xlabel
+        int titlepad = imgRect.height*0.325;
+        Point br(imgRect.br().x+xpad, imgRect.br().y + ypad+titlepad);
+        tl.x = max(0,tl.x); tl.y = max(0,tl.y);
+        br.x = min(input.cols-1, br.x); br.y = min(input.rows-1, br.y);
+        Mat croppedGraph = input(cv::Rect(tl, br));
+        char buf[1000];
+        printf("writinh.\n");
+        // draw the contour of the graph box we identified 
+        cv::Scalar color = cv::Scalar(255, 255, 255);
+        drawContours(drawing, rectContours, i, color, 1, 8);
+        sprintf(buf, "%s-%d.png", argv[3], (int)imgCandidates.size());
+        imgCandidates.push_back(imgRect);
+        imwrite(buf, croppedGraph);
       }
     }
   }

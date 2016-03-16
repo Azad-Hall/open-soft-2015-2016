@@ -61,7 +61,7 @@ int main(int argc, char const *argv[])
   Rect boundRect;
   boundRect = boundingRect( Mat(finalContour) );
   rectangle( drawing, boundRect.tl(), boundRect.br(), Scalar(100,100,100), 2, 8, 0 );
-  imshow("dra",drawing);
+  //imshow("dra",drawing);
       //waitKey(0);
   cv::Point2f corners[4];
   corners[0] = boundRect.tl();
@@ -177,11 +177,11 @@ cout<<"\nvert_text: "<<txt_ver;
 imwrite("y_label.jpg", y_label);
 system("tesseract y_label.jpg tes_out0 digits hocr");
 
-imshow("vert_text", vert_text);
-imshow("y_label", y_label);
+//imshow("vert_text", vert_text);
+//imshow("y_label", y_label);
 
 
-imshow("sidnvinsv",img);
+//imshow("sidnvinsv",img);
 
 
 /////////////////////////Horizontal Text
@@ -264,9 +264,9 @@ imshow("sidnvinsv",img);
       xrect = cropRect(xrect, img.size());
       x_label = Mat(img, xrect);
     }
-    imshow("NEw", img);
+    //imshow("NEw", img);
     
-    imshow("hor_text", hor_text);
+    //imshow("hor_text", hor_text);
     
     char txt_title[1024];
     char txt_hor[1024];    
@@ -280,7 +280,7 @@ imshow("sidnvinsv",img);
     cout<<"\nhor_text: "<<txt_hor;
     
     if(title.rows) {
-     imshow("Title", title);
+     //imshow("Title", title);
      imwrite("title.jpg", title);
      pPipe = popen("tesseract title.jpg stdout -psm 7", "r");
      fgets(txt_title, 128, pPipe);
@@ -291,7 +291,7 @@ imshow("sidnvinsv",img);
    imwrite("x_label.jpg", x_label);
    system("tesseract x_label.jpg tes_out1 digits hocr");
 
-   imshow("x_label", x_label);
+   //imshow("x_label", x_label);
    pugi::xml_document indoc;
    pugi::xml_node to_add_x = indoc.append_child();
    to_add_x.set_name("to_add_x");

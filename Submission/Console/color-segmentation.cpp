@@ -14,10 +14,16 @@
 #include <algorithm>
 #include <string>
 #include "peakdetect.h"
+//#include </home/aytas32/OpenSoft/inter_hall_16/ocr/peakdetect.cpp>
 //Need to run g++ peakdetect.cpp color-segmentation.cpp 
 
 using namespace cv;
 using namespace std;
+map<int, string> hueColor;
+
+string getColorName(int hue){
+  return hueColor[(hue + 5)%360/20];
+}
 typedef unsigned char uchar;
 int run(int argc, char **argv); // for peakdetect
 // expands black mask using a looser threshold for saturation to be considered black (eg. 20%)
@@ -48,7 +54,7 @@ void histogram(vector<int> &rowHist){
                          Point( bin_w*(i), hist_h - cvRound(rowHist[i]) ),
                          Scalar( 255), 2, 8, 0  );
     }
-    imshow("column Histogram",histImg);
+    // imshow("column Histogram",histImg);
    
 
     
@@ -58,7 +64,7 @@ void histogram(vector<int> &rowHist){
 
 
 }
-void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew, Mat &whiteMask, int lowSatThresh) {
+void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew, Mat &whiteMask, int lowSatThresh, Point srcCoord) {
   int iArr[] = {-2, -1, 0, 1, 2};
   for (int k = 0; k < 5; k++) {
     for (int l = 0; l < 5; l++) {
@@ -72,17 +78,22 @@ void traverse(Mat &bmask, Mat &visited, Mat &imgHSV, int i, int j, Mat &bmaskNew
         continue;
       visited.at<uchar>(ii,jj) = 1;
       // add special conditions for brown and blue to counter anti aliasing
-      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-30) < 20 || fabs(hsv[0]-200) < 20 || fabs(hsv[0]-216) < 8) && whiteMask.at<uchar>(ii,jj) ) {
+      if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-10) < 20 || fabs(hsv[0]-100) < 20) && whiteMask.at<uchar>(ii,jj) ) {
         visited.at<uchar>(ii,jj) = 1;
         bmaskNew.at<uchar>(ii,jj) = 0;
-        traverse(bmask, visited, imgHSV, ii, jj, bmaskNew, whiteMask, lowSatThresh);
+        // only traverse if distance to srcCoord is less than thresh
+        if (norm(srcCoord-Point(jj,ii)) < 20)
+          traverse(bmask, visited, imgHSV, ii, jj, bmaskNew, whiteMask, lowSatThresh, srcCoord);
       }
     }
   }
 }
+
 Mat expandBMask(Mat bmask, Mat imgHSV, Mat whiteMask, int lowSatThresh) {
+  // shouldn't use search for expanding mask, it can completely take away the color!
   Mat visited = Mat::zeros(bmask.size(), CV_8U);
   Mat bmaskNew = Mat::ones(bmask.size(), CV_8U);
+  Mat kernel = getStructuringElement(MORPH_ELLIPSE, Size(7,7));
   for (int i = 0; i < bmask.rows; ++i)
   {
     for (int j = 0; j < bmask.cols; ++j)
@@ -90,13 +101,35 @@ Mat expandBMask(Mat bmask, Mat imgHSV, Mat whiteMask, int lowSatThresh) {
       if (bmask.at<uchar>(i,j) == 0)
         bmaskNew.at<uchar>(i,j) = 0;
       if (bmask.at<uchar>(i,j) == 0 && visited.at<uchar>(i,j) == 0) {
+        // don't use search. instead, just use a kernel and mask away shitty pixels.
+        // use search, but only to a fixed radius.
         visited.at<uchar>(i,j) = 1;
-        traverse(bmask, visited, imgHSV, i, j, bmaskNew, whiteMask, lowSatThresh);
+        // for (int ii = 0; ii < kernel.rows; ii++) {
+        //   for (int jj = 0; jj < kernel.cols; jj++) {
+        //     int k = i+ii-kernel.rows/2, l = j+jj-kernel.cols/2;
+        //     Vec3b hsv = imgHSV.at<Vec3b>(k,l);
+        //     // add special conditions for brown and blue to counter anti aliasing
+        //     if ((hsv[1] <= lowSatThresh || fabs(hsv[0]-10) < 20 || fabs(hsv[0]-100) < 20) && whiteMask.at<uchar>(ii,jj) ) {
+        //       visited.at<uchar>(ii,jj) = 1;
+        //       bmaskNew.at<uchar>(ii,jj) = 0;
+        //     }
+        //   }
+        // }
+        traverse(bmask, visited, imgHSV, i, j, bmaskNew, whiteMask, lowSatThresh, Point(j,i));
       }
     }
   }
   return bmaskNew;
 }
+
+
+// crops rectangle to stay within image.
+Rect cropRect(Rect r, cv::Size size) {
+  Point tl(max(r.tl().x, 0), max(r.tl().y, 0));
+  Point br(min(r.br().x, size.width-1), min(r.br().y, size.height-1));
+  return Rect(tl, br);
+}
+
 
 void histRGB(Mat src){
   vector<Mat> bgr_planes;
@@ -117,10 +150,6 @@ void histRGB(Mat src){
   calcHist( &bgr_planes[0], 1, 0, Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate );
   calcHist( &bgr_planes[1], 1, 0, Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate );
   calcHist( &bgr_planes[2], 1, 0, Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate );
-
-  /*imshow("blue hist",b_hist);
-  imshow("red hist",r_hist);
-  imshow("green hist",g_hist);*/
 
   // Draw the histograms for B, G and R
   int hist_w = 512; int hist_h = 400;
@@ -148,20 +177,61 @@ void histRGB(Mat src){
   }
 
   /// Display
-  namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
-  imshow("calcHist Demo", histImage );
+  // namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
+  // imshow("calcHist Demo", histImage );
   //namedWindow("blue hist", CV_WINDOW_AUTOSIZE );
  
 
 }
+// fill the legend counts with the number of pixles of that color. 
+// return total numboer of unmaked pixels that were also some color.
+int fillLegendCounts(vector<int> &counts, const vector<pair<int,int> > &plothues, Mat hsv, Mat mask) {
+  assert(counts.size() == plothues.size());
+  int totCount = 0;
+  for (int i = 0; i < hsv.rows; i++) {
+    for (int j = 0; j < hsv.cols; j++) {
+      if (!mask.at<uchar>(i,j))
+        continue;
+      int h = hsv.at<Vec3b>(i,j)[0];
+      // printf("got unmasked pixle!!\n");
+      for (int k = 0; k < plothues.size(); k++) {
+
+        if (plothues[k].first <= h && h < plothues[k].second) {
+          counts[k]++;
+          totCount++;
+        }
+      }
+    }
+  }
+  return totCount;
+}
 
 int main(int argc, char const *argv[])
 {
-  if (argc != 3) {
-    printf("usage: ./color-segmentation <graph-img-cropped> <out-basename>\n");
+
+  if (argc != 4) {
+    printf("usage: ./color-segmentation <graph-img-cropped> <out-basename> <graph-img-cropped-nolegend>\n");
     return 0;
   }
-  cout<<"sdhfukdshf\n";
+  hueColor[0] = "red";
+  hueColor[1] = "orange";
+  hueColor[2] = "yellowish orange";
+  hueColor[3] = "yellow";
+  hueColor[4] = "lime";
+  hueColor[5] = "light green";
+  hueColor[6] = "green";
+  hueColor[7] = "dark green";
+  hueColor[8] = "cyanish green";
+  hueColor[9] = "cyan";
+  hueColor[10] = "light blue";
+  hueColor[11] = "blue";
+  hueColor[12] = "dark blue";
+  hueColor[13] = "indigo";
+  hueColor[14] = "violet";
+  hueColor[15] = "purple";
+  hueColor[16] = "magenta";
+  hueColor[17] = "rose red";
+  // cout<<"sdhfukdshf\n";
   /*string path=argv[1];
   char Path[]="../ocr/build/graph-box ";
   strcat(Path,path.c_str()); 
@@ -212,7 +282,52 @@ int main(int argc, char const *argv[])
   }
   
   mask = mask & bmask;
-  
+  // make mask2 as well, exactly the same way
+  Mat mask2;
+  {
+    Mat img=imread(argv[3]);
+    Mat imgHSV;
+    cvtColor(img, imgHSV, CV_BGR2HSV);
+    Mat mask(img.rows, img.cols, CV_8U, Scalar(1)), bmask = mask.clone(); // to mask away all colorless pixels
+    // bmask = black mask. will dilate to remove some anti-aliased points
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        mask.at<uchar>(i,j) = 1;
+        bmask.at<uchar>(i,j) = 1;
+        Vec3b cRGB = img.at<Vec3b>(i,j);
+        Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
+        if (cRGB[0] >= 210 && cRGB[1] >= 210 && cRGB[2] >= 210) {//210
+          mask.at<uchar>(i,j) = 0;
+        } else if (cRGB[0] <= 120 && cRGB[1] <= 120 && cRGB[2] <= 120) {
+          bmask.at<uchar>(i,j) = 0;
+        }  // if saturation is low i.e less than 10%, it could be black/grey, we don't need that.
+        else if (cHSV[1] <= .03*255) {
+          bmask.at<uchar>(i,j) = 0;
+        }      
+      }
+    }
+    //anti aliasing correction
+    // using search method
+    //again adding all black pixels to bmask for higher threshold of saturation
+    bmask = expandBMask(bmask, imgHSV, mask, 0.15*255);//0.11
+    bool got=false;
+    for (int i = 0; i < mask.rows; ++i)
+    {
+      for (int j = 0; j < mask.cols; ++j)
+      {
+        Vec3b cRGB = img.at<Vec3b>(i,j);
+        Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
+         if (cHSV[1] <= .06*255)// || (cHSV[0]<166+5 && cHSV[0]>166-5)) //because 166 was the text hue//0.06
+        {
+          bmask.at<uchar>(i,j) = 0;
+        }      
+      }
+    }
+    mask = mask & bmask;
+    mask2 = mask;
+  }
   // we will now classify with H value only.
   // make histogram on H
   vector<int> hist(256, 0);
@@ -241,7 +356,7 @@ int main(int argc, char const *argv[])
   int noPlots=0;
   int deltaParam=2;
   vector<float> maxima;
-  int tick=4;
+  int tick=4;//=1 for a.png
 
   
 
@@ -269,7 +384,6 @@ int main(int argc, char const *argv[])
         hist[i] = nhist[i];
       }
     }
-    // cout<<"maxH : "<<maxH<<endl;
      maxH = 0;
     ////////////////////////////file peak detect
     FILE* fp = fopen("res.csv","w");
@@ -318,11 +432,10 @@ int main(int argc, char const *argv[])
 
 
   
-  // cout<<"OUT\n";
   
   ///-------------------------------------------------------------------------------------------------------------------------------------
   // first half of maxima array is max, second half is min
-  maxima.push_back(256);
+  maxima.push_back(180);
   
 
   
@@ -359,30 +472,17 @@ int main(int argc, char const *argv[])
                        Point( bin_w*(i), hist_h - cvRound(hist[i]) ),
                        Scalar( 255), 2, 8, 0  );
   }
-  imshow("histogram", histImg);
+  // imshow("histogram", histImg);
   // draw all pixels with H < 50 degrees. Troublesome in 1.png?
   
   Mat yellow;
   cvtColor(imgHSV,yellow,CV_HSV2BGR);
   Mat unColor=yellow.clone();
-  //Mat yellow = img.clone();
-  for (int i = 0; i < yellow.rows; ++i)
-  {
-    for (int j = 0; j < yellow.cols; ++j)
-    {
-      if (!mask.at<uchar>(i,j)){
-        yellow.at<Vec3b>(i,j) = Vec3b(0,0,0);
-      }
-      if(mask.at<uchar>(i,j)){
-        unColor.at<Vec3b>(i,j)=Vec3b(255,255,255);
-      }
-      
-    }
-  }
+  
 
   
 
-  Mat plots=yellow.clone();//Mat::zeros(yellow.rows,yellow.cols,CV_8UC1);
+  Mat plots=yellow.clone();
   //merging folding of red
   int k=maxNo,t=0;
   plots=Scalar(0);
@@ -394,11 +494,11 @@ int main(int argc, char const *argv[])
     // cout<<"pushed"<<i-1<<" "<<i<<"\n";
     plothues.push_back(make_pair(maxima[i-1],maxima[i]));
   }
+  // use mask2 instead of mask, so that legend colors are not output in the binary images.
+  swap(mask, mask2);
   if(maxima[maxNo+1]<=20){
     plothues[0]=*(--plothues.end());
     plothues.pop_back();
-    // cout<<"yooyoyo"<<plothues.size()<<"\n";
-    // printf("%d\n", (int)maxima.size()/2-1);
     k++;
     t=1;
     plots=Scalar(0);
@@ -441,8 +541,9 @@ int main(int argc, char const *argv[])
    
   }
   printf("%d\n",plothues.size());
-  for(auto it:plothues)
-    printf("%d %d\n",it.first,it.second);
+
+  swap(mask, mask2);
+  
 
   Mat imgBW = Mat(imgHSV.rows,imgHSV.cols,CV_8UC1);
   for(int i=0;i<imgHSV.rows;i++){
@@ -450,33 +551,146 @@ int main(int argc, char const *argv[])
       imgBW.at<uchar>(i,j)=imgHSV.at<Vec3b>(i,j)[1]*2;
     }
   }
+  // imshow("imgBW", imgBW);
+  // waitKey();
+  vector<string> legendText;
   vector<pair<int,int> > X,Y;
   {
     ifstream fin("legend_boxes.txt");
     int sz;fin>>sz;
-    X.resize(sz);Y.resize(sz);
-    for(int i=0;i<sz;++i)
+    // printf("%d\n",sz);
+    X.resize(sz);Y.resize(sz);legendText.resize(sz);
+    for(int i=0;i<sz;++i){
       fin>>X[i].first>>X[i].second>>Y[i].first>>Y[i].second;
+      string temp;
+      getline(fin,temp);
+      getline(fin,legendText[i]);
+    }
+
     fin.close();
+  }
+  // map each color to a legend.
+  // for each legend, array of length (numColors) stores the counts of that color 
+  // around the legend
+  vector<vector<int> > legendColorFreq(X.size(), vector<int> (plothues.size(), 0));
+  for (int i = 0; i < X.size(); i++) {
+    // make rectangles on either side of the legend text
+    // count the colors
+    Rect lgdRect(Point(X[i].first, Y[i].first), Point(X[i].second, Y[i].second));
+    int wd = lgdRect.width;
+    // r1 = left rect, r2 = right rect
+    Rect r1(lgdRect.tl()-Point(wd,0), lgdRect.tl()+Point(0,lgdRect.height));
+    Rect r2(lgdRect.tl()+Point(lgdRect.width,0), lgdRect.br()+Point(wd,0));
+    r1 = cropRect(r1, mask2.size());
+    r2 = cropRect(r2, mask2.size()); 
+    Mat mr1 = mask(r1);
+    Mat mr2 = mask(r2);
+    Mat hsv1 = imgHSV(r1);
+    Mat hsv2 = imgHSV(r2);
+    int totCount = fillLegendCounts(legendColorFreq[i], plothues, hsv1, mr1);
+    totCount += fillLegendCounts(legendColorFreq[i], plothues, hsv2, mr2);
+    // imshow("r1", hsv1);
+    // imshow("r2", hsv2);
+    // waitKey();
+  }
+  vector<bool> legendUsed(X.size(), false);
+  vector<string> hueString(plothues.size(), "");
+  // should probably use some kind of max. matching bhere.
+  for (int i = 0; i < plothues.size(); i++) {
+    int lgdIdx = 0;
+    int maxCount = 0;
+    bool found = false;
+    for (int j = 0; j < legendUsed.size(); j++) {
+      if (legendUsed[j])
+        continue;
+      if (legendColorFreq[j][i] > maxCount) {
+        maxCount = legendColorFreq[j][i];
+        lgdIdx = j;
+        found = true;
+      }
+    }
+    if (found) {
+      hueString[i] = legendText[lgdIdx];
+      legendUsed[lgdIdx] = true;
+    }
+    int clr = 0;
+    if (plothues[i].second == 180)
+      clr = 360;
+    else
+      clr = plothues[i].first+plothues[i].second;
+    hueString[i].append(" (" + getColorName(clr) + ") ");
+  }
+  // print the hues and their labels.
+  for (int i = 0; i < plothues.size(); i++) {
+    printf("%d %d %s\n", plothues[i].first, plothues[i].second, hueString[i].c_str());
   }
   int xmax=-1e9,xmin=1e9;
   for(auto it:X)
     xmax=max(it.first,xmax),xmin=min(it.second,xmin);
   int xthr=0.18*imgHSV.cols;
-  // cout<<xmax<<" "<<xmin<<"\n";
-  // cout<<xmax-xthr<<" "<<imgHSV.cols<<"\n";
-  // return 0;
 
   map<int,int> mp;
+  // for(int i=0;i<Y.size();++i)
+  // {
+  //   vector<int> legendHist(256);
+  //   for(int j=max(0,xmax-xthr);j<=xmax;++j)
+  //   {
+  //     for(int k=Y[i].first;k<=Y[i].second;++k)
+  //     {
+  //       if(!mask.at<uchar>(k,j))continue;
+  //       ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+  //       yellow.at<Vec3b>(k,j)=Vec3b(255,255,0);
+  //     }
+  //   }
+  //   for(int j=xmin;j<=min(xmin+xthr,imgHSV.cols-1);++j)
+  //   {
+  //     for(int k=Y[i].first;k<=Y[i].second;++k)
+  //     {
+  //       if(!mask.at<uchar>(k,j))continue;
+  //       ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+  //       yellow.at<Vec3b>(k,j)=Vec3b(0,255,0);
+  //     }
+  //   }
+  //   int maxpos=max_element(legendHist.begin(),legendHist.end())-legendHist.begin();
+  //   for(int j=0;j<plothues.size();++j)
+  //     if(maxpos>=plothues[j].first and maxpos<=plothues[j].second)
+  //       {mp[i]=j;break;}
+  //   histogram(legendHist);
+  // }
+  //------------------------------------------------------------
+  vector<int> hue2HC(256,0);
+  int r=0;
+  for(int i=0;i<256;i++){
+    for(int r=0;r<plothues.size();r++){
+      if(i>=plothues[r].first && i<=plothues[r].second){
+        hue2HC[i]=r;
+        break;
+      }
+    }
+  }
+  
+
+  int** legendHist = new int*[Y.size()];
+    for(int q = 0; q < Y.size(); ++q)
+         legendHist[q] = new int[plothues.size()];
+
+  // memset(legendHist,0,sizeof(legendHist[0][0])*Y.size()*plothues.size());
+      for(int i=0;i<Y.size();i++){
+        for(int j=0;j<plothues.size();j++)
+          legendHist[i][j]=0;
+      }
+
+// cout<<"dshk";
+// return(0);
   for(int i=0;i<Y.size();++i)
   {
-    vector<int> legendHist(256);
+      
     for(int j=max(0,xmax-xthr);j<=xmax;++j)
     {
       for(int k=Y[i].first;k<=Y[i].second;++k)
       {
         if(!mask.at<uchar>(k,j))continue;
-        ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+        ++legendHist[i][hue2HC[imgHSV.at<Vec3b>(k,j)[0]]];
         yellow.at<Vec3b>(k,j)=Vec3b(255,255,0);
       }
     }
@@ -485,30 +699,49 @@ int main(int argc, char const *argv[])
       for(int k=Y[i].first;k<=Y[i].second;++k)
       {
         if(!mask.at<uchar>(k,j))continue;
-        ++legendHist[imgHSV.at<Vec3b>(k,j)[0]];
+        ++legendHist[i][hue2HC[imgHSV.at<Vec3b>(k,j)[0]]];
         yellow.at<Vec3b>(k,j)=Vec3b(0,255,0);
       }
     }
-    // for(int id=0;id<legendHist.size();id++)
-    //   cout<<legendHist[id]<<" ";
-    // cout<<"\n";
-    cout<<"PLotHues :"<<plothues.size()<<"\n";
-    int maxpos=max_element(legendHist.begin(),legendHist.end())-legendHist.begin();
-    for(int j=0;i<plothues.size();++j)
+    
+    /*
+    for(int j=0;j<plothues.size();++j)
       if(maxpos>=plothues[j].first and maxpos<=plothues[j].second)
         {mp[i]=j;break;}
-    histogram(legendHist);
-    waitKey(0);
+    histogram(legendHist);*/
   }
+  for(int m=0;m<Y.size();m++){
+    int maxPos=0;
+      for(int n=0;n<plothues.size();n++){
+        if(legendHist[m][n]>legendHist[m][maxPos])
+          maxPos=n;
+        // cout<<legendHist[m][n]<<" ";
+      }
+      mp[m]=maxPos;
+      // cout<<"\n";
+    }
+    // for(int n=0;n<plothues.size();n++){//col-hueID
+    //   int maxPos=0;
+    //   for(int m=0;m<Y.size();m++){//row-legendID
+    //     if(legendHist[m][n]>legendHist[maxPos][n])
+    //       maxPos=m;
+    //   }
+    //   mp[maxPos]=n;
+    // }
 
 
   // legend id SPACE hue id SPACE hue.first SPACE hue.second \n
-  for(auto it:mp)
-        printf("%d %d %d %d\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second);
-
-  imshow("weird", yellow);
+  // char a[200];
+  // int h=-1;
+  // for(auto it:mp){
+  //   ++h;
+  //   strcpy(a,legendText[h].c_str());
+  //   printf("%d %d %d %d %s\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second,a);
+  // }
+        
+  // imshow("weird", yellow);
   imwrite("weird2.png", yellow);
  
-  waitKey(0);
+  // waitKey(0);
   return 0;
 }

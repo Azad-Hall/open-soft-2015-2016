@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
 		    		rectangle(img, a, b, color, 2, 8, 0);
 		    	}
     }
-    imshow("Final.png", img);
+    //imshow("Final.png", img);
     
 }
 

@@ -34,7 +34,7 @@ int main(int argc, char const *argv[])
 	namedWindow("input");
 	createTrackbar("Threshold", "input",&max,100);
 	// cv::Mat mask = thresh(input, 120);
-	// imshow("bw", mask);
+	// //imshow("bw", mask);
 	cv::Mat mask;
 	cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
 	imwrite("/tmp/tmp-bw.png",  mask);
@@ -75,17 +75,17 @@ int main(int argc, char const *argv[])
 			// 	cv::Mat croppedImage = input(myROI);
 			// 	char buf[1000];
 			// 	sprintf(buf, "%d", i);
-			// 	cv::imshow(buf, croppedImage);
+			// 	cv:://imshow(buf, croppedImage);
 			// 	/*cv::imwrite("rotatedRect.png", drawing);*/
 			// }
 		}
 		printf("numContours = %d\n", numContours);
 		imwrite("/tmp/tmp-drawing.png", drawing);
-		cv::imshow("input", input);
-		cv::imshow("drawing", drawing);
+		//imshow("input", input);
+		//imshow("drawing", drawing);
 		break;
 		if (waitKey(30) == 27) break;
 	}
-	cv::waitKey(0);
+//	cv::waitKey(0);
 	return 0;
 }

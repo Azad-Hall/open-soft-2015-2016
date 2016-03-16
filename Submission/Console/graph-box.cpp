@@ -43,9 +43,9 @@ vector<Point> get_outer_box(Mat& input, Mat& cropped)
   vector<Point> finalContour = getRectangularContour2(largest);
   // need to shrink alittle, since we don't want the black boundary to be there
   // in the output image.
-  // shirnk by 3% contour height
-
-  vector<Point> shrinkedContour = shrinkContour(finalContour, 0.03*boundingRect(finalContour).height);
+  // shirnk by 7% contour height, just to remove all the  black ticks
+  // can't do more than 4 else sometimes cuts other image :(
+  vector<Point> shrinkedContour = shrinkContour(finalContour, 0.04*boundingRect(finalContour).height);
   // don't crop the image, just make everything outside contour white.
   cropped = input.clone();
   for (int i =0; i < cropped.rows; i++) {
