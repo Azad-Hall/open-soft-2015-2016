@@ -473,6 +473,7 @@ int main(int argc, char const *argv[])
                        Scalar( 255), 2, 8, 0  );
   }
   // imshow("histogram", histImg);
+  // waitKey();
   // draw all pixels with H < 50 degrees. Troublesome in 1.png?
   
   Mat yellow;
