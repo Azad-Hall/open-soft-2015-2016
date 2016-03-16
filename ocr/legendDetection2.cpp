@@ -133,7 +133,8 @@ int main(int argc, char const *argv[]){
   }
   fclose(f);
   // make a margin each side of the lgdRect, and make that shit WHITE, write it to new file.
-  int wd = lgdRect.width*1.2;
+  // this margin is now percentage of the image width instead of the text widht!!
+  int wd = original.cols*0.1;
   Rect toRemoveRect(lgdRect.tl()-Point(wd,0), lgdRect.br()+Point(wd,0));
   toRemoveRect = cropRect(toRemoveRect, original.size());
   Mat nolegend = original.clone();

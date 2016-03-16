@@ -85,7 +85,7 @@ bool detect_color(Mat img)
   //anti aliasing correction
   // using search method
   //again adding all black pixels to bmask for higher threshold of saturation
-  bmask = expandBMask(bmask, imgHSV, mask, 0.1*255);//0.11
+  bmask = expandBMask(bmask, imgHSV, mask, 0.15*255);//0.11
   mask = mask & bmask;
   int count = 0;
    for(int i = 0 ; i < mask.rows ; ++i ){
@@ -97,7 +97,7 @@ bool detect_color(Mat img)
    		}
    }
   bool isGraph = false;
- 	if( count > (mask.rows * mask.cols) * 0.008)
+ 	if( count > (mask.rows * mask.cols) * 0.01)
  		isGraph = true;
  	return isGraph;
  	

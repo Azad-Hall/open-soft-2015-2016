@@ -530,6 +530,8 @@ int main(int argc, char const *argv[])
       }
     }
     char name[1000];
+    // close image once.
+    morphologyEx( plots, plots, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
     sprintf(name, "%s-0.png", argv[2]);
     imwrite(name,plots);
   }
@@ -545,6 +547,8 @@ int main(int argc, char const *argv[])
       }
     }
     char name[1000];
+    // close image once.
+    morphologyEx( plots, plots, MORPH_CLOSE, getStructuringElement(MORPH_ELLIPSE, Size(5, 5)) );
     sprintf(name, "%s-%d.png", argv[2], (k-maxNo));
     imwrite(name,plots);
    
