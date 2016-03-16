@@ -30,9 +30,17 @@ function graphFn {
   # color processing will be done on the cropped image
   # make a new file for input to gen-table
   cp bb.txt gen.txt
-  ../../color-segmentation $img_cropped "bin" >> gen.txt
-  # run granularity detction
-  ../../xaxis-granularity "$1" < bb.txt >> gen.txt
+  # run legend removal
+  ../../legend-box "$img_cropped" "nolegend-$img_cropped"
+  # run uncoloring
+  ../../unColoring "nolegend-$img_cropped" "o.png"
+  # run legend detection (new one)
+  ../../legendDetection2 "o.png" "nolegend-$img_cropped" "p.png"
+  # ../../legendDetection "$img_cropped"
+  # color segmentation
+  ../../color-segmentation "$img_cropped" "bin" "p.png" >> gen.txt
+  # run granularity detction. actually fick this
+  # ../../xaxis-granularity "$1" < bb.txt >> gen.txt
   # fingers crossed
   tablexml="$2"
   ../../gen-table scale.xml bin $tablexml < gen.txt
@@ -109,10 +117,15 @@ function pdfFn {
     echo "Illegal number of parameters"
     exit
   fi
+  # get number of pages in pdf
+  # image_tmp= new Imagick();
+  # $image_tmp->pingImage("$1");
+  # numpages=$image_tmp->getNumberImages();
+  numpages=`identify -format %n "$1"`
   basename=`basename $1 .pdf`
   folder="$basename-dir"
   # print 0 in the begninng because of qt problem. then print output file name
-  echo "0 "`pwd`"/$folder/out.pdf"
+  echo "$numpages "`pwd`"/$folder/out.pdf"
   # commenting these out for now
   rm -rf "$folder"
   mkdir "$folder"
