@@ -361,12 +361,13 @@ int main(int argc, char const *argv[])
     char buf[1000];
     sprintf(buf, "%s-%d.png", argv[2], i);
     Mat bin = imread(buf, 0);
-    // open image once.
-    erode(bin, bin, Mat());
-    dilate(bin, bin, Mat());
+    // doing closing operation in color-segmentation itself
+
+    // erode(bin, bin, Mat());
+    // dilate(bin, bin, Mat());
     vector<pair<bool, double> > ysamples = getData(bin, xsamples);
-    
-    ysamples = interpolate(xsamples,ysamples);
+    // NOTE: trying WITHOUT INTERPOALTION!!!
+    // ysamples = interpolate(xsamples,ysamples);
     // need leegend text here
     table.push_back(getColumn(legendTexts[i], ysamples, yscale, yrefPix, yrefVal));
   }

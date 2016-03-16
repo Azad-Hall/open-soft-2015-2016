@@ -72,9 +72,9 @@ bool detect_color(Mat img)
     {
       Vec3b cRGB = img.at<Vec3b>(i,j);
       Vec3b cHSV = imgHSV.at<Vec3b>(i,j);
-      if (cRGB[0] >= 210 && cRGB[1] >= 210 && cRGB[2] >= 210) {//210
+      if (cRGB[0] >= 230 && cRGB[1] >= 230 && cRGB[2] >= 230) {//210
         mask.at<uchar>(i,j) = 0;
-      } else if (cRGB[0] <= 120 && cRGB[1] <= 120 && cRGB[2] <= 120) {
+      } else if (cRGB[0] <= 100 && cRGB[1] <= 100 && cRGB[2] <= 100) {
         bmask.at<uchar>(i,j) = 0;
       }  // if saturation is low i.e less than 10%, it could be black/grey, we don't need that.
       else if (cHSV[1] <= .1*255) {
@@ -110,7 +110,7 @@ bool detect_color(Mat img)
 //   //cout << img.size() << endl;
 //   cout<<detect_color(img)<<endl;
 //  //cout << isGraph << endl;
-
+//   cout << detect_color(img) << endl;
 // //namedWindow("my window", CV_WINDOW_NORMAL);
 // 	////imshow("my window", mask);
 // 	//waitKey(0);

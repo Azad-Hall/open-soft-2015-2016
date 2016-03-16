@@ -18,9 +18,8 @@ if [ -z "$https_proxy" ]; then
 fi
 
 set -e
-
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $DIR
+DIR="`dirname "$(readlink -f "$0")"`"
+cd "$DIR"
 
 echo "--- Installing Dependencies"
 
