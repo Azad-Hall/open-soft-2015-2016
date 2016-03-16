@@ -50,11 +50,12 @@ void PDFProcessor::readOutput() {
     while (process->canReadLine()) {
 
         QString line(process->readLine());
-        QTextStream stream(&line);
         int value;
         QString status;
-        stream >> value >> status;
+        char buff[1000];
 
+        std::sscanf(line.toStdString().c_str(), " %d %[^\n]", &value, buff);
+        status = QString::fromLocal8Bit(buff);
         if(status.isEmpty())
             continue;
 
