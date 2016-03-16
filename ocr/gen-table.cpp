@@ -266,10 +266,12 @@ int main(int argc, char const *argv[])
   // actually don't read the granularity.
   // read the color and legend data generate by color-segmentation
   vector<string> legendTexts(n, "");
-  vector<int> hvals(n, -1);
+  vector<double> hvals(n, -1);
   for (int i = 0; i < n; i++) {
     char buf[1000];
-    scanf("%*d %*d %[^\n]s\n", buf);
+    int hlow, hhi;
+    scanf("%d %d %[^\n]s\n", &hlow, &hhi, buf);
+    hvals[i] = (hlow+hhi)/360.;
     legendTexts[i] = buf;
   }
   
@@ -397,6 +399,11 @@ int main(int argc, char const *argv[])
   xml_node tablenode = odoc.append_child("table");
   tablenode.append_attribute("title") = title.c_str();
   tablenode.append_attribute("ytitle") = vtext.c_str();
+  for (int i= 0; i < hvals.size(); i++) {
+    char buf[1000];
+    sprintf(buf, "c%d", i);
+    tablenode.append_attribute(buf) = hvals[i];
+  }
   for (int i = 0; i < table.size(); i++) {
     xml_node tr = tablenode.append_child();
     tr.set_name("tr");

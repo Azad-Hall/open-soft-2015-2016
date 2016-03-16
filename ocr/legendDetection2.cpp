@@ -115,6 +115,7 @@ int main(int argc, char const *argv[]){
     // append bb by lgdRect.tl()
     bb = Rect(bb.tl()+lgdRect.tl(), bb.br()+lgdRect.tl());
     keyRects.push_back(bb);
+    // imshow("legend", legend);
     // waitKey();
   }
   FILE *f = fopen("legend_boxes.txt", "w");
