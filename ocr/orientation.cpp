@@ -27,6 +27,8 @@ void rotate_90n(cv::Mat &src, cv::Mat &dst, int angle)
             src.copyTo(dst);
         }
     }
+    else
+      dst=src.clone();
 }
 int main(int argc, char const *argv[])
 {
