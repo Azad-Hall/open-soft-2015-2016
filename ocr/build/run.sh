@@ -32,10 +32,13 @@ function graphFn {
   cp bb.txt gen.txt
   # run legend removal
   ../../legend-box "$img_cropped" "nolegend-$img_cropped"
-  # run legend detection
-  ../../legendDetection "$img_cropped"
+  # run uncoloring
+  ../../unColoring "nolegend-$img_cropped" "o.png"
+  # run legend detection (new one)
+  ../../legendDetection2 "o.png" "$img_cropped" "p.png"
+  # ../../legendDetection "$img_cropped"
   # color segmentation
-  ../../color-segmentation $img_cropped "bin" "nolegend-$img_cropped" >> gen.txt
+  ../../color-segmentation $img_cropped "bin" "p.png" >> gen.txt
   # run granularity detction. actually fick this
   # ../../xaxis-granularity "$1" < bb.txt >> gen.txt
   # fingers crossed

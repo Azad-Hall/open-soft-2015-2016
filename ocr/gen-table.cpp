@@ -28,11 +28,7 @@ using namespace std;
 using namespace std;
 using namespace cv;
 
-map<int, string> hueColor;
 
-string getColorName(int hue){
-  return hueColor[(hue + 5)%360/20];
-}
 // take pixels xsamples as input, gives pixels ysamples as output.
 vector<pair<bool, double> > getData(Mat bin, vector<double> xsamples) {
   vector<pair<bool, double> > ysamples;
@@ -252,24 +248,7 @@ vector<double> InsertPositions(vector<double> &X, double scale, double refPix, d
 int main(int argc, char const *argv[])
 {
   printf("usage: ./gen-table <xml-file> <binimg-basename> <outxml-file>\n");
-  hueColor[0] = "red";
-  hueColor[1] = "orange";
-  hueColor[2] = "yellowish orange";
-  hueColor[3] = "yellow";
-  hueColor[4] = "lime";
-  hueColor[5] = "light green";
-  hueColor[6] = "green";
-  hueColor[7] = "dark green";
-  hueColor[8] = "cyanish green";
-  hueColor[9] = "cyan";
-  hueColor[10] = "light blue";
-  hueColor[11] = "blue";
-  hueColor[12] = "dark blue";
-  hueColor[13] = "indigo";
-  hueColor[14] = "violet";
-  hueColor[15] = "purple";
-  hueColor[16] = "magenta";
-  hueColor[17] = "rose red";
+
 
   vector<Point> contour;
   // read the bb conotur;
@@ -289,20 +268,11 @@ int main(int argc, char const *argv[])
   vector<string> legendTexts(n, "");
   vector<int> hvals(n, -1);
   for (int i = 0; i < n; i++) {
-    int id;
-    int hlow, hhi;
     char buf[1000];
-    scanf("%*d %d %d %d %[^\n]s\n", &id, &hlow, &hhi, buf);
-    if (id < 0 || id >= n)
-      continue;
-    if (legendTexts[id].empty())
-      legendTexts[id] = buf;
-    hvals[id] = (hlow+hhi);
+    scanf("%*d %*d %[^\n]s\n", buf);
+    legendTexts[i] = buf;
   }
-  for (int i = 0; i < n; i++) {
-    if (legendTexts[i].empty())
-      legendTexts[i] = getColorName(hvals[i]);
-  }
+  
   // read xml
   pugi::xml_document doc;
   printf("loading xml %s\n", argv[1]);

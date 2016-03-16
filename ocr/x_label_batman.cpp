@@ -21,14 +21,14 @@ int main(int argc, char const *argv[])
   }
   Mat img = imread(argv[1],0);
   Mat binary = img > 220;
-  imshow("sdva",binary);
+  //imshow("sdva",binary);
 
   dilate(binary, binary, getStructuringElement(MORPH_RECT, Size(3,3)));
   int a = 0.03 * img.cols;
   if(!a%2)
   	a=a+1;
   erode(binary, binary, getStructuringElement(MORPH_RECT, Size(a,a)));
-  imshow("sdv",binary);
+  //imshow("sdv",binary);
  //waitKey(0);
 
   vector<int> contain(binary.cols-1,0);
@@ -75,7 +75,7 @@ int main(int argc, char const *argv[])
 
         string aa = "x_label_batman" + to_string(seg) + ".jpg";
         Q_points.push({a, b});
-        imshow(aa.c_str(),new_img);
+        //imshow(aa.c_str(),new_img);
         // waitKey(0);
         imwrite(aa.c_str(),new_img);
         seg++;
@@ -106,7 +106,7 @@ int main(int argc, char const *argv[])
 
   // 	string aa = "x_label_batman" + to_string(seg) + ".jpg";
   // 	Q_points.push({a, b});
-  // 	imshow(aa.c_str(),new_img);
+  // 	//imshow(aa.c_str(),new_img);
   //   // waitKey(0);
   // 	imwrite(aa.c_str(),new_img);
   // 	seg++;

@@ -202,7 +202,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
   cv::threshold(gray, mask,240, 255, CV_THRESH_BINARY_INV );
   // try dilating a litte... maybe more lines will be detected??
   imwrite("tmp/thresholded.png", mask);
-  imshow("mask", mask);
+  //imshow("mask", mask);
   vector<Vec4i> lines;
   vector<Vec4i> hlines, vlines; // horizontal and vertical lines
   // printf("houghLineThresh = %d, minLineLenght = %d, houghMergeThresh = %d\n", houghLineThresh, minLineLength, houghMergeThresh);
@@ -292,7 +292,7 @@ std::vector<std::vector<cv::Point> > getBoxes(Mat input, int minLineLength = 30,
     }
   }
   imwrite("tmp/box-contours.png", drawing);
-  imshow("drawing", drawing);
+  //imshow("drawing", drawing);
 //  waitKey(0);
   return rectContours;
 }
@@ -319,7 +319,7 @@ int getBoxesNew(Mat input, int minLineLength = 30, int houghLineThresh = 200, in
 
   Mat img1=input.clone();
   Mat img0=gray,eimg0;
-  imshow("middle",img0);
+  //imshow("middle",img0);
 
 
 
@@ -348,7 +348,7 @@ int getBoxesNew(Mat input, int minLineLength = 30, int houghLineThresh = 200, in
   // try dilating a litte... maybe more lines will be detected??
   imwrite("tmp/thresholded.png", mask);
 
-  imshow("mask", mask);
+  //imshow("mask", mask);
   vector<Vec4i> lines;
   vector<Vec4i> hlines, vlines; // horizontal and vertical lines
   // printf("houghLineThresh = %d, minLineLenght = %d, houghMergeThresh = %d\n", houghLineThresh, minLineLength, houghMergeThresh);
@@ -438,7 +438,7 @@ int getBoxesNew(Mat input, int minLineLength = 30, int houghLineThresh = 200, in
     }
   }
   imwrite("tmp/box-contours.png", drawing);
-  imshow("drawing", drawing);
+  //imshow("drawing", drawing);
 //  waitKey(0);
   
   vector<vector<Point> > contours_new = rectContours;
@@ -462,13 +462,20 @@ int getBoxesNew(Mat input, int minLineLength = 30, int houghLineThresh = 200, in
     // using 4% area
     if (bb.width * bb.height > 0.2*0.2*input.cols*input.rows) {
       // lets expand it by 10 pix to make sure that all of legend gets deletd
-      largest = shrinkContour(largest, -10);
+      // actually don't fill, just remove the box by drawing a thick, unfilled rectangle
+      // largest = shrinkContour(largest, -10);
       // for some reason we need final contour in an array for drawing..
       vector<vector<Point> > dummy(1, largest);
       Mat contourImg = input.clone();
-      drawContours(contourImg, dummy, 0, Scalar(255,255,255), CV_FILLED, 8);
+      assert(largest.size() > 0);
+      // just to make drawing line segmetns easier
+      largest.push_back(largest[0]);
+      for (int i = 1; i < largest.size(); i++) {
+        line(contourImg, largest[i-1], largest[i], Scalar(255,255,255), 15);
+      }
+      // drawContours(contourImg, dummy, 0, Scalar(255,255,255), CV_FILLED, 8);
       imwrite(output_name.c_str(), contourImg);
-      imshow("v",contourImg);
+      //imshow("v",contourImg);
       //waitKey(0);
       return 0;
     } 
@@ -569,7 +576,7 @@ vector<Point> getRectangularContour2(vector<Point> contour) {
   // define min line length and line merge distance
   int minLineLength = max(30, min(imgRect.width, imgRect.height)/2);
   int mergeDist = minLineLength*0.75;
-  // imshow("img",img);
+  // //imshow("img",img);
   // waitKey(0);
   HoughLinesP( img, lines, 1, CV_PI/180, 230, minLineLength, mergeDist );
 
@@ -618,8 +625,8 @@ vector<Point> getRectangularContour2(vector<Point> contour) {
   for (int i =0 ; i < lines.size(); i++)
     line( linesImg, Point(lines[i][0], lines[i][1]),
         Point(lines[i][2], lines[i][3]), Scalar(255), 1, 8 );
-  // imshow("lines", linesImg);
-  // imshow("contour", img);
+  // //imshow("lines", linesImg);
+  // //imshow("contour", img);
   // waitKey();
 
   vector<Point> ans ;

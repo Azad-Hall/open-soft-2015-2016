@@ -54,7 +54,7 @@ int main(int argc, char const *argv[])
     imwrite("tmp/tmp-rot.png", rot);
     char buf[1000];
     sprintf(buf, "tesseract tmp/tmp-rot.png tmp/out-rot -l eng hocr" );
-    // imshow("rotated", rot);
+    // //imshow("rotated", rot);
     // waitKey();
     system(buf);
   }

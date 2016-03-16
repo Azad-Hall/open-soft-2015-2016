@@ -72,3 +72,6 @@ target_link_libraries( unColoring ${OpenCV_LIBS} )
 
 add_executable(legendDetection legendDetection.cpp peakdetect.cpp)
 target_link_libraries( legendDetection ${OpenCV_LIBS} )
+
+add_executable(legendDetection2 legendDetection2.cpp)
+target_link_libraries( legendDetection2 ${OpenCV_LIBS} )

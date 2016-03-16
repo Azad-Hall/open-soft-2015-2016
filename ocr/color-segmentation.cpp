@@ -19,6 +19,11 @@
 
 using namespace cv;
 using namespace std;
+map<int, string> hueColor;
+
+string getColorName(int hue){
+  return hueColor[(hue + 5)%360/20];
+}
 typedef unsigned char uchar;
 int run(int argc, char **argv); // for peakdetect
 // expands black mask using a looser threshold for saturation to be considered black (eg. 20%)
@@ -49,7 +54,7 @@ void histogram(vector<int> &rowHist){
                          Point( bin_w*(i), hist_h - cvRound(rowHist[i]) ),
                          Scalar( 255), 2, 8, 0  );
     }
-    imshow("column Histogram",histImg);
+    // imshow("column Histogram",histImg);
    
 
     
@@ -117,6 +122,15 @@ Mat expandBMask(Mat bmask, Mat imgHSV, Mat whiteMask, int lowSatThresh) {
   return bmaskNew;
 }
 
+
+// crops rectangle to stay within image.
+Rect cropRect(Rect r, cv::Size size) {
+  Point tl(max(r.tl().x, 0), max(r.tl().y, 0));
+  Point br(min(r.br().x, size.width-1), min(r.br().y, size.height-1));
+  return Rect(tl, br);
+}
+
+
 void histRGB(Mat src){
   vector<Mat> bgr_planes;
   split( src, bgr_planes );
@@ -163,11 +177,33 @@ void histRGB(Mat src){
   }
 
   /// Display
-  namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
-  imshow("calcHist Demo", histImage );
+  // namedWindow("calcHist Demo", CV_WINDOW_AUTOSIZE );
+  // imshow("calcHist Demo", histImage );
   //namedWindow("blue hist", CV_WINDOW_AUTOSIZE );
  
 
+}
+// fill the legend counts with the number of pixles of that color. 
+// return total numboer of unmaked pixels that were also some color.
+int fillLegendCounts(vector<int> &counts, const vector<pair<int,int> > &plothues, Mat hsv, Mat mask) {
+  assert(counts.size() == plothues.size());
+  int totCount = 0;
+  for (int i = 0; i < hsv.rows; i++) {
+    for (int j = 0; j < hsv.cols; j++) {
+      if (!mask.at<uchar>(i,j))
+        continue;
+      int h = hsv.at<Vec3b>(i,j)[0];
+      // printf("got unmasked pixle!!\n");
+      for (int k = 0; k < plothues.size(); k++) {
+
+        if (plothues[k].first <= h && h < plothues[k].second) {
+          counts[k]++;
+          totCount++;
+        }
+      }
+    }
+  }
+  return totCount;
 }
 
 int main(int argc, char const *argv[])
@@ -177,6 +213,24 @@ int main(int argc, char const *argv[])
     printf("usage: ./color-segmentation <graph-img-cropped> <out-basename> <graph-img-cropped-nolegend>\n");
     return 0;
   }
+  hueColor[0] = "red";
+  hueColor[1] = "orange";
+  hueColor[2] = "yellowish orange";
+  hueColor[3] = "yellow";
+  hueColor[4] = "lime";
+  hueColor[5] = "light green";
+  hueColor[6] = "green";
+  hueColor[7] = "dark green";
+  hueColor[8] = "cyanish green";
+  hueColor[9] = "cyan";
+  hueColor[10] = "light blue";
+  hueColor[11] = "blue";
+  hueColor[12] = "dark blue";
+  hueColor[13] = "indigo";
+  hueColor[14] = "violet";
+  hueColor[15] = "purple";
+  hueColor[16] = "magenta";
+  hueColor[17] = "rose red";
   // cout<<"sdhfukdshf\n";
   /*string path=argv[1];
   char Path[]="../ocr/build/graph-box ";
@@ -381,7 +435,7 @@ int main(int argc, char const *argv[])
   
   ///-------------------------------------------------------------------------------------------------------------------------------------
   // first half of maxima array is max, second half is min
-  maxima.push_back(256);
+  maxima.push_back(180);
   
 
   
@@ -418,7 +472,7 @@ int main(int argc, char const *argv[])
                        Point( bin_w*(i), hist_h - cvRound(hist[i]) ),
                        Scalar( 255), 2, 8, 0  );
   }
-  imshow("histogram", histImg);
+  // imshow("histogram", histImg);
   // draw all pixels with H < 50 degrees. Troublesome in 1.png?
   
   Mat yellow;
@@ -486,7 +540,7 @@ int main(int argc, char const *argv[])
     imwrite(name,plots);
    
   }
-  //printf("%d\n",plothues.size());
+  printf("%d\n",plothues.size());
 
   swap(mask, mask2);
   
@@ -497,12 +551,14 @@ int main(int argc, char const *argv[])
       imgBW.at<uchar>(i,j)=imgHSV.at<Vec3b>(i,j)[1]*2;
     }
   }
+  // imshow("imgBW", imgBW);
+  // waitKey();
   vector<string> legendText;
   vector<pair<int,int> > X,Y;
   {
     ifstream fin("legend_boxes.txt");
     int sz;fin>>sz;
-    printf("%d\n",sz);
+    // printf("%d\n",sz);
     X.resize(sz);Y.resize(sz);legendText.resize(sz);
     for(int i=0;i<sz;++i){
       fin>>X[i].first>>X[i].second>>Y[i].first>>Y[i].second;
@@ -512,6 +568,61 @@ int main(int argc, char const *argv[])
     }
 
     fin.close();
+  }
+  // map each color to a legend.
+  // for each legend, array of length (numColors) stores the counts of that color 
+  // around the legend
+  vector<vector<int> > legendColorFreq(X.size(), vector<int> (plothues.size(), 0));
+  for (int i = 0; i < X.size(); i++) {
+    // make rectangles on either side of the legend text
+    // count the colors
+    Rect lgdRect(Point(X[i].first, Y[i].first), Point(X[i].second, Y[i].second));
+    int wd = lgdRect.width;
+    // r1 = left rect, r2 = right rect
+    Rect r1(lgdRect.tl()-Point(wd,0), lgdRect.tl()+Point(0,lgdRect.height));
+    Rect r2(lgdRect.tl()+Point(lgdRect.width,0), lgdRect.br()+Point(wd,0));
+    r1 = cropRect(r1, mask2.size());
+    r2 = cropRect(r2, mask2.size()); 
+    Mat mr1 = mask(r1);
+    Mat mr2 = mask(r2);
+    Mat hsv1 = imgHSV(r1);
+    Mat hsv2 = imgHSV(r2);
+    int totCount = fillLegendCounts(legendColorFreq[i], plothues, hsv1, mr1);
+    totCount += fillLegendCounts(legendColorFreq[i], plothues, hsv2, mr2);
+    // imshow("r1", hsv1);
+    // imshow("r2", hsv2);
+    // waitKey();
+  }
+  vector<bool> legendUsed(X.size(), false);
+  vector<string> hueString(plothues.size(), "");
+  // should probably use some kind of max. matching bhere.
+  for (int i = 0; i < plothues.size(); i++) {
+    int lgdIdx = 0;
+    int maxCount = 0;
+    bool found = false;
+    for (int j = 0; j < legendUsed.size(); j++) {
+      if (legendUsed[j])
+        continue;
+      if (legendColorFreq[j][i] > maxCount) {
+        maxCount = legendColorFreq[j][i];
+        lgdIdx = j;
+        found = true;
+      }
+    }
+    if (found) {
+      hueString[i] = legendText[lgdIdx];
+      legendUsed[lgdIdx] = true;
+    }
+    int clr = 0;
+    if (plothues[i].second == 180)
+      clr = 360;
+    else
+      clr = plothues[i].first+plothues[i].second;
+    hueString[i].append(" (" + getColorName(clr) + ") ");
+  }
+  // print the hues and their labels.
+  for (int i = 0; i < plothues.size(); i++) {
+    printf("%d %d %s\n", plothues[i].first, plothues[i].second, hueString[i].c_str());
   }
   int xmax=-1e9,xmin=1e9;
   for(auto it:X)
@@ -620,14 +731,13 @@ int main(int argc, char const *argv[])
 
 
   // legend id SPACE hue id SPACE hue.first SPACE hue.second \n
-  char a[200];
-  int h=-1;
-  for(auto it:mp){
-    ++h;
-    strcpy(a,legendText[h].c_str());
-    printf("%d %d %d %d %s\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second,a);
-    h++;
-  }
+  // char a[200];
+  // int h=-1;
+  // for(auto it:mp){
+  //   ++h;
+  //   strcpy(a,legendText[h].c_str());
+  //   printf("%d %d %d %d %s\n",it.first,it.second,plothues[it.second].first,plothues[it.second].second,a);
+  // }
         
   // imshow("weird", yellow);
   imwrite("weird2.png", yellow);

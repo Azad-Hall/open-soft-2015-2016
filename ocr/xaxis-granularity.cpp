@@ -100,7 +100,7 @@ int main(int argc, char const *argv[])
   // for(int i = 0 ; i < 3 ; i++)
   erode(binimg, binimg, Mat());
   namedWindow("Output", cv::WINDOW_AUTOSIZE);
-  imshow("Output", binimg);
+  //imshow("Output", binimg);
   // waitKey(0);
   imwrite("tmp/tmp.png", binimg);
   vector<int> ugranularPoints, diff;

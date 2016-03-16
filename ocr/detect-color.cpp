@@ -112,7 +112,7 @@ bool detect_color(Mat img)
 //  //cout << isGraph << endl;
 
 // //namedWindow("my window", CV_WINDOW_NORMAL);
-// 	//imshow("my window", mask);
+// 	////imshow("my window", mask);
 // 	//waitKey(0);
 // 	return 0;
 // }
